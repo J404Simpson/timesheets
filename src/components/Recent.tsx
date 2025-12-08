@@ -11,11 +11,11 @@ type Props = {
   items?: RecentItem[];
 };
 
-export default function RecentActivity({ items }: Props): JSX.Element {
+export default function Recent({ items }: Props): JSX.Element {
   if (!items || items.length === 0) {
     return (
       <section className="placeholder recent-activity">
-        <h3>Recent activity</h3>
+        <h3>Recent</h3>
         <p className="muted">
           No recent activity yet — create your first timesheet.
         </p>
@@ -25,7 +25,7 @@ export default function RecentActivity({ items }: Props): JSX.Element {
 
   return (
     <section className="recent-activity">
-      <h3>Recent activity</h3>
+      <h3>Recent</h3>
       <ul className="recent-list">
         {items.map((it) => (
           <li key={it.id} className="recent-item">

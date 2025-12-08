@@ -11,7 +11,7 @@ type Entry = {
   notes?: string;
 };
 
-export default function TimesheetForm() {
+export default function TimesheetForm({ onCancel }: { onCancel?: () => void }) {
   const [entry, setEntry] = useState<Entry>({
     workDate: new Date().toISOString().slice(0, 10),
     project: "",
@@ -35,12 +35,11 @@ export default function TimesheetForm() {
 
   const submitLocal = (e: React.FormEvent) => {
     e.preventDefault();
-    // For the starter, we'll just show the entry locally
     setStatus(`Saved locally: ${JSON.stringify(entry)}`);
     console.log("Timesheet entry:", entry);
   };
 
-  // Example: call a protected API with an acquired token
+  // kept for future use
   const callProtectedApi = async () => {
     setStatus("Acquiring token...");
     if (!account) {
@@ -53,12 +52,10 @@ export default function TimesheetForm() {
         account
       };
 
-      // acquire token silently if possible
       let response;
       try {
         response = await instance.acquireTokenSilent(request);
       } catch (silentError) {
-        // fallback to interactive if silent acquisition fails
         response = await instance.acquireTokenPopup(request);
       }
 
@@ -85,7 +82,6 @@ export default function TimesheetForm() {
 
   return (
     <section>
-      <h2>Timesheet Entry</h2>
       <form onSubmit={submitLocal} className="form">
         <label>
           Work date
@@ -113,9 +109,17 @@ export default function TimesheetForm() {
         </label>
 
         <div className="actions">
-          <button type="submit" className="btn btn-primary">Save locally</button>
-          <button type="button" onClick={callProtectedApi} className="btn btn-accent">
-            Call protected API
+          <button type="submit" className="btn btn-primary">Save</button>
+
+          <button
+            type="button"
+            onClick={() => {
+              // cancel returns to homescreen (same effect as previous Cancel in App)
+              onCancel?.();
+            }}
+            className="btn secondary"
+          >
+            Cancel
           </button>
         </div>
       </form>

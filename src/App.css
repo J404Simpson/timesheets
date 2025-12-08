@@ -6,6 +6,7 @@
   --text: #0f172a;
 }
 
+/* reset */
 *{box-sizing:border-box}
 html,body,#root{height:100%}
 body{
@@ -16,6 +17,7 @@ body{
   color:var(--text);
 }
 
+/* layout */
 .app{
   min-height:100%;
   display:flex;
@@ -44,6 +46,7 @@ body{
   margin-left:12px;
 }
 
+/* nav */
 .nav-link{
   color:var(--muted);
   text-decoration:none;
@@ -53,6 +56,7 @@ body{
 }
 .nav-link:hover{ background:rgba(15,23,42,0.03); color:var(--text); }
 
+/* auth area */
 .auth-area{
   margin-left:auto;
   display:flex;
@@ -71,6 +75,7 @@ body{
   gap:20px;
 }
 
+/* cards */
 .hero{
   background:var(--card);
   border:1px solid rgba(15,23,42,0.04);
@@ -84,6 +89,12 @@ body{
 
 .hero-actions{ display:flex; gap:10px; }
 
+/* buttons
+   Ensure button text is readable on whatever background they sit on:
+   - default .btn text is dark
+   - .btn.primary has a colored background and white text
+   - disabled/secondary styles use darker text on light backgrounds
+*/
 .btn{
   padding:8px 12px;
   border-radius:8px;
@@ -91,7 +102,10 @@ body{
   background:transparent;
   cursor:pointer;
   font-size:14px;
+  color:var(--text); /* default: dark text */
 }
+
+/* primary: colored background with white foreground */
 .btn.primary{
   background:var(--accent);
   color:#fff;
@@ -99,12 +113,32 @@ body{
 }
 .btn.primary:hover{ filter:brightness(.95); }
 
+/* secondary: light background, dark text */
+.btn.secondary{
+  background:transparent;
+  color:var(--text);
+  border:1px solid rgba(15,23,42,0.06);
+}
+
+/* safe disabled appearance: dark text on light bg */
+.btn:disabled,
+.btn.disabled,
+.btn.primary:disabled,
+.btn.primary.disabled{
+  background: rgba(15,23,42,0.06);
+  color: var(--muted);
+  border:1px solid rgba(15,23,42,0.04);
+  cursor: not-allowed;
+}
+
+/* nav disabled */
 .nav-link.disabled {
   opacity: 0.6;
   pointer-events: none;
   cursor: default;
 }
 
+/* sign in */
 .sign-in-button {
   color: #000;
   background: transparent;
