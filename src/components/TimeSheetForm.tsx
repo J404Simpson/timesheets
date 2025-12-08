@@ -194,9 +194,9 @@ export default function TimesheetForm({ onCancel }: { onCancel?: () => void }) {
       </div>
 
       <form onSubmit={submitLocal} className="form">
-        {/* Top area: only two buttons initially */}
+        {/* Top area: two buttons initially. show selected button and hide the other when selected */}
         <div style={{ display: "flex", gap: 8, marginBottom: 12 }}>
-          {selectedType !== "project" && (
+          {(selectedType === "none" || selectedType === "project") && (
             <button
               type="button"
               className="btn"
@@ -209,7 +209,7 @@ export default function TimesheetForm({ onCancel }: { onCancel?: () => void }) {
             </button>
           )}
 
-          {selectedType !== "internal" && (
+          {(selectedType === "none" || selectedType === "internal") && (
             <button
               type="button"
               className="btn"
