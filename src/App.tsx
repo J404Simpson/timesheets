@@ -93,10 +93,7 @@ const App: React.FC = () => {
               )
             ) : (
               <section id="new-entry-form" className="new-entry-section" aria-live="polite">
-                <div className="new-entry-header">
-                  <h2>New Entry</h2>
-                </div>
-
+                {/* Removed the New Entry header from App; TimeSheetForm renders it now */}
                 <TimeSheetForm
                   onCancel={() => {
                     setShowNewEntryForm(false);
