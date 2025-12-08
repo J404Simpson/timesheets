@@ -172,6 +172,7 @@ export default function TimesheetForm({ onCancel }: { onCancel?: () => void }) {
   const endOptions = timeOptions.filter((opt) => minutesFrom(opt.value) >= minEnd);
 
   const availablePhases = entry.project ? PROJECTS.find((p) => p.id === entry.project)?.phases ?? [] : [];
+  const selectedProject = entry.project ? PROJECTS.find((p) => p.id === entry.project) : undefined;
 
   // determine when to show time inputs
   const timeInputsVisible =
@@ -194,28 +195,32 @@ export default function TimesheetForm({ onCancel }: { onCancel?: () => void }) {
       </div>
 
       <form onSubmit={submitLocal} className="form">
-        {/* Top area: two buttons initially. show selected button and hide the other when selected */}
+        {/* Top area: two buttons initially. Project button hides when selected (per your request) */}
         <div style={{ display: "flex", gap: 8, marginBottom: 12 }}>
-          {(selectedType === "none" || selectedType === "project") && (
+          {selectedType !== "project" && (
             <button
               type="button"
               className="btn"
               onClick={() => {
                 setSelectedType("project");
                 setStatus(null);
+                // clear any previous project/phase selection when entering project flow
+                setEntry((prev) => ({ ...prev, project: undefined, phase: undefined }));
               }}
             >
               Project
             </button>
           )}
 
-          {(selectedType === "none" || selectedType === "internal") && (
+          {selectedType !== "internal" && (
             <button
               type="button"
               className="btn"
               onClick={() => {
                 setSelectedType("internal");
                 setStatus(null);
+                // clear project/phase when switching to internal
+                setEntry((prev) => ({ ...prev, project: undefined, phase: undefined }));
               }}
             >
               Internal Meeting
@@ -225,25 +230,34 @@ export default function TimesheetForm({ onCancel }: { onCancel?: () => void }) {
 
         {/* Project dropdown shows after selecting Project */}
         {selectedType === "project" && (
-          <label>
-            Project
-            <select
-              name="project"
-              value={entry.project ?? ""}
-              onChange={(e) => {
-                // selecting a project; clear phase until chosen
-                handleChange(e);
-                handleField("phase", undefined);
-              }}
-            >
-              <option value="">Select a project</option>
-              {PROJECTS.map((p) => (
-                <option key={p.id} value={p.id}>
-                  {p.name}
-                </option>
-              ))}
-            </select>
-          </label>
+          <>
+            <label>
+              Project
+              <select
+                name="project"
+                value={entry.project ?? ""}
+                onChange={(e) => {
+                  // selecting a project; clear phase until chosen
+                  handleChange(e);
+                  handleField("phase", undefined);
+                }}
+              >
+                <option value="">Select a project</option>
+                {PROJECTS.map((p) => (
+                  <option key={p.id} value={p.id}>
+                    {p.name}
+                  </option>
+                ))}
+              </select>
+            </label>
+
+            {/* Once a project is selected, show the project name above the phase dropdown */}
+            {entry.project && selectedProject && (
+              <div className="project-title" style={{ fontWeight: 600, marginTop: 8, marginBottom: 4 }}>
+                {selectedProject.name}
+              </div>
+            )}
+          </>
         )}
 
         {/* Phase shown if project has phases */}

@@ -168,7 +168,7 @@ body{
 .form {
   display: flex;
   flex-direction: column;
-  min-height: 320px; /* ensures actions area can sit at bottom for small forms */
+  min-height: 320px;
 }
 
 .form .actions {
@@ -178,4 +178,10 @@ body{
   justify-content: flex-end;
   padding-top: 12px;
   border-top: 1px solid rgba(15, 23, 42, 0.03);
+}
+
+.project-title {
+  font-size: 15px;
+  color: var(--text);
+  margin-bottom: 6px;
 }
