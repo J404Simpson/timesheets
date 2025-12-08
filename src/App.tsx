@@ -1,13 +1,15 @@
-import React from "react";
+import React, { useState } from "react";
 import "./App.css";
 import SignInButton from "./components/SignInButton";
 import Profile from "./components/Profile";
 import { useMsal } from "@azure/msal-react";
 import RecentActivity from "./components/RecentActivity";
+import TimeSheetForm from "./components/TimeSheetForm";
 
 const App: React.FC = () => {
   const { accounts } = useMsal();
   const isAuthenticated = Array.isArray(accounts) && accounts.length > 0;
+  const [showNewEntryForm, setShowNewEntryForm] = useState(false);
 
   return (
     <div className="app">
@@ -17,6 +19,17 @@ const App: React.FC = () => {
         <nav className="app-nav" aria-label="Main navigation">
           <a
             className={`nav-link ${!isAuthenticated ? "disabled" : ""}`}
+            href={isAuthenticated ? "#create" : undefined}
+            role="link"
+            aria-disabled={!isAuthenticated}
+            tabIndex={isAuthenticated ? 0 : -1}
+            onClick={(e) => {
+              if (!isAuthenticated) e.preventDefault();
+            }}>
+            Create
+          </a>
+          <a
+            className={`nav-link ${!isAuthenticated ? "disabled" : ""}`}
             href={isAuthenticated ? "#history" : undefined}
             role="link"
             aria-disabled={!isAuthenticated}
@@ -24,7 +37,8 @@ const App: React.FC = () => {
             onClick={(e) => {
               if (!isAuthenticated) e.preventDefault();
             }}>
-            History</a>
+            History
+          </a>
           <a
             className={`nav-link ${!isAuthenticated ? "disabled" : ""}`}
             href={isAuthenticated ? "#recent" : undefined}
@@ -39,9 +53,7 @@ const App: React.FC = () => {
           </a>
         </nav>
 
-        <div className="auth-area">
-          {isAuthenticated ? <Profile /> : null}
-        </div>
+        <div className="auth-area">{isAuthenticated ? <Profile /> : null}</div>
       </header>
 
       <main className="app-main">
@@ -51,17 +63,38 @@ const App: React.FC = () => {
           </div>
         ) : (
           <>
-            <section className="hero">
-              <p className="muted">
-              </p>
+            <section className="hero" aria-hidden={showNewEntryForm}>
               <div className="hero-actions">
-                <button className="btn primary">New Entry</button>
+                {!showNewEntryForm && (
+                  <button
+                    className="btn primary"
+                    onClick={() => setShowNewEntryForm(true)}
+                    aria-controls="new-entry-form"
+                  >
+                    New Entry
+                  </button>
+                )}
               </div>
             </section>
 
-            {/* Replaced inline placeholder with RecentActivity component (keeps fallback inside the component) */}
-            <RecentActivity />
+            {!showNewEntryForm ? (
+              <RecentActivity />
+            ) : (
+              <section id="new-entry-form" className="new-entry-section" aria-live="polite">
+                <div className="new-entry-header">
+                  <h2>New Entry</h2>
+                  <button
+                    className="btn secondary"
+                    onClick={() => setShowNewEntryForm(false)}
+                    aria-label="Cancel new entry"
+                  >
+                    Cancel
+                  </button>
+                </div>
 
+                <TimeSheetForm />
+              </section>
+            )}
           </>
         )}
       </main>
