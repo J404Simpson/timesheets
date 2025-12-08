@@ -17,6 +17,7 @@ const App: React.FC = () => {
         <h1 className="app-title">Timesheets</h1>
 
         <nav className="app-nav" aria-label="Main navigation">
+
           <a
             className={`nav-link ${!isAuthenticated ? "disabled" : ""}`}
             href={isAuthenticated ? "#create" : undefined}
@@ -28,17 +29,7 @@ const App: React.FC = () => {
             }}>
             Create
           </a>
-          <a
-            className={`nav-link ${!isAuthenticated ? "disabled" : ""}`}
-            href={isAuthenticated ? "#history" : undefined}
-            role="link"
-            aria-disabled={!isAuthenticated}
-            tabIndex={isAuthenticated ? 0 : -1}
-            onClick={(e) => {
-              if (!isAuthenticated) e.preventDefault();
-            }}>
-            History
-          </a>
+
           <a
             className={`nav-link ${!isAuthenticated ? "disabled" : ""}`}
             href={isAuthenticated ? "#recent" : undefined}
@@ -51,6 +42,19 @@ const App: React.FC = () => {
           >
             Recent
           </a>
+
+          <a
+            className={`nav-link ${!isAuthenticated ? "disabled" : ""}`}
+            href={isAuthenticated ? "#history" : undefined}
+            role="link"
+            aria-disabled={!isAuthenticated}
+            tabIndex={isAuthenticated ? 0 : -1}
+            onClick={(e) => {
+              if (!isAuthenticated) e.preventDefault();
+            }}>
+            History
+          </a>
+
         </nav>
 
         <div className="auth-area">{isAuthenticated ? <Profile /> : null}</div>
