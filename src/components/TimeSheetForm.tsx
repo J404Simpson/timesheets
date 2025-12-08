@@ -195,16 +195,19 @@ export default function TimesheetForm({ onCancel }: { onCancel?: () => void }) {
       </div>
 
       <form onSubmit={submitLocal} className="form">
-        {/* Top area: two buttons initially. Project button hides when selected (per your request) */}
+        {/* Top area: keep selected button visible and hide the other.
+            - Initial (none): show both
+            - Project selected: show Project, hide Internal
+            - Internal selected: show Internal, hide Project
+        */}
         <div style={{ display: "flex", gap: 8, marginBottom: 12 }}>
-          {selectedType !== "project" && (
+          {selectedType !== "internal" && (
             <button
               type="button"
               className="btn"
               onClick={() => {
                 setSelectedType("project");
                 setStatus(null);
-                // clear any previous project/phase selection when entering project flow
                 setEntry((prev) => ({ ...prev, project: undefined, phase: undefined }));
               }}
             >
@@ -212,14 +215,13 @@ export default function TimesheetForm({ onCancel }: { onCancel?: () => void }) {
             </button>
           )}
 
-          {selectedType !== "internal" && (
+          {selectedType !== "project" && (
             <button
               type="button"
               className="btn"
               onClick={() => {
                 setSelectedType("internal");
                 setStatus(null);
-                // clear project/phase when switching to internal
                 setEntry((prev) => ({ ...prev, project: undefined, phase: undefined }));
               }}
             >
@@ -232,7 +234,6 @@ export default function TimesheetForm({ onCancel }: { onCancel?: () => void }) {
         {selectedType === "project" && (
           <>
             <label>
-              Project
               <select
                 name="project"
                 value={entry.project ?? ""}
@@ -250,22 +251,14 @@ export default function TimesheetForm({ onCancel }: { onCancel?: () => void }) {
                 ))}
               </select>
             </label>
-
-            {/* Once a project is selected, show the project name above the phase dropdown */}
-            {entry.project && selectedProject && (
-              <div className="project-title" style={{ fontWeight: 600, marginTop: 8, marginBottom: 4 }}>
-                {selectedProject.name}
-              </div>
-            )}
           </>
         )}
 
         {/* Phase shown if project has phases */}
         {selectedType === "project" && entry.project && availablePhases.length > 0 && (
           <label>
-            Phase
             <select name="phase" value={entry.phase ?? ""} onChange={handleChange}>
-              <option value="">Select a phase</option>
+              <option value="">Select</option>
               {availablePhases.map((ph) => (
                 <option key={ph} value={ph}>
                   {ph}
