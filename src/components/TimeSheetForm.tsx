@@ -179,6 +179,15 @@ export default function TimesheetForm({ onCancel }: { onCancel?: () => void }) {
     selectedType === "internal" ||
     (selectedType === "project" && entry.project && (availablePhases.length === 0 || !!entry.phase));
 
+  // Back handler: only revert the top-level selection (project/internal) and clear project/phase
+  const handleBack = () => {
+    if (selectedType === "project" || selectedType === "internal") {
+      setSelectedType("none");
+      setEntry((prev) => ({ ...prev, project: undefined, phase: undefined }));
+      setStatus(null);
+    }
+  };
+
   return (
     <section>
       <div className="new-entry-header" style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 12 }}>
@@ -197,8 +206,8 @@ export default function TimesheetForm({ onCancel }: { onCancel?: () => void }) {
       <form onSubmit={submitLocal} className="form">
         {/* Top area: keep selected button visible and hide the other.
             - Initial (none): show both
-            - Project selected: show Project, hide Internal
-            - Internal selected: show Internal, hide Project
+            - Project selected: Project visible, Internal hidden
+            - Internal selected: Internal visible, Project hidden
         */}
         <div style={{ display: "flex", gap: 8, marginBottom: 12 }}>
           {selectedType !== "internal" && (
@@ -309,11 +318,24 @@ export default function TimesheetForm({ onCancel }: { onCancel?: () => void }) {
           </>
         )}
 
-        {/* actions: Save shown only when time inputs visible; Cancel always visible and kept at bottom */}
+        {/* actions: Save shown only when time inputs visible; show Back only when top-level selection made; Cancel kept at bottom */}
         <div className="actions">
           {timeInputsVisible && (
             <button type="submit" className="btn btn-primary">
               Save
+            </button>
+          )}
+
+          {/* Back appears only when Project or Internal Meeting is selected and reverts that selection */}
+          {(selectedType === "project" || selectedType === "internal") && (
+            <button
+              type="button"
+              className="btn secondary"
+              onClick={handleBack}
+              aria-label="Back"
+              title="Revert selection"
+            >
+              Back
             </button>
           )}
 
