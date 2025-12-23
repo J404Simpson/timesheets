@@ -5,7 +5,7 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "start": "vite preview",
+    "start": "vite build && vite preview", 
     "lint": "eslint 'src/**/*.{ts,tsx}' --ext .ts,.tsx --cache",
     "lint:fix": "eslint 'src/**/*.{ts,tsx}' --ext .ts,.tsx --fix --cache"
   },
