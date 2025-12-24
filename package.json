@@ -4,11 +4,12 @@
   "private": true,
   "scripts": {
     "dev": "vite",
-    "build": "vite build",
+    "build": "npm run prebuild && vite build",
     "start": "npm run set-path && vite build && vite preview",
     "set-path": "echo $PATH && export PATH=$(npm bin):$PATH",
     "lint": "eslint 'src/**/*.{ts,tsx}' --ext .ts,.tsx --cache",
-    "lint:fix": "eslint 'src/**/*.{ts,tsx}' --ext .ts,.tsx --fix --cache"
+    "lint:fix": "eslint 'src/**/*.{ts,tsx}' --ext .ts,.tsx --fix --cache",
+    "prebuild": "ls -la ./index.html && ls -la ./src"
   },
   "dependencies": {
     "@azure/msal-browser": "2.38.4",
