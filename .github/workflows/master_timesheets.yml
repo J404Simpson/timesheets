@@ -42,6 +42,7 @@ jobs:
             package-lock.json \
             node_modules \
             dist \
+            vite.config.ts \
             index.html \
             src \
             deploy 2>/dev/null || true
