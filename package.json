@@ -5,11 +5,10 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "start": "ls -la ./node_modules/.bin && npm run set-path && vite build && vite preview",
+    "start": "npm run set-path && vite build && vite preview",
     "set-path": "echo $PATH && export PATH=$(npm bin):$PATH",
     "lint": "eslint 'src/**/*.{ts,tsx}' --ext .ts,.tsx --cache",
-    "lint:fix": "eslint 'src/**/*.{ts,tsx}' --ext .ts,.tsx --fix --cache",
-    "postinstall": "if [ \"$SCM_BUILD\" = \"1\" ] && [ -f node_modules.tar.gz ]; then tar -xzf node_modules.tar.gz -C /home/site/wwwroot; else echo 'Skipping node_modules extraction'; fi"
+    "lint:fix": "eslint 'src/**/*.{ts,tsx}' --ext .ts,.tsx --fix --cache"
   },
   "dependencies": {
     "@azure/msal-browser": "2.38.4",
