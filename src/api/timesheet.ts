@@ -1,5 +1,6 @@
 import { acquireTokenSilent } from "../auth/msalConfig";
-import axios, { AxiosResponse } from "axios";
+import axios from "axios";
+import type { AxiosResponse } from "axios";
 
 const BASE_URL = "http://localhost:3000/timesheet";
 
