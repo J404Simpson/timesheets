@@ -1,5 +1,5 @@
 import type { Configuration } from "@azure/msal-browser";
-import { LogLevel } from "@azure/msal-browser";
+import { PublicClientApplication, LogLevel } from "@azure/msal-browser";
 
 const tenantId = import.meta.env.VITE_AAD_TENANT_ID ?? "common";
 const clientId = import.meta.env.VITE_AAD_CLIENT_ID ?? "";
@@ -50,5 +50,23 @@ export const protectedResources = {
     scope: apiScope,
   },
 };
+
+const msalInstance = new PublicClientApplication(msalConfig);
+
+export async function acquireTokenSilent(scopes: string[]): Promise<string> {
+  const activeAccount = msalInstance.getActiveAccount();
+  if (!activeAccount) throw new Error("No active account! Ensure you are logged in.");
+
+  try {
+    const response = await msalInstance.acquireTokenSilent({
+      account: activeAccount,
+      scopes,
+    });
+    return response.accessToken;
+  } catch (error) {
+    console.error("Failed to silently acquire token:", error);
+    throw error;
+  }
+}
 
 export default msalConfig;
