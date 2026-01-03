@@ -2,7 +2,42 @@ import { acquireTokenSilent } from "../auth/msalConfig";
 import axios from "axios";
 import type { AxiosResponse } from "axios";
 
-const BASE_URL = "http://localhost:3000/timesheet";
+const LOGIN_URL = `${import.meta.env.VITE_API_URL}/login`;
+const BASE_URL = `${import.meta.env.VITE_API_URL}/timesheet`;
+
+// Function to notify the backend of user login
+export async function notifyLogin(
+  firstName: string,
+  lastName: string,
+  email: string,
+  object_id: string
+): Promise<void> {
+  try {
+    // Acquire access token
+    const accessToken = await acquireTokenSilent(["timesheetApi"]);
+
+    // Make the POST request to the backend
+    await axios.post(
+      LOGIN_URL,
+      { firstName, lastName, email, object_id },
+      {
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
+      }
+    );
+
+    console.log("Login notification sent successfully!");
+  } catch (error: any) {
+    // Check if the error is an AxiosError
+    if (axios.isAxiosError(error)) {
+      console.error("Axios error:", error.response?.data || error.message);
+    } else {
+      console.error("Unexpected error:", error);
+    }
+    throw new Error("Failed to notify backend of login");
+  }
+}
 
 // Function to fetch timesheets
 type Timesheet = {
