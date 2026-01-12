@@ -15,6 +15,7 @@ dist-ssr
 # ignore local env file with secrets
 .env.local
 .env
+prisma/.env
 
 # Editor directories and files
 .vscode/*

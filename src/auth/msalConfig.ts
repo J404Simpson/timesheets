@@ -1,9 +1,33 @@
 import type { Configuration } from "@azure/msal-browser";
 import { PublicClientApplication, LogLevel } from "@azure/msal-browser";
 
-const tenantId = import.meta.env.VITE_AAD_TENANT_ID ?? "common";
-const clientId = import.meta.env.VITE_AAD_CLIENT_ID ?? "";
-const apiScope = import.meta.env.VITE_AAD_API_SCOPE ?? "";
+function resolveEnvValue(
+  ...values: Array<string | undefined>
+): string {
+  for (const value of values) {
+    if (typeof value === "string" && value.trim().length > 0) {
+      return value;
+    }
+  }
+  return "";
+}
+
+const tenantId =
+  resolveEnvValue(
+    import.meta.env.VITE_AAD_TENANT_ID,
+    import.meta.env.VITE_LOCAL_AAD_TENANT_ID,
+    "common"
+  ) || "common";
+
+const clientId = resolveEnvValue(
+  import.meta.env.VITE_AAD_CLIENT_ID,
+  import.meta.env.VITE_LOCAL_AAD_CLIENT_ID
+);
+
+const apiScope = resolveEnvValue(
+  import.meta.env.VITE_AAD_API_SCOPE,
+  import.meta.env.VITE_LOCAL_AAD_API_SCOPE
+);
 
 export const msalConfig: Configuration = {
   auth: {
