@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import "./App.css";
 import SignInButton from "./components/SignInButton";
 import Profile from "./components/Profile";
@@ -6,6 +6,7 @@ import { useMsal } from "@azure/msal-react";
 import Recent from "./components/Recent";
 import History from "./components/History";
 import TimeSheetForm from "./components/TimeSheetForm";
+import { notifyLogin } from "./api/timesheet";
 
 const App: React.FC = () => {
   const { accounts } = useMsal();
@@ -13,6 +14,25 @@ const App: React.FC = () => {
 
   const [showNewEntryForm, setShowNewEntryForm] = useState(false);
   const [view, setView] = useState<"recent" | "history">("recent");
+
+  // Notify API when user logs in
+  useEffect(() => {
+    if (isAuthenticated && accounts[0]) {
+      const account = accounts[0];
+      const firstName = account.name?.split(" ")[0] || "";
+      const lastName = account.name?.split(" ").slice(1).join(" ") || "";
+      const email = account.username || "";
+      const object_id = account.localAccountId || account.homeAccountId || "";
+
+      notifyLogin(firstName, lastName, email, object_id)
+        .then(() => {
+          console.log("User details sent to API successfully");
+        })
+        .catch((error) => {
+          console.error("Failed to send user details to API:", error);
+        });
+    }
+  }, [isAuthenticated, accounts]);
 
   const openCreate = (e: React.MouseEvent) => {
     e.preventDefault();

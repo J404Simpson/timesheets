@@ -1,4 +1,4 @@
-import { acquireTokenSilent } from "../auth/msalConfig";
+import { acquireTokenSilent, protectedResources } from "../auth/msalConfig";
 import axios from "axios";
 import type { AxiosResponse } from "axios";
 
@@ -14,7 +14,7 @@ export async function notifyLogin(
 ): Promise<void> {
   try {
     // Acquire access token
-    const accessToken = await acquireTokenSilent(["timesheetApi"]);
+    const accessToken = await acquireTokenSilent([protectedResources.timesheetApi.scope]);
 
     // Make the POST request to the backend
     await axios.post(
@@ -50,7 +50,7 @@ type Timesheet = {
 export async function getTimesheets(): Promise<Timesheet[]> {
   try {
     // Acquire access token
-    const accessToken = await acquireTokenSilent(["timesheetApi"]);
+    const accessToken = await acquireTokenSilent([protectedResources.timesheetApi.scope]);
 
     // Configure axios request with Authorization header
     const response: AxiosResponse<Timesheet[]> = await axios.get(BASE_URL, {
