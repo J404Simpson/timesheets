@@ -7,7 +7,9 @@ export default function SignInButton() {
 
   const handleLogin = async () => {
     try {
-      await instance.loginPopup(loginRequest);
+      const response = await instance.loginPopup(loginRequest);
+      // Set the active account after successful login
+      instance.setActiveAccount(response.account);
     } catch (e) {
       // fallback to redirect if popup fails
       try {
