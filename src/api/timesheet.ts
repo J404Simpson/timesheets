@@ -10,7 +10,7 @@ export async function getPhasesForProject(projectId: number): Promise<Phase[]> {
   try {
     const accessToken = await acquireTokenSilent([protectedResources.timesheetApi.scope]);
     const apiBase = import.meta.env.VITE_API_URL;
-    const response = await axios.get(`${apiBase}/projects/${projectId}/phases`, {
+    const response = await axios.get(`${apiBase}/api/projects/${projectId}/phases`, {
       headers: {
         Authorization: `Bearer ${accessToken}`,
       },
@@ -32,7 +32,7 @@ export async function getActiveProjects(): Promise<Project[]> {
   try {
     const accessToken = await acquireTokenSilent([protectedResources.timesheetApi.scope]);
     const apiBase = import.meta.env.VITE_API_URL;
-    const response = await axios.get(`${apiBase}/projects`, {
+    const response = await axios.get(`${apiBase}/api/projects`, {
       headers: {
         Authorization: `Bearer ${accessToken}`,
       },
