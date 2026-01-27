@@ -1,7 +1,8 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useMsal } from "@azure/msal-react";
 import axios from "axios";
 import { protectedResources } from "../auth/msalConfig";
+import { getActiveProjects, getPhasesForProject, Project as ApiProject, Phase as ApiPhase } from "../api/timesheet";
 
 type Entry = {
   workDate: string;
@@ -43,13 +44,29 @@ function minutesFrom(value24: string) {
   return h * 60 + m;
 }
 
-/* Example project/phase data — replace with real data source later */
-const PROJECTS: { id: string; name: string; phases: string[] }[] = [
-  { id: "proj-a", name: "Alpha Project", phases: ["Design", "Development", "QA"] },
-  { id: "proj-b", name: "Beta Project", phases: ["Planning", "Implementation"] }
-];
+
+// Remove hardcoded projects, use state for fetched projects
 
 export default function TimesheetForm({ onCancel }: { onCancel?: () => void }) {
+  const [projects, setProjects] = useState<ApiProject[]>([]);
+  const [loadingProjects, setLoadingProjects] = useState(false);
+  const [projectError, setProjectError] = useState<string | null>(null);
+  const [phases, setPhases] = useState<ApiPhase[]>([]);
+  const [loadingPhases, setLoadingPhases] = useState(false);
+  const [phaseError, setPhaseError] = useState<string | null>(null);
+
+  useEffect(() => {
+    setLoadingProjects(true);
+    getActiveProjects()
+      .then((data) => {
+        setProjects(data);
+        setProjectError(null);
+      })
+      .catch(() => {
+        setProjectError("Failed to load projects");
+      })
+      .finally(() => setLoadingProjects(false));
+  }, []);
   const today = new Date().toISOString().slice(0, 10);
   const STEP_MINUTES = 15; // 0.25 hour increments
   const timeOptions = generateTimeOptions(STEP_MINUTES);
@@ -123,7 +140,6 @@ export default function TimesheetForm({ onCancel }: { onCancel?: () => void }) {
     const out = { ...entry, type: selectedType === "none" ? undefined : selectedType, hours };
 
     setStatus(`Saved locally: ${JSON.stringify(out)}`);
-    console.log("Timesheet entry:", out);
   };
 
   const callProtectedApi = async () => {
@@ -161,7 +177,6 @@ export default function TimesheetForm({ onCancel }: { onCancel?: () => void }) {
 
       setStatus(`API responded: ${JSON.stringify(resp.data)}`);
     } catch (err) {
-      console.error("API call failed", err);
       setStatus(`API call error: ${(err as any)?.message ?? err}`);
     }
   };
@@ -171,8 +186,24 @@ export default function TimesheetForm({ onCancel }: { onCancel?: () => void }) {
   const minEnd = startMin + STEP_MINUTES;
   const endOptions = timeOptions.filter((opt) => minutesFrom(opt.value) >= minEnd);
 
-  const availablePhases = entry.project ? PROJECTS.find((p) => p.id === entry.project)?.phases ?? [] : [];
-  const selectedProject = entry.project ? PROJECTS.find((p) => p.id === entry.project) : undefined;
+  const selectedProject = entry.project ? projects.find((p) => String(p.id) === entry.project) : undefined;
+  // Fetch phases when project changes
+  useEffect(() => {
+    if (selectedType === "project" && entry.project) {
+      setLoadingPhases(true);
+      setPhases([]);
+      setPhaseError(null);
+      getPhasesForProject(Number(entry.project))
+        .then((data) => {
+          setPhases(data.filter((ph) => ph.enabled !== false));
+        })
+        .catch(() => setPhaseError("Failed to load phases"))
+        .finally(() => setLoadingPhases(false));
+    } else {
+      setPhases([]);
+      setPhaseError(null);
+    }
+  }, [selectedType, entry.project]);
 
   // determine when to show time inputs
   const timeInputsVisible =
@@ -247,13 +278,13 @@ export default function TimesheetForm({ onCancel }: { onCancel?: () => void }) {
                 name="project"
                 value={entry.project ?? ""}
                 onChange={(e) => {
-                  // selecting a project; clear phase until chosen
                   handleChange(e);
                   handleField("phase", undefined);
                 }}
+                disabled={loadingProjects || !!projectError}
               >
-                <option value="">Select a project</option>
-                {PROJECTS.map((p) => (
+                <option value="">{loadingProjects ? "Loading projects..." : projectError ? projectError : "Select a project"}</option>
+                {projects.map((p) => (
                   <option key={p.id} value={p.id}>
                     {p.name}
                   </option>
@@ -264,13 +295,18 @@ export default function TimesheetForm({ onCancel }: { onCancel?: () => void }) {
         )}
 
         {/* Phase shown if project has phases */}
-        {selectedType === "project" && entry.project && availablePhases.length > 0 && (
+        {selectedType === "project" && entry.project && (
           <label>
-            <select name="phase" value={entry.phase ?? ""} onChange={handleChange}>
-              <option value="">Select</option>
-              {availablePhases.map((ph) => (
-                <option key={ph} value={ph}>
-                  {ph}
+            <select
+              name="phase"
+              value={entry.phase ?? ""}
+              onChange={handleChange}
+              disabled={loadingPhases || !!phaseError || phases.length === 0}
+            >
+              <option value="">{loadingPhases ? "Loading phases..." : phaseError ? phaseError : "Select a phase"}</option>
+              {phases.map((ph) => (
+                <option key={ph.id} value={ph.id}>
+                  {ph.name}
                 </option>
               ))}
             </select>

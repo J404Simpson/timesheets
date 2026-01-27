@@ -15,7 +15,7 @@ export default function SignInButton() {
       try {
         await instance.loginRedirect(loginRequest);
       } catch (err) {
-        console.error("Login failed:", err);
+        // Login failed silently
       }
     }
   };

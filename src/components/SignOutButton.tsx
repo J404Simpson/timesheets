@@ -15,7 +15,7 @@ export default function SignOutButton() {
           mainWindowRedirectUri: "/"
         });
       } catch (err) {
-        console.error("Logout failed:", err);
+        // Logout failed silently
       }
     }
   };

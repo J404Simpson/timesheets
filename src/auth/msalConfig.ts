@@ -88,7 +88,6 @@ export async function acquireTokenSilent(scopes: string[]): Promise<string> {
     });
     return response.accessToken;
   } catch (error) {
-    console.error("Failed to silently acquire token:", error);
     throw error;
   }
 }

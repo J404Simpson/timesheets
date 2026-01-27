@@ -26,10 +26,10 @@ const App: React.FC = () => {
 
       notifyLogin(firstName, lastName, email, object_id)
         .then(() => {
-          console.log("User details sent to API successfully");
+          // User details sent successfully
         })
         .catch((error) => {
-          console.error("Failed to send user details to API:", error);
+          // Failed to send user details
         });
     }
   }, [isAuthenticated, accounts]);

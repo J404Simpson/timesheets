@@ -1,3 +1,47 @@
+// Fetch phases for a given project
+export type Phase = {
+  id: number;
+  name: string;
+  description?: string;
+  enabled?: boolean;
+};
+
+export async function getPhasesForProject(projectId: number): Promise<Phase[]> {
+  try {
+    const accessToken = await acquireTokenSilent([protectedResources.timesheetApi.scope]);
+    const apiBase = import.meta.env.VITE_API_URL;
+    const response = await axios.get(`${apiBase}/projects/${projectId}/phases`, {
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+      },
+    });
+    return response.data.phases;
+  } catch (error) {
+    throw new Error("Failed to fetch phases for project");
+  }
+}
+// Fetch active projects from the backend
+export type Project = {
+  id: number;
+  name: string;
+  description?: string;
+  created_at?: string;
+};
+
+export async function getActiveProjects(): Promise<Project[]> {
+  try {
+    const accessToken = await acquireTokenSilent([protectedResources.timesheetApi.scope]);
+    const apiBase = import.meta.env.VITE_API_URL;
+    const response = await axios.get(`${apiBase}/projects`, {
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+      },
+    });
+    return response.data.projects;
+  } catch (error) {
+    throw new Error("Failed to fetch active projects");
+  }
+}
 import { acquireTokenSilent, protectedResources } from "../auth/msalConfig";
 import axios from "axios";
 import type { AxiosResponse } from "axios";
@@ -26,15 +70,7 @@ export async function notifyLogin(
         },
       }
     );
-
-    console.log("Login notification sent successfully!");
   } catch (error: any) {
-    // Check if the error is an AxiosError
-    if (axios.isAxiosError(error)) {
-      console.error("Axios error:", error.response?.data || error.message);
-    } else {
-      console.error("Unexpected error:", error);
-    }
     throw new Error("Failed to notify backend of login");
   }
 }
@@ -61,8 +97,6 @@ export async function getTimesheets(): Promise<Timesheet[]> {
 
     return response.data;
   } catch (error) {
-    // Handle errors: Log and rethrow
-    console.error("Error fetching timesheets:", error);
     throw new Error("Failed to retrieve timesheets");
   }
 }
