@@ -208,7 +208,7 @@ export default function TimesheetForm({ onCancel }: { onCancel?: () => void }) {
   // determine when to show time inputs
   const timeInputsVisible =
     selectedType === "internal" ||
-    (selectedType === "project" && entry.project && (availablePhases.length === 0 || !!entry.phase));
+    (selectedType === "project" && entry.project && (phases.length === 0 || !!entry.phase));
 
   // Back handler: only revert the top-level selection (project/internal) and clear project/phase
   const handleBack = () => {
