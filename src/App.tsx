@@ -74,11 +74,11 @@ const App: React.FC = () => {
 
         <nav className="app-nav" aria-label="Main navigation">
           <a
-            className={`nav-link ${!isAuthenticated ? "disabled" : ""}`}
-            href={isAuthenticated ? "#create" : undefined}
+            className={`nav-link ${!isAuthenticated || showDepartmentModal ? "disabled" : ""}`}
+            href={isAuthenticated && !showDepartmentModal ? "#create" : undefined}
             role="button"
-            aria-disabled={!isAuthenticated}
-            tabIndex={isAuthenticated ? 0 : -1}
+            aria-disabled={!isAuthenticated || showDepartmentModal}
+            tabIndex={isAuthenticated && !showDepartmentModal ? 0 : -1}
             onClick={openCreate}
             aria-controls="new-entry-form"
           >
@@ -86,22 +86,22 @@ const App: React.FC = () => {
           </a>
 
           <a
-            className={`nav-link ${!isAuthenticated ? "disabled" : ""}`}
-            href={isAuthenticated ? "#recent" : undefined}
+            className={`nav-link ${!isAuthenticated || showDepartmentModal ? "disabled" : ""}`}
+            href={isAuthenticated && !showDepartmentModal ? "#recent" : undefined}
             role="button"
-            aria-disabled={!isAuthenticated}
-            tabIndex={isAuthenticated ? 0 : -1}
+            aria-disabled={!isAuthenticated || showDepartmentModal}
+            tabIndex={isAuthenticated && !showDepartmentModal ? 0 : -1}
             onClick={goRecent}
           >
             Recent
           </a>
 
           <a
-            className={`nav-link ${!isAuthenticated ? "disabled" : ""}`}
-            href={isAuthenticated ? "#history" : undefined}
+            className={`nav-link ${!isAuthenticated || showDepartmentModal ? "disabled" : ""}`}
+            href={isAuthenticated && !showDepartmentModal ? "#history" : undefined}
             role="button"
-            aria-disabled={!isAuthenticated}
-            tabIndex={isAuthenticated ? 0 : -1}
+            aria-disabled={!isAuthenticated || showDepartmentModal}
+            tabIndex={isAuthenticated && !showDepartmentModal ? 0 : -1}
             onClick={goHistory}
           >
             History
@@ -120,7 +120,6 @@ const App: React.FC = () => {
           <>
             <DepartmentModal
               open={showDepartmentModal}
-              onCancel={() => setShowDepartmentModal(false)}
               onSubmit={async (departmentId) => {
                 if (pendingUser) {
                   await createEmployee(
@@ -135,7 +134,7 @@ const App: React.FC = () => {
                 }
               }}
             />
-            {!showNewEntryForm ? (
+            {!showDepartmentModal && (!showNewEntryForm ? (
               view === "recent" ? (
                 <Recent />
               ) : (
@@ -151,7 +150,7 @@ const App: React.FC = () => {
                   }}
                 />
               </section>
-            )}
+            ))}
           </>
         )}
       </main>

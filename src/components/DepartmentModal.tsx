@@ -4,10 +4,9 @@ import { getDepartments, createEmployee, Department } from "../api/department";
 interface DepartmentModalProps {
   open: boolean;
   onSubmit: (departmentId: number) => void;
-  onCancel: () => void;
 }
 
-export default function DepartmentModal({ open, onSubmit, onCancel }: DepartmentModalProps) {
+export default function DepartmentModal({ open, onSubmit }: DepartmentModalProps) {
   const [departments, setDepartments] = useState<Department[]>([]);
   const [selected, setSelected] = useState<number | null>(null);
   const [loading, setLoading] = useState(false);
@@ -49,7 +48,6 @@ export default function DepartmentModal({ open, onSubmit, onCancel }: Department
           </select>
         )}
         <div className="modal-actions">
-          <button onClick={onCancel}>Cancel</button>
           <button
             onClick={() => selected && onSubmit(selected)}
             disabled={!selected}
