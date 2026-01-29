@@ -55,13 +55,12 @@ export async function notifyLogin(
   lastName: string,
   email: string,
   object_id: string
-): Promise<void> {
+): Promise<any> {
   try {
     // Acquire access token
     const accessToken = await acquireTokenSilent([protectedResources.timesheetApi.scope]);
-
     // Make the POST request to the backend
-    await axios.post(
+    const response = await axios.post(
       LOGIN_URL,
       { firstName, lastName, email, object_id },
       {
@@ -70,6 +69,7 @@ export async function notifyLogin(
         },
       }
     );
+    return response.data;
   } catch (error: any) {
     throw new Error("Failed to notify backend of login");
   }

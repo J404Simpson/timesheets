@@ -7,13 +7,23 @@ import Recent from "./components/Recent";
 import History from "./components/History";
 import TimeSheetForm from "./components/TimeSheetForm";
 import { notifyLogin } from "./api/timesheet";
+import DepartmentModal from "./components/DepartmentModal";
+import { createEmployee } from "./api/department";
 
 const App: React.FC = () => {
+
   const { accounts } = useMsal();
   const isAuthenticated = Array.isArray(accounts) && accounts.length > 0;
 
   const [showNewEntryForm, setShowNewEntryForm] = useState(false);
   const [view, setView] = useState<"recent" | "history">("recent");
+  const [showDepartmentModal, setShowDepartmentModal] = useState(false);
+  const [pendingUser, setPendingUser] = useState<{
+    firstName: string;
+    lastName: string;
+    email: string;
+    object_id: string;
+  } | null>(null);
 
   // Notify API when user logs in
   useEffect(() => {
@@ -25,8 +35,11 @@ const App: React.FC = () => {
       const object_id = account.localAccountId || account.homeAccountId || "";
 
       notifyLogin(firstName, lastName, email, object_id)
-        .then(() => {
-          // User details sent successfully
+        .then((data) => {
+          if (data && data.status === "department_required") {
+            setPendingUser({ firstName, lastName, email, object_id });
+            setShowDepartmentModal(true);
+          }
         })
         .catch((error) => {
           // Failed to send user details
@@ -105,6 +118,23 @@ const App: React.FC = () => {
           </div>
         ) : (
           <>
+            <DepartmentModal
+              open={showDepartmentModal}
+              onCancel={() => setShowDepartmentModal(false)}
+              onSubmit={async (departmentId) => {
+                if (pendingUser) {
+                  await createEmployee(
+                    pendingUser.firstName,
+                    pendingUser.lastName,
+                    pendingUser.email,
+                    pendingUser.object_id,
+                    departmentId
+                  );
+                  setShowDepartmentModal(false);
+                  setPendingUser(null);
+                }
+              }}
+            />
             {!showNewEntryForm ? (
               view === "recent" ? (
                 <Recent />
