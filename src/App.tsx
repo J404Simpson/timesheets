@@ -24,6 +24,7 @@ const App: React.FC = () => {
     email: string;
     object_id: string;
   } | null>(null);
+  const [isOnboarded, setIsOnboarded] = useState(false);
 
   // Notify API when user logs in
   useEffect(() => {
@@ -39,6 +40,9 @@ const App: React.FC = () => {
           if (data && data.status === "department_required") {
             setPendingUser({ firstName, lastName, email, object_id });
             setShowDepartmentModal(true);
+            setIsOnboarded(false);
+          } else {
+            setIsOnboarded(true);
           }
         })
         .catch((error) => {
@@ -131,10 +135,11 @@ const App: React.FC = () => {
                   );
                   setShowDepartmentModal(false);
                   setPendingUser(null);
+                  setIsOnboarded(true);
                 }
               }}
             />
-            {!showDepartmentModal && (!showNewEntryForm ? (
+            {isOnboarded && !showDepartmentModal && (!showNewEntryForm ? (
               view === "recent" ? (
                 <Recent />
               ) : (

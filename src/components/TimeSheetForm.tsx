@@ -3,6 +3,7 @@ import { useMsal } from "@azure/msal-react";
 import axios from "axios";
 import { protectedResources } from "../auth/msalConfig";
 import { getActiveProjects, getPhasesForProject, Project as ApiProject, Phase as ApiPhase } from "../api/timesheet";
+import { getTasksForPhaseAndEmployee, Task as ApiTask } from "../api/task";
 
 type Entry = {
   workDate: string;
@@ -79,6 +80,9 @@ export default function TimesheetForm({ onCancel }: { onCancel?: () => void }) {
   });
   const [selectedType, setSelectedType] = useState<"none" | "project" | "internal">("none");
   const [status, setStatus] = useState<string | null>(null);
+  const [tasks, setTasks] = useState<ApiTask[]>([]);
+  const [loadingTasks, setLoadingTasks] = useState(false);
+  const [taskError, setTaskError] = useState<string | null>(null);
 
   const { instance, accounts } = useMsal();
   const account = accounts && accounts[0];
@@ -211,7 +215,8 @@ export default function TimesheetForm({ onCancel }: { onCancel?: () => void }) {
     if (selectedType === "project" && entry.project) {
       if (loadingPhases) return false;
       if (phases.length === 0) return true; // No phases for this project
-      return !!entry.phase; // Only show if a phase is selected
+      if (tasks.length > 0) return !!entry.task; // Only show if a task is selected
+      return false;
     }
     return false;
   })();
@@ -306,13 +311,51 @@ export default function TimesheetForm({ onCancel }: { onCancel?: () => void }) {
             <select
               name="phase"
               value={entry.phase ?? ""}
-              onChange={handleChange}
+              onChange={async (e) => {
+                handleChange(e);
+                handleField("task", undefined);
+                const phaseId = Number(e.target.value);
+                if (phaseId) {
+                  setLoadingTasks(true);
+                  setTaskError(null);
+                  setTasks([]);
+                  try {
+                    const fetchedTasks = await getTasksForPhaseAndEmployee(phaseId);
+                    setTasks(fetchedTasks);
+                  } catch {
+                    setTaskError("Failed to load tasks");
+                  } finally {
+                    setLoadingTasks(false);
+                  }
+                } else {
+                  setTasks([]);
+                }
+              }}
               disabled={loadingPhases || !!phaseError || phases.length === 0}
             >
               <option value="">{loadingPhases ? "Loading phases..." : phaseError ? phaseError : "Select a phase"}</option>
               {phases.map((ph) => (
                 <option key={ph.id} value={ph.id}>
                   {ph.name}
+                </option>
+              ))}
+            </select>
+          </label>
+        )}
+
+        {/* Task dropdown shown after phase selection and tasks loaded */}
+        {selectedType === "project" && entry.project && entry.phase && (
+          <label>
+            <select
+              name="task"
+              value={entry.task ?? ""}
+              onChange={handleChange}
+              disabled={loadingTasks || !!taskError || tasks.length === 0}
+            >
+              <option value="">{loadingTasks ? "Loading tasks..." : taskError ? taskError : "Select a task"}</option>
+              {tasks.map((task) => (
+                <option key={task.id} value={task.id}>
+                  {task.name}
                 </option>
               ))}
             </select>
