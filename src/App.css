@@ -67,7 +67,7 @@ body{
 .app-main{
   flex:1;
   padding:28px;
-  max-width:980px;
+  max-width:1600px;
   margin:0 auto;
   width:100%;
   display:flex;
@@ -194,6 +194,198 @@ body{
   margin-top: 16px;
 }
 
+/* Week Grid Spreadsheet Styles */
+.week-grid-container {
+  margin-top: 16px;
+  background: var(--card);
+  border: 1px solid rgba(15, 23, 42, 0.06);
+  border-radius: 8px;
+  overflow: hidden;
+  width: 100%;
+}
+
+.week-grid {
+  display: grid;
+  grid-template-columns: 60px repeat(7, 1fr);
+  max-height: calc(100vh - 300px);
+  min-height: 500px;
+  overflow-y: auto;
+  overflow-x: auto;
+}
+
+.grid-header {
+  position: sticky;
+  top: 0;
+  background: linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%);
+  font-weight: 600;
+  padding: 12px 8px;
+  border-bottom: 2px solid rgba(15, 23, 42, 0.1);
+  border-right: 1px solid rgba(15, 23, 42, 0.06);
+  z-index: 10;
+  text-align: center;
+}
+
+.grid-time-label {
+  position: sticky;
+  left: 0;
+  z-index: 20;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--muted);
+}
+
+.grid-day-header {
+  font-size: 12px;
+}
+
+.grid-day-header.today {
+  background: linear-gradient(180deg, #dbeafe 0%, #bfdbfe 100%);
+  color: var(--accent);
+}
+
+.grid-day-name {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 2px;
+}
+
+.grid-day-date {
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.grid-time-cell {
+  position: sticky;
+  left: 0;
+  background: #fafafa;
+  border-right: 1px solid rgba(15, 23, 42, 0.1);
+  border-bottom: 1px solid rgba(15, 23, 42, 0.04);
+  padding: 0 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 9px;
+  font-weight: 500;
+  color: var(--muted);
+  z-index: 5;
+  min-height: 8px;
+}
+
+.grid-time-cell.on-hour {
+  background: #f1f5f9;
+  border-bottom: 1px solid rgba(15, 23, 42, 0.1);
+  min-height: 12px;
+}
+
+.time-label {
+  font-size: 9px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.grid-cell {
+  border: none;
+  border-bottom: 1px solid rgba(15, 23, 42, 0.04);
+  border-right: 1px solid rgba(15, 23, 42, 0.04);
+  background: #ffffff;
+  cursor: pointer;
+  transition: all 0.1s;
+  padding: 0;
+  min-height: 8px;
+}
+
+.grid-cell:hover:not(:disabled) {
+  background: rgba(37, 99, 235, 0.08);
+  transform: scale(1.02);
+}
+
+.grid-cell.available {
+  background: rgba(37, 99, 235, 0.02);
+}
+
+.grid-cell.available:hover {
+  background: rgba(37, 99, 235, 0.12);
+}
+
+.grid-cell.occupied {
+  background: linear-gradient(135deg, #e2e8f0 0%, #cbd5e1 100%);
+  cursor: not-allowed;
+}
+
+.grid-cell.future {
+  background: rgba(15, 23, 42, 0.02);
+  cursor: not-allowed;
+  opacity: 0.4;
+}
+
+.grid-cell.today-col {
+  border-right: 1px solid rgba(37, 99, 235, 0.15);
+}
+
+/* Entries Summary */
+.week-entries-summary {
+  padding: 16px;
+  border-top: 2px solid rgba(15, 23, 42, 0.06);
+  background: #fafbfc;
+}
+
+.week-entries-summary h4 {
+  margin: 0 0 12px 0;
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--muted);
+}
+
+.entries-by-day {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 12px;
+}
+
+.day-entries {
+  background: var(--card);
+  border: 1px solid rgba(15, 23, 42, 0.06);
+  border-radius: 6px;
+  padding: 8px;
+}
+
+.day-entries-header {
+  font-weight: 600;
+  font-size: 12px;
+  margin-bottom: 6px;
+  padding-bottom: 4px;
+  border-bottom: 1px solid rgba(15, 23, 42, 0.06);
+  color: var(--text);
+}
+
+.entry-summary {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 6px;
+  margin-bottom: 4px;
+  background: rgba(15, 23, 42, 0.02);
+  border-radius: 4px;
+  font-size: 11px;
+}
+
+.entry-time-summary {
+  font-weight: 600;
+  color: var(--accent);
+}
+
+.entry-project-summary {
+  color: var(--text);
+}
+
+.entry-hours-summary {
+  color: var(--muted);
+  font-size: 10px;
+}
+
 .week-day {
   background: var(--card);
   border: 1px solid rgba(15, 23, 42, 0.06);
@@ -240,52 +432,6 @@ body{
   color: var(--accent);
 }
 
-.week-day-entries {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.no-entries {
-  font-size: 13px;
-  text-align: center;
-  padding: 20px 8px;
-}
-
-.entry-item {
-  background: rgba(15, 23, 42, 0.02);
-  border: 1px solid rgba(15, 23, 42, 0.04);
-  border-radius: 6px;
-  padding: 8px;
-  font-size: 12px;
-}
-
-.entry-time {
-  font-weight: 600;
-  color: var(--text);
-  margin-bottom: 4px;
-  font-size: 11px;
-}
-
-.entry-details {
-  margin-bottom: 4px;
-}
-
-.entry-project {
-  font-weight: 500;
-  color: var(--text);
-  margin-bottom: 2px;
-}
-
-.entry-phase, .entry-task {
-  font-size: 11px;
-}
-
-.entry-hours {
-  font-size: 11px;
-  text-align: right;
-}
-
 @media (max-width: 1024px) {
   .week-calendar {
     grid-template-columns: repeat(4, 1fr);
@@ -296,105 +442,18 @@ body{
   .week-calendar {
     grid-template-columns: repeat(2, 1fr);
   }
+  
+  .week-grid {
+    grid-template-columns: 50px repeat(7, minmax(60px, 1fr));
+  }
 }
 
 @media (max-width: 480px) {
   .week-calendar {
     grid-template-columns: 1fr;
   }
-}
-
-/* Hourly Grid Styles */
-.week-day-hours-grid {
-  display: flex;
-  flex-direction: column;
-  gap: 0;
-  margin-bottom: 12px;
-  max-height: 400px;
-  overflow-y: auto;
-  padding-right: 4px;
-}
-
-.time-block {
-  padding: 4px 8px;
-  border: none;
-  border-bottom: 1px solid rgba(15, 23, 42, 0.06);
-  background: #f9fafb;
-  font-size: 11px;
-  cursor: pointer;
-  transition: all 0.15s;
-  display: flex;
-  align-items: center;
-  justify-content: flex-start;
-  min-height: 12px;
-  position: relative;
-}
-
-.time-block:hover:not(:disabled) {
-  background: rgba(37, 99, 235, 0.05);
-}
-
-.time-block.available {
-  background: rgba(37, 99, 235, 0.03);
-}
-
-.time-block.available:hover {
-  background: rgba(37, 99, 235, 0.1);
-}
-
-.time-block.occupied {
-  background: rgba(15, 23, 42, 0.08);
-  cursor: not-allowed;
-  color: var(--muted);
-}
-
-.time-block.future {
-  background: rgba(15, 23, 42, 0.03);
-  cursor: not-allowed;
-  color: var(--muted);
-  opacity: 0.5;
-}
-
-.time-label {
-  font-weight: 600;
-  font-size: 10px;
-  color: var(--text);
-}
-
-.time-block.occupied .time-label,
-.time-block.future .time-label {
-  color: var(--muted);
-}
-
-.week-day-summary {
-  border-top: 1px solid rgba(15, 23, 42, 0.06);
-  padding-top: 8px;
-}
-
-.summary-title {
-  font-size: 11px;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  margin-bottom: 6px;
-}
-
-.entry-item-compact {
-  font-size: 11px;
-  background: rgba(15, 23, 42, 0.02);
-  border: 1px solid rgba(15, 23, 42, 0.04);
-  border-radius: 4px;
-  padding: 6px;
-  margin-bottom: 4px;
-}
-
-.entry-time-compact {
-  font-weight: 500;
-  color: var(--accent);
-  margin-bottom: 2px;
-}
-
-.entry-project-compact {
-  color: var(--text);
-  font-weight: 500;
+  
+  .week-grid {
+    grid-template-columns: 45px repeat(7, minmax(50px, 1fr));
+  }
 }

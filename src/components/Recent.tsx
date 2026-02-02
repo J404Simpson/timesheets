@@ -95,63 +95,89 @@ export default function Recent({ onSelectDate }: Props): JSX.Element {
   return (
     <section className="recent-activity">
       <h3>This Week</h3>
-      <div className="week-calendar">
-        {weekDays.map((day) => {
-          const dayEntries = getEntriesForDate(day);
-          const isToday = day.toDateString() === now.toDateString();
-          const dateStr = day.toISOString().split("T")[0];
-
-          return (
-            <div
-              key={day.toISOString()}
-              className={`week-day ${isToday ? "today" : ""}`}
-            >
-              <div className="week-day-header">
-                <div className="week-day-name">
+      <div className="week-grid-container">
+        <div className="week-grid">
+          {/* Header row with days */}
+          <div className="grid-header grid-time-label">Time</div>
+          {weekDays.map((day) => {
+            const isToday = day.toDateString() === now.toDateString();
+            return (
+              <div key={day.toISOString()} className={`grid-header grid-day-header ${isToday ? "today" : ""}`}>
+                <div className="grid-day-name">
                   {day.toLocaleDateString("en-US", { weekday: "short" })}
                 </div>
-                <div className="week-day-date">
+                <div className="grid-day-date">
                   {day.getDate()}
                 </div>
               </div>
-              <div className="week-day-hours-grid">
-                {Array.from({ length: 96 }, (_, i) => {
-                  const hour = Math.floor(i / 4);
-                  const minute = (i % 4) * 15;
+            );
+          })}
+
+          {/* Time slots rows */}
+          {Array.from({ length: 96 }, (_, i) => {
+            const hour = Math.floor(i / 4);
+            const minute = (i % 4) * 15;
+            const isOnTheHour = minute === 0;
+            const timeLabel = `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
+
+            return (
+              <>
+                {/* Time label column */}
+                <div key={`time-${i}`} className={`grid-time-cell ${isOnTheHour ? "on-hour" : ""}`}>
+                  {isOnTheHour && <span className="time-label">{timeLabel}</span>}
+                </div>
+
+                {/* Day cells */}
+                {weekDays.map((day) => {
+                  const dateStr = day.toISOString().split("T")[0];
                   const isOccupied = isTimeSlotOccupied(day, hour, minute);
                   const isFuture = !canSelectTimeSlot(day, hour, minute);
-                  const isOnTheHour = minute === 0;
-                  const formattedTime = `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
+                  const isToday = day.toDateString() === now.toDateString();
 
                   return (
                     <button
                       key={`${dateStr}-${hour}-${minute}`}
-                      className={`time-block ${isOccupied ? "occupied" : ""} ${isFuture ? "future" : ""} ${!isFuture && !isOccupied ? "available" : ""}`}
+                      className={`grid-cell ${isOccupied ? "occupied" : ""} ${isFuture ? "future" : ""} ${!isFuture && !isOccupied ? "available" : ""} ${isToday ? "today-col" : ""}`}
                       onClick={() => handleTimeSlotClick(day, hour, minute)}
                       disabled={isFuture || isOccupied}
-                      title={isFuture ? "Cannot select future time" : isOccupied ? "Time slot occupied" : `Click to add entry starting at ${formattedTime}`}
-                    >
-                      {isOnTheHour && <span className="time-label">{formattedTime}</span>}
-                    </button>
+                      title={isFuture ? "Cannot select future time" : isOccupied ? "Time slot occupied" : `Click to add entry for ${timeLabel} on ${day.toLocaleDateString()}`}
+                    />
                   );
                 })}
-              </div>
-              {dayEntries.length > 0 && (
-                <div className="week-day-summary">
-                  <div className="summary-title muted">Entries</div>
-                  {dayEntries.map((entry) => (
-                    <div key={entry.id} className="entry-item-compact">
-                      <div className="entry-time-compact">
-                        {formatTime(entry.start_time)} - {formatTime(entry.end_time)}
-                      </div>
-                      {entry.project && <div className="entry-project-compact">{entry.project.name}</div>}
+              </>
+            );
+          })}
+        </div>
+
+        {/* Entries summary below grid */}
+        {entries.length > 0 && (
+          <div className="week-entries-summary">
+            <h4>This Week's Entries</h4>
+            <div className="entries-by-day">
+              {weekDays.map((day) => {
+                const dayEntries = getEntriesForDate(day);
+                if (dayEntries.length === 0) return null;
+                
+                return (
+                  <div key={day.toISOString()} className="day-entries">
+                    <div className="day-entries-header">
+                      {day.toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" })}
                     </div>
-                  ))}
-                </div>
-              )}
+                    {dayEntries.map((entry) => (
+                      <div key={entry.id} className="entry-summary">
+                        <span className="entry-time-summary">
+                          {formatTime(entry.start_time)} - {formatTime(entry.end_time)}
+                        </span>
+                        {entry.project && <span className="entry-project-summary">{entry.project.name}</span>}
+                        <span className="entry-hours-summary">{Number(entry.hours)}h</span>
+                      </div>
+                    ))}
+                  </div>
+                );
+              })}
             </div>
-          );
-        })}
+          </div>
+        )}
       </div>
     </section>
   );
