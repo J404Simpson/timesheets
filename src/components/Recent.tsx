@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { getWeekEntries, WeekEntry } from "../api/timesheet";
 
 type Props = {
-  onSelectDate?: (date: string) => void;
+  onSelectDate?: (date: string, hour?: number) => void;
 };
 
 export default function Recent({ onSelectDate }: Props): JSX.Element {
@@ -47,6 +47,29 @@ export default function Recent({ onSelectDate }: Props): JSX.Element {
     return entries.filter((e) => e.date.startsWith(dateStr));
   };
 
+  const isHourOccupied = (date: Date, hour: number): boolean => {
+    const dateStr = date.toISOString().split("T")[0];
+    return entries.some((entry) => {
+      if (!entry.date.startsWith(dateStr)) return false;
+      const startHour = parseInt(entry.start_time.split(":")[0], 10);
+      const endHour = parseInt(entry.end_time.split(":")[0], 10);
+      return hour >= startHour && hour < endHour;
+    });
+  };
+
+  const canSelectHour = (date: Date, hour: number): boolean => {
+    // Cannot select future date/time
+    const targetDateTime = new Date(date);
+    targetDateTime.setHours(hour, 0, 0, 0);
+    return targetDateTime <= now;
+  };
+
+  const handleHourClick = (date: Date, hour: number) => {
+    if (!canSelectHour(date, hour)) return;
+    const dateStr = date.toISOString().split("T")[0];
+    onSelectDate?.(dateStr, hour);
+  };
+
   if (loading) {
     return (
       <section className="recent-activity">
@@ -73,13 +96,12 @@ export default function Recent({ onSelectDate }: Props): JSX.Element {
           const dayEntries = getEntriesForDate(day);
           const isToday = day.toDateString() === now.toDateString();
           const dateStr = day.toISOString().split("T")[0];
+          const isPastDay = day.toDateString() < now.toDateString();
 
           return (
             <div
               key={day.toISOString()}
               className={`week-day ${isToday ? "today" : ""}`}
-              onClick={() => onSelectDate?.(dateStr)}
-              style={{ cursor: onSelectDate ? "pointer" : "default" }}
             >
               <div className="week-day-header">
                 <div className="week-day-name">
@@ -89,27 +111,39 @@ export default function Recent({ onSelectDate }: Props): JSX.Element {
                   {day.getDate()}
                 </div>
               </div>
-              <div className="week-day-entries">
-                {dayEntries.length === 0 ? (
-                  <div className="no-entries muted">No entries</div>
-                ) : (
-                  dayEntries.map((entry) => (
-                    <div key={entry.id} className="entry-item">
-                      <div className="entry-time">
+              <div className="week-day-hours-grid">
+                {Array.from({ length: 24 }, (_, i) => {
+                  const hour = i;
+                  const isOccupied = isHourOccupied(day, hour);
+                  const isFuture = !canSelectHour(day, hour);
+                  const formattedHour = hour === 0 ? "12 AM" : hour < 12 ? `${hour} AM` : hour === 12 ? "12 PM" : `${hour - 12} PM`;
+
+                  return (
+                    <button
+                      key={`${dateStr}-${hour}`}
+                      className={`hour-block ${isOccupied ? "occupied" : ""} ${isFuture ? "future" : ""} ${!isFuture && !isOccupied ? "available" : ""}`}
+                      onClick={() => handleHourClick(day, hour)}
+                      disabled={isFuture || isOccupied}
+                      title={isFuture ? "Cannot select future time" : isOccupied ? "Time slot occupied" : `Click to add entry for ${formattedHour}`}
+                    >
+                      <span className="hour-label">{hour}:00</span>
+                    </button>
+                  );
+                })}
+              </div>
+              {dayEntries.length > 0 && (
+                <div className="week-day-summary">
+                  <div className="summary-title muted">Entries</div>
+                  {dayEntries.map((entry) => (
+                    <div key={entry.id} className="entry-item-compact">
+                      <div className="entry-time-compact">
                         {formatTime(entry.start_time)} - {formatTime(entry.end_time)}
                       </div>
-                      <div className="entry-details">
-                        {entry.project && <div className="entry-project">{entry.project.name}</div>}
-                        {entry.project_phase?.phase && (
-                          <div className="entry-phase muted">{entry.project_phase.phase.name}</div>
-                        )}
-                        {entry.task && <div className="entry-task muted">{entry.task.name}</div>}
-                      </div>
-                      <div className="entry-hours muted">{Number(entry.hours)} hrs</div>
+                      {entry.project && <div className="entry-project-compact">{entry.project.name}</div>}
                     </div>
-                  ))
-                )}
-              </div>
+                  ))}
+                </div>
+              )}
             </div>
           );
         })}

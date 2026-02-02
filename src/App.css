@@ -199,8 +199,10 @@ body{
   border: 1px solid rgba(15, 23, 42, 0.06);
   border-radius: 8px;
   padding: 12px;
-  min-height: 200px;
+  min-height: 280px;
   transition: all 0.2s;
+  display: flex;
+  flex-direction: column;
 }
 
 .week-day:hover {
@@ -299,5 +301,121 @@ body{
 @media (max-width: 480px) {
   .week-calendar {
     grid-template-columns: 1fr;
+  }
+}
+
+/* Hourly Grid Styles */
+.week-day-hours-grid {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 4px;
+  margin-bottom: 12px;
+}
+
+.hour-block {
+  padding: 6px;
+  border-radius: 4px;
+  border: 1px solid rgba(15, 23, 42, 0.06);
+  background: #f9fafb;
+  font-size: 10px;
+  cursor: pointer;
+  transition: all 0.15s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 28px;
+  position: relative;
+}
+
+.hour-block:hover:not(:disabled) {
+  border-color: var(--accent);
+  background: rgba(37, 99, 235, 0.05);
+}
+
+.hour-block.available {
+  border-color: rgba(37, 99, 235, 0.2);
+  background: rgba(37, 99, 235, 0.03);
+}
+
+.hour-block.available:hover {
+  border-color: var(--accent);
+  background: rgba(37, 99, 235, 0.08);
+  transform: scale(1.05);
+}
+
+.hour-block.occupied {
+  background: rgba(15, 23, 42, 0.08);
+  border-color: rgba(15, 23, 42, 0.12);
+  cursor: not-allowed;
+  color: var(--muted);
+}
+
+.hour-block.future {
+  background: rgba(15, 23, 42, 0.03);
+  border-color: rgba(15, 23, 42, 0.04);
+  cursor: not-allowed;
+  color: var(--muted);
+  opacity: 0.5;
+}
+
+.hour-label {
+  font-weight: 500;
+  font-size: 9px;
+  color: var(--text);
+}
+
+.hour-block.occupied .hour-label,
+.hour-block.future .hour-label {
+  color: var(--muted);
+}
+
+.week-day-summary {
+  border-top: 1px solid rgba(15, 23, 42, 0.06);
+  padding-top: 8px;
+}
+
+.summary-title {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 6px;
+}
+
+.entry-item-compact {
+  font-size: 11px;
+  background: rgba(15, 23, 42, 0.02);
+  border: 1px solid rgba(15, 23, 42, 0.04);
+  border-radius: 4px;
+  padding: 6px;
+  margin-bottom: 4px;
+}
+
+.entry-time-compact {
+  font-weight: 500;
+  color: var(--accent);
+  margin-bottom: 2px;
+}
+
+.entry-project-compact {
+  color: var(--text);
+  font-weight: 500;
+}
+
+@media (max-width: 1024px) {
+  .week-day-hours-grid {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+@media (max-width: 768px) {
+  .week-day-hours-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+@media (max-width: 480px) {
+  .week-day-hours-grid {
+    grid-template-columns: repeat(2, 1fr);
   }
 }

@@ -19,6 +19,7 @@ const App: React.FC = () => {
   const [view, setView] = useState<"recent" | "history">("recent");
   const [showDepartmentModal, setShowDepartmentModal] = useState(false);
   const [selectedDate, setSelectedDate] = useState<string | undefined>(undefined);
+  const [selectedHour, setSelectedHour] = useState<number | undefined>(undefined);
   const [pendingUser, setPendingUser] = useState<{
     firstName: string;
     lastName: string;
@@ -72,8 +73,9 @@ const App: React.FC = () => {
     setView("history");
   };
 
-  const handleDateSelect = (date: string) => {
+  const handleDateSelect = (date: string, hour?: number) => {
     setSelectedDate(date);
+    setSelectedHour(hour);
     setShowNewEntryForm(true);
   };
 
@@ -156,9 +158,11 @@ const App: React.FC = () => {
                 {/* Removed the New Entry header from App; TimeSheetForm renders it now */}
                 <TimeSheetForm
                   initialDate={selectedDate}
+                  initialHour={selectedHour}
                   onCancel={() => {
                     setShowNewEntryForm(false);
                     setSelectedDate(undefined);
+                    setSelectedHour(undefined);
                     setView("recent");
                   }}
                 />
