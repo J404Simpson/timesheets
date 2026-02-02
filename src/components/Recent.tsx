@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from "react";
-import { getWeekEntries, WeekEntry } from "../api/timesheet";
+import { useEffect, useState } from "react";
+import { getWeekEntries, type WeekEntry } from "../api/timesheet";
 
 type Props = {
   onSelectDate?: (date: string, hour?: number, minute?: number) => void;
@@ -100,7 +100,6 @@ export default function Recent({ onSelectDate }: Props): JSX.Element {
           const dayEntries = getEntriesForDate(day);
           const isToday = day.toDateString() === now.toDateString();
           const dateStr = day.toISOString().split("T")[0];
-          const isPastDay = day.toDateString() < now.toDateString();
 
           return (
             <div
@@ -112,7 +111,11 @@ export default function Recent({ onSelectDate }: Props): JSX.Element {
                   {day.toLocaleDateString("en-US", { weekday: "short" })}
                 </div>
                 <div className="week-day-date">
-                  {day.getDate()}96 }, (_, i) => {
+                  {day.getDate()}
+                </div>
+              </div>
+              <div className="week-day-hours-grid">
+                {Array.from({ length: 96 }, (_, i) => {
                   const hour = Math.floor(i / 4);
                   const minute = (i % 4) * 15;
                   const isOccupied = isTimeSlotOccupied(day, hour, minute);
@@ -129,10 +132,6 @@ export default function Recent({ onSelectDate }: Props): JSX.Element {
                       title={isFuture ? "Cannot select future time" : isOccupied ? "Time slot occupied" : `Click to add entry starting at ${formattedTime}`}
                     >
                       {isOnTheHour && <span className="time-label">{formattedTime}</span>}
-                      disabled={isFuture || isOccupied}
-                      title={isFuture ? "Cannot select future time" : isOccupied ? "Time slot occupied" : `Click to add entry for ${formattedHour}`}
-                    >
-                      <span className="hour-label">{hour}:00</span>
                     </button>
                   );
                 })}
