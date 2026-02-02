@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, Fragment } from "react";
 import { getWeekEntries, type WeekEntry } from "../api/timesheet";
 
 type Props = {
@@ -114,37 +114,44 @@ export default function Recent({ onSelectDate }: Props): JSX.Element {
           })}
 
           {/* Time slots rows */}
-          {Array.from({ length: 96 }, (_, i) => {
-            const hour = Math.floor(i / 4);
-            const minute = (i % 4) * 15;
-            const isOnTheHour = minute === 0;
-            const timeLabel = `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
+          {Array.from({ length: 24 }, (_, hour) => {
+            const hourLabel = `${hour.toString().padStart(2, "0")}:00`;
 
             return (
-              <>
-                {/* Time label column */}
-                <div key={`time-${i}`} className={`grid-time-cell ${isOnTheHour ? "on-hour" : ""}`}>
-                  {isOnTheHour && <span className="time-label">{timeLabel}</span>}
+              <Fragment key={`hour-${hour}`}>
+                {/* Time label spans the full hour */}
+                <div className="grid-time-cell span-2">
+                  <span className="time-label">{hourLabel}</span>
                 </div>
 
-                {/* Day cells */}
-                {weekDays.map((day) => {
-                  const dateStr = day.toISOString().split("T")[0];
-                  const isOccupied = isTimeSlotOccupied(day, hour, minute);
-                  const isFuture = !canSelectTimeSlot(day, hour, minute);
-                  const isToday = day.toDateString() === now.toDateString();
+                {/* Two half-hour rows per hour */}
+                {Array.from({ length: 2 }, (_, half) => {
+                  const minute = half * 30;
+                  const timeLabel = `${hour.toString().padStart(2, "0")}:${minute.toString().padStart(2, "0")}`;
+                  const isHalfDivider = minute === 30;
 
                   return (
-                    <button
-                      key={`${dateStr}-${hour}-${minute}`}
-                      className={`grid-cell ${isOccupied ? "occupied" : ""} ${isFuture ? "future" : ""} ${!isFuture && !isOccupied ? "available" : ""} ${isToday ? "today-col" : ""}`}
-                      onClick={() => handleTimeSlotClick(day, hour, minute)}
-                      disabled={isFuture || isOccupied}
-                      title={isFuture ? "Cannot select future time" : isOccupied ? "Time slot occupied" : `Click to add entry for ${timeLabel} on ${day.toLocaleDateString()}`}
-                    />
+                    <Fragment key={`hour-${hour}-h-${half}`}>
+                      {weekDays.map((day) => {
+                        const dateStr = day.toISOString().split("T")[0];
+                        const isOccupied = isTimeSlotOccupied(day, hour, minute);
+                        const isFuture = !canSelectTimeSlot(day, hour, minute);
+                        const isToday = day.toDateString() === now.toDateString();
+
+                        return (
+                          <button
+                            key={`${dateStr}-${hour}-${minute}`}
+                            className={`grid-cell half ${isHalfDivider ? "half-divider" : ""} ${isOccupied ? "occupied" : ""} ${isFuture ? "future" : ""} ${!isFuture && !isOccupied ? "available" : ""} ${isToday ? "today-col" : ""}`}
+                            onClick={() => handleTimeSlotClick(day, hour, minute)}
+                            disabled={isFuture || isOccupied}
+                            title={isFuture ? "Cannot select future time" : isOccupied ? "Time slot occupied" : `Click to add entry for ${timeLabel} on ${day.toLocaleDateString()}`}
+                          />
+                        );
+                      })}
+                    </Fragment>
                   );
                 })}
-              </>
+              </Fragment>
             );
           })}
         </div>
