@@ -48,7 +48,7 @@ function minutesFrom(value24: string) {
 
 // Remove hardcoded projects, use state for fetched projects
 
-export default function TimesheetForm({ onCancel, initialDate, initialHour }: { onCancel?: () => void; initialDate?: string; initialHour?: number }) {
+export default function TimesheetForm({ onCancel, initialDate, initialHour, initialMinute }: { onCancel?: () => void; initialDate?: string; initialHour?: number; initialMinute?: number }) {
   const [projects, setProjects] = useState<ApiProject[]>([]);
   const [loadingProjects, setLoadingProjects] = useState(false);
   const [projectError, setProjectError] = useState<string | null>(null);
@@ -72,8 +72,11 @@ export default function TimesheetForm({ onCancel, initialDate, initialHour }: { 
   const STEP_MINUTES = 15; // 0.25 hour increments
   const timeOptions = generateTimeOptions(STEP_MINUTES);
 
-  // Calculate initial start time based on selected hour
+  // Calculate initial start time based on selected hour and minute
   const getInitialStartTime = (): string => {
+    if (initialHour !== undefined && initialMinute !== undefined) {
+      return `${String(initialHour).padStart(2, "0")}:${String(initialMinute).padStart(2, "0")}`;
+    }
     if (initialHour !== undefined) {
       return `${String(initialHour).padStart(2, "0")}:00`;
     }

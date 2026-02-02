@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { getWeekEntries, WeekEntry } from "../api/timesheet";
 
 type Props = {
-  onSelectDate?: (date: string, hour?: number) => void;
+  onSelectDate?: (date: string, hour?: number, minute?: number) => void;
 };
 
 export default function Recent({ onSelectDate }: Props): JSX.Element {
@@ -47,27 +47,31 @@ export default function Recent({ onSelectDate }: Props): JSX.Element {
     return entries.filter((e) => e.date.startsWith(dateStr));
   };
 
-  const isHourOccupied = (date: Date, hour: number): boolean => {
+  const isTimeSlotOccupied = (date: Date, hour: number, minute: number): boolean => {
     const dateStr = date.toISOString().split("T")[0];
+    const slotMinutes = hour * 60 + minute;
+    
     return entries.some((entry) => {
       if (!entry.date.startsWith(dateStr)) return false;
-      const startHour = parseInt(entry.start_time.split(":")[0], 10);
-      const endHour = parseInt(entry.end_time.split(":")[0], 10);
-      return hour >= startHour && hour < endHour;
+      const [startH, startM] = entry.start_time.split(":").map(Number);
+      const [endH, endM] = entry.end_time.split(":").map(Number);
+      const startMinutes = startH * 60 + startM;
+      const endMinutes = endH * 60 + endM;
+      return slotMinutes >= startMinutes && slotMinutes < endMinutes;
     });
   };
 
-  const canSelectHour = (date: Date, hour: number): boolean => {
+  const canSelectTimeSlot = (date: Date, hour: number, minute: number): boolean => {
     // Cannot select future date/time
     const targetDateTime = new Date(date);
-    targetDateTime.setHours(hour, 0, 0, 0);
+    targetDateTime.setHours(hour, minute, 0, 0);
     return targetDateTime <= now;
   };
 
-  const handleHourClick = (date: Date, hour: number) => {
-    if (!canSelectHour(date, hour)) return;
+  const handleTimeSlotClick = (date: Date, hour: number, minute: number) => {
+    if (!canSelectTimeSlot(date, hour, minute)) return;
     const dateStr = date.toISOString().split("T")[0];
-    onSelectDate?.(dateStr, hour);
+    onSelectDate?.(dateStr, hour, minute);
   };
 
   if (loading) {
@@ -108,21 +112,23 @@ export default function Recent({ onSelectDate }: Props): JSX.Element {
                   {day.toLocaleDateString("en-US", { weekday: "short" })}
                 </div>
                 <div className="week-day-date">
-                  {day.getDate()}
-                </div>
-              </div>
-              <div className="week-day-hours-grid">
-                {Array.from({ length: 24 }, (_, i) => {
-                  const hour = i;
-                  const isOccupied = isHourOccupied(day, hour);
-                  const isFuture = !canSelectHour(day, hour);
-                  const formattedHour = hour === 0 ? "12 AM" : hour < 12 ? `${hour} AM` : hour === 12 ? "12 PM" : `${hour - 12} PM`;
+                  {day.getDate()}96 }, (_, i) => {
+                  const hour = Math.floor(i / 4);
+                  const minute = (i % 4) * 15;
+                  const isOccupied = isTimeSlotOccupied(day, hour, minute);
+                  const isFuture = !canSelectTimeSlot(day, hour, minute);
+                  const isOnTheHour = minute === 0;
+                  const formattedTime = `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
 
                   return (
                     <button
-                      key={`${dateStr}-${hour}`}
-                      className={`hour-block ${isOccupied ? "occupied" : ""} ${isFuture ? "future" : ""} ${!isFuture && !isOccupied ? "available" : ""}`}
-                      onClick={() => handleHourClick(day, hour)}
+                      key={`${dateStr}-${hour}-${minute}`}
+                      className={`time-block ${isOccupied ? "occupied" : ""} ${isFuture ? "future" : ""} ${!isFuture && !isOccupied ? "available" : ""}`}
+                      onClick={() => handleTimeSlotClick(day, hour, minute)}
+                      disabled={isFuture || isOccupied}
+                      title={isFuture ? "Cannot select future time" : isOccupied ? "Time slot occupied" : `Click to add entry starting at ${formattedTime}`}
+                    >
+                      {isOnTheHour && <span className="time-label">{formattedTime}</span>}
                       disabled={isFuture || isOccupied}
                       title={isFuture ? "Cannot select future time" : isOccupied ? "Time slot occupied" : `Click to add entry for ${formattedHour}`}
                     >
