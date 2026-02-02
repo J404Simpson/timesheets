@@ -201,7 +201,7 @@ body{
   margin-top: 16px;
   background: var(--card);
   border: 1px solid rgba(15, 23, 42, 0.06);
-  border-radius: 8px;
+  border-radius: 0;
   overflow: hidden;
   width: 100%;
 }
@@ -297,6 +297,7 @@ body{
   transition: all 0.1s;
   padding: 0;
   min-height: 16px;
+  border-radius: 0;
 }
 
 .grid-cell.half {
