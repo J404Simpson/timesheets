@@ -185,3 +185,119 @@ body{
   color: var(--text);
   margin-bottom: 6px;
 }
+
+/* Week Calendar Styles */
+.week-calendar {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 12px;
+  margin-top: 16px;
+}
+
+.week-day {
+  background: var(--card);
+  border: 1px solid rgba(15, 23, 42, 0.06);
+  border-radius: 8px;
+  padding: 12px;
+  min-height: 200px;
+  transition: all 0.2s;
+}
+
+.week-day:hover {
+  border-color: var(--accent);
+  box-shadow: 0 2px 8px rgba(37, 99, 235, 0.1);
+}
+
+.week-day.today {
+  border-color: var(--accent);
+  background: linear-gradient(180deg, #eff6ff 0%, #ffffff 100%);
+}
+
+.week-day-header {
+  border-bottom: 1px solid rgba(15, 23, 42, 0.06);
+  padding-bottom: 8px;
+  margin-bottom: 12px;
+}
+
+.week-day-name {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.week-day-date {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--text);
+  margin-top: 4px;
+}
+
+.week-day.today .week-day-date {
+  color: var(--accent);
+}
+
+.week-day-entries {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.no-entries {
+  font-size: 13px;
+  text-align: center;
+  padding: 20px 8px;
+}
+
+.entry-item {
+  background: rgba(15, 23, 42, 0.02);
+  border: 1px solid rgba(15, 23, 42, 0.04);
+  border-radius: 6px;
+  padding: 8px;
+  font-size: 12px;
+}
+
+.entry-time {
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: 4px;
+  font-size: 11px;
+}
+
+.entry-details {
+  margin-bottom: 4px;
+}
+
+.entry-project {
+  font-weight: 500;
+  color: var(--text);
+  margin-bottom: 2px;
+}
+
+.entry-phase, .entry-task {
+  font-size: 11px;
+}
+
+.entry-hours {
+  font-size: 11px;
+  text-align: right;
+}
+
+@media (max-width: 1024px) {
+  .week-calendar {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+@media (max-width: 768px) {
+  .week-calendar {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 480px) {
+  .week-calendar {
+    grid-template-columns: 1fr;
+  }
+}

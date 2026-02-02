@@ -100,3 +100,29 @@ export async function getTimesheets(): Promise<Timesheet[]> {
     throw new Error("Failed to retrieve timesheets");
   }
 }
+
+export type WeekEntry = {
+  id: number;
+  date: string;
+  start_time: string;
+  end_time: string;
+  hours: number;
+  notes?: string;
+  project?: { id: number; name: string };
+  task?: { id: number; name: string };
+  project_phase?: {
+    id: number;
+    phase: { id: number; name: string };
+  };
+};
+
+export async function getWeekEntries(): Promise<WeekEntry[]> {
+  const accessToken = await acquireTokenSilent([protectedResources.timesheetApi.scope]);
+  const apiBase = import.meta.env.VITE_API_URL;
+  const response = await axios.get(`${apiBase}/api/entries/week`, {
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+    },
+  });
+  return response.data.entries;
+}

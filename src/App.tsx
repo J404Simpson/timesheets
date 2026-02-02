@@ -18,6 +18,7 @@ const App: React.FC = () => {
   const [showNewEntryForm, setShowNewEntryForm] = useState(false);
   const [view, setView] = useState<"recent" | "history">("recent");
   const [showDepartmentModal, setShowDepartmentModal] = useState(false);
+  const [selectedDate, setSelectedDate] = useState<string | undefined>(undefined);
   const [pendingUser, setPendingUser] = useState<{
     firstName: string;
     lastName: string;
@@ -45,7 +46,7 @@ const App: React.FC = () => {
             setIsOnboarded(true);
           }
         })
-        .catch((error) => {
+        .catch(() => {
           // Failed to send user details
         });
     }
@@ -69,6 +70,11 @@ const App: React.FC = () => {
     if (!isAuthenticated) return;
     setShowNewEntryForm(false);
     setView("history");
+  };
+
+  const handleDateSelect = (date: string) => {
+    setSelectedDate(date);
+    setShowNewEntryForm(true);
   };
 
   return (
@@ -141,7 +147,7 @@ const App: React.FC = () => {
             />
             {isOnboarded && !showDepartmentModal && (!showNewEntryForm ? (
               view === "recent" ? (
-                <Recent />
+                <Recent onSelectDate={handleDateSelect} />
               ) : (
                 <History />
               )
@@ -149,8 +155,10 @@ const App: React.FC = () => {
               <section id="new-entry-form" className="new-entry-section" aria-live="polite">
                 {/* Removed the New Entry header from App; TimeSheetForm renders it now */}
                 <TimeSheetForm
+                  initialDate={selectedDate}
                   onCancel={() => {
                     setShowNewEntryForm(false);
+                    setSelectedDate(undefined);
                     setView("recent");
                   }}
                 />

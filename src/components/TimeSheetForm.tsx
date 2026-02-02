@@ -48,7 +48,7 @@ function minutesFrom(value24: string) {
 
 // Remove hardcoded projects, use state for fetched projects
 
-export default function TimesheetForm({ onCancel }: { onCancel?: () => void }) {
+export default function TimesheetForm({ onCancel, initialDate }: { onCancel?: () => void; initialDate?: string }) {
   const [projects, setProjects] = useState<ApiProject[]>([]);
   const [loadingProjects, setLoadingProjects] = useState(false);
   const [projectError, setProjectError] = useState<string | null>(null);
@@ -73,7 +73,7 @@ export default function TimesheetForm({ onCancel }: { onCancel?: () => void }) {
   const timeOptions = generateTimeOptions(STEP_MINUTES);
 
   const [entry, setEntry] = useState<Entry>({
-    workDate: today,
+    workDate: initialDate || today,
     startTime: "09:00",
     endTime: "17:00",
     notes: ""
