@@ -175,7 +175,7 @@ export default function Recent({ onSelectDate }: Props): JSX.Element {
                         <span className="entry-time-summary">
                           {formatTime(entry.start_time)} - {formatTime(entry.end_time)}
                         </span>
-                        {entry.project && <span className="entry-project-summary">{entry.project.name}</span>}
+                        {entry.project != null && <span className="entry-project-summary">{entry.project.name}</span>}
                         <span className="entry-hours-summary">{Number(entry.hours)}h</span>
                       </div>
                     ))}

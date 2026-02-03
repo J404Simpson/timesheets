@@ -138,7 +138,7 @@ export default function TimesheetForm({ onCancel, initialDate, initialHour, init
 
     // validation
     if (selectedType === "project") {
-      if (!entry.project) {
+      if (entry.project == null) {
         setStatus("Please select a project.");
         return;
       }
@@ -211,10 +211,10 @@ export default function TimesheetForm({ onCancel, initialDate, initialHour, init
   const minEnd = startMin + STEP_MINUTES;
   const endOptions = timeOptions.filter((opt) => minutesFrom(opt.value) >= minEnd);
 
-  const selectedProject = entry.project ? projects.find((p) => String(p.id) === entry.project) : undefined;
+  const selectedProject = entry.project != null ? projects.find((p) => String(p.id) === entry.project) : undefined;
   // Fetch phases when project changes
   useEffect(() => {
-    if (selectedType === "project" && entry.project) {
+    if (selectedType === "project" && entry.project != null) {
       setLoadingPhases(true);
       setPhases([]);
       setPhaseError(null);
@@ -233,10 +233,10 @@ export default function TimesheetForm({ onCancel, initialDate, initialHour, init
   // determine when to show time inputs
   const timeInputsVisible = (() => {
     if (selectedType === "internal") return true;
-    if (selectedType === "project" && entry.project) {
+    if (selectedType === "project" && entry.project != null) {
       if (loadingPhases) return false;
       if (phases.length === 0) return true; // No phases for this project
-      if (tasks.length > 0) return !!entry.task; // Only show if a task is selected
+      if (tasks.length > 0) return entry.task != null; // Only show if a task is selected
       return false;
     }
     return false;
@@ -327,7 +327,7 @@ export default function TimesheetForm({ onCancel, initialDate, initialHour, init
         )}
 
         {/* Phase shown if project has phases */}
-        {selectedType === "project" && entry.project && (
+        {selectedType === "project" && entry.project != null && (
           <label>
             <select
               name="phase"
@@ -336,7 +336,7 @@ export default function TimesheetForm({ onCancel, initialDate, initialHour, init
                 handleChange(e);
                 handleField("task", undefined);
                 const phaseId = Number(e.target.value);
-                if (phaseId) {
+                if (phaseId != null && !isNaN(phaseId) && phaseId > 0) {
                   setLoadingTasks(true);
                   setTaskError(null);
                   setTasks([]);
@@ -365,7 +365,7 @@ export default function TimesheetForm({ onCancel, initialDate, initialHour, init
         )}
 
         {/* Task dropdown shown after phase selection and tasks loaded */}
-        {selectedType === "project" && entry.project && entry.phase && (
+        {selectedType === "project" && entry.project != null && entry.phase != null && (
           <label>
             <select
               name="task"
