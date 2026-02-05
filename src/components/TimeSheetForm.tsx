@@ -259,9 +259,12 @@ export default function TimesheetForm({ onCancel, initialDate, initialHour, init
         <input
           type="date"
           name="workDate"
+          className="date-input"
           value={entry.workDate}
           max={today}
           onChange={(e) => handleField("workDate", e.target.value)}
+          onKeyDown={(e) => e.preventDefault()}
+          readOnly
           aria-label="Work date"
         />
       </div>
