@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useMsal } from "@azure/msal-react";
 import axios from "axios";
 import { protectedResources } from "../auth/msalConfig";
@@ -49,6 +49,7 @@ function minutesFrom(value24: string) {
 // Remove hardcoded projects, use state for fetched projects
 
 export default function TimesheetForm({ onCancel, initialDate, initialHour, initialMinute }: { onCancel?: () => void; initialDate?: string; initialHour?: number; initialMinute?: number }) {
+  const dateInputRef = useRef<HTMLInputElement | null>(null);
   const [projects, setProjects] = useState<ApiProject[]>([]);
   const [loadingProjects, setLoadingProjects] = useState(false);
   const [projectError, setProjectError] = useState<string | null>(null);
@@ -256,19 +257,36 @@ export default function TimesheetForm({ onCancel, initialDate, initialHour, init
       <div className="new-entry-header" style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 12 }}>
         <h2 style={{ margin: 0 }}>New Entry</h2>
 
-        <input
-          type="date"
-          name="workDate"
-          className="date-input"
-          value={entry.workDate}
-          max={today}
-          onChange={(e) => handleField("workDate", e.target.value)}
-          onKeyDown={(e) => e.preventDefault()}
-          onPaste={(e) => e.preventDefault()}
-          onDrop={(e) => e.preventDefault()}
-          inputMode="none"
-          aria-label="Work date"
-        />
+        <div className="date-picker">
+          <input
+            ref={dateInputRef}
+            type="date"
+            name="workDate"
+            className="date-input"
+            value={entry.workDate}
+            max={today}
+            onChange={(e) => handleField("workDate", e.target.value)}
+            onKeyDown={(e) => e.preventDefault()}
+            onPaste={(e) => e.preventDefault()}
+            onDrop={(e) => e.preventDefault()}
+            inputMode="none"
+            aria-label="Work date"
+          />
+          <button
+            type="button"
+            className="date-picker-btn"
+            onClick={() => {
+              if (dateInputRef.current?.showPicker) {
+                dateInputRef.current.showPicker();
+              } else {
+                dateInputRef.current?.focus();
+              }
+            }}
+            aria-label="Open date picker"
+          >
+            📅
+          </button>
+        </div>
       </div>
 
       <form onSubmit={submitLocal} className="form">
