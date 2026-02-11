@@ -189,9 +189,9 @@ body{
 }
 
 .date-input {
-  background: var(--card);
+  background: #f8fafc;
   color: var(--text);
-  border: 1px solid rgba(15, 23, 42, 0.12);
+  border: 1px solid rgba(15, 23, 42, 0.2);
   border-radius: 8px;
   padding: 6px 10px;
   font-size: 14px;
