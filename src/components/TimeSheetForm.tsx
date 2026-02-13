@@ -247,7 +247,7 @@ export default function TimesheetForm({ onCancel, initialDate, initialHour, init
   const handleBack = () => {
     if (selectedType === "project" || selectedType === "internal") {
       setSelectedType("none");
-      setEntry((prev) => ({ ...prev, project: undefined, phase: undefined }));
+      setEntry((prev) => ({ ...prev, project: undefined, phase: undefined, task: undefined }));
       setStatus(null);
     }
   };
@@ -257,7 +257,16 @@ export default function TimesheetForm({ onCancel, initialDate, initialHour, init
       <div className="new-entry-header" style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 12 }}>
         <h2 style={{ margin: 0 }}>New Entry</h2>
 
-        <div className="date-picker">
+        <div className="date-picker" style={{ marginLeft: "auto" }}>
+          <span className="date-display" aria-live="polite">
+            {entry.workDate
+              ? new Date(`${entry.workDate}T00:00:00`).toLocaleDateString("en-US", {
+                  month: "short",
+                  day: "numeric",
+                  year: "numeric"
+                })
+              : ""}
+          </span>
           <input
             ref={dateInputRef}
             type="date"
@@ -271,6 +280,7 @@ export default function TimesheetForm({ onCancel, initialDate, initialHour, init
             onDrop={(e) => e.preventDefault()}
             inputMode="none"
             aria-label="Work date"
+            style={{ position: "absolute", opacity: 0, width: 0, height: 0, pointerEvents: "none" }}
           />
           <button
             type="button"
@@ -317,7 +327,7 @@ export default function TimesheetForm({ onCancel, initialDate, initialHour, init
               onClick={() => {
                 setSelectedType("internal");
                 setStatus(null);
-                setEntry((prev) => ({ ...prev, project: undefined, phase: undefined }));
+                setEntry((prev) => ({ ...prev, project: "0", phase: undefined, task: undefined }));
               }}
             >
               Internal Meeting
@@ -471,6 +481,8 @@ export default function TimesheetForm({ onCancel, initialDate, initialHour, init
           <button
             type="button"
             onClick={() => {
+              setSelectedType("none");
+              setEntry((prev) => ({ ...prev, project: undefined, phase: undefined, task: undefined }));
               onCancel?.();
             }}
             className="btn secondary"
