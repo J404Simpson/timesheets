@@ -126,3 +126,25 @@ export async function getWeekEntries(): Promise<WeekEntry[]> {
   });
   return response.data.entries;
 }
+
+export type CreateEntryPayload = {
+  projectId: number;
+  phaseId?: number | null;
+  taskId?: number | null;
+  date: string; // YYYY-MM-DD
+  startTime: string; // HH:MM
+  endTime: string; // HH:MM
+  hours?: number;
+  notes?: string;
+};
+
+export async function createEntry(payload: CreateEntryPayload): Promise<any> {
+  const accessToken = await acquireTokenSilent([protectedResources.timesheetApi.scope]);
+  const apiBase = import.meta.env.VITE_API_URL;
+  const response = await axios.post(`${apiBase}/api/entries`, payload, {
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+    },
+  });
+  return response.data;
+}

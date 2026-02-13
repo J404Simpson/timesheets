@@ -161,6 +161,13 @@ const App: React.FC = () => {
                 <TimeSheetForm
                   initialDate={selectedDate}
                   initialMinute={selectedMinute}
+                  onSaved={() => {
+                    setShowNewEntryForm(false);
+                    setSelectedDate(undefined);
+                    setSelectedHour(undefined);
+                    setSelectedMinute(undefined);
+                    setView("recent");
+                  }}
                   onCancel={() => {
                     setShowNewEntryForm(false);
                     setSelectedDate(undefined);

@@ -1,8 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
-import { useMsal } from "@azure/msal-react";
-import axios from "axios";
-import { protectedResources } from "../auth/msalConfig";
-import { getActiveProjects, getPhasesForProject, Project as ApiProject, Phase as ApiPhase } from "../api/timesheet";
+import { createEntry, getActiveProjects, getPhasesForProject, Project as ApiProject, Phase as ApiPhase } from "../api/timesheet";
 import { getTasksForPhaseAndEmployee, Task as ApiTask } from "../api/task";
 
 type Entry = {
@@ -10,6 +7,7 @@ type Entry = {
   type?: "project" | "internal";
   project?: string;
   phase?: string;
+  task?: string;
   startTime?: string; // "HH:MM"
   endTime?: string;   // "HH:MM"
   hours?: number;
@@ -48,7 +46,19 @@ function minutesFrom(value24: string) {
 
 // Remove hardcoded projects, use state for fetched projects
 
-export default function TimesheetForm({ onCancel, initialDate, initialHour, initialMinute }: { onCancel?: () => void; initialDate?: string; initialHour?: number; initialMinute?: number }) {
+export default function TimesheetForm({
+  onCancel,
+  onSaved,
+  initialDate,
+  initialHour,
+  initialMinute
+}: {
+  onCancel?: () => void;
+  onSaved?: () => void;
+  initialDate?: string;
+  initialHour?: number;
+  initialMinute?: number;
+}) {
   const dateInputRef = useRef<HTMLInputElement | null>(null);
   const [projects, setProjects] = useState<ApiProject[]>([]);
   const [loadingProjects, setLoadingProjects] = useState(false);
@@ -106,9 +116,6 @@ export default function TimesheetForm({ onCancel, initialDate, initialHour, init
   const [loadingTasks, setLoadingTasks] = useState(false);
   const [taskError, setTaskError] = useState<string | null>(null);
 
-  const { instance, accounts } = useMsal();
-  const account = accounts && accounts[0];
-
   const handleField = (name: keyof Entry, value?: string) => {
     setEntry((prev) => ({ ...prev, [name]: value }));
     setStatus(null);
@@ -134,18 +141,26 @@ export default function TimesheetForm({ onCancel, initialDate, initialHour, init
     setStatus(null);
   };
 
-  const submitLocal = (e: React.FormEvent) => {
+  const submitEntry = async (e: React.FormEvent) => {
     e.preventDefault();
 
     // validation
+    if (selectedType === "none") {
+      setStatus("Please select Project or Internal Meeting.");
+      return;
+    }
+
     if (selectedType === "project") {
       if (entry.project == null) {
         setStatus("Please select a project.");
         return;
       }
-      const phases = PROJECTS.find((p) => p.id === entry.project)?.phases ?? [];
       if (phases.length > 0 && !entry.phase) {
         setStatus("Please select a phase.");
+        return;
+      }
+      if (tasks.length > 0 && !entry.task) {
+        setStatus("Please select a task.");
         return;
       }
     }
@@ -163,47 +178,23 @@ export default function TimesheetForm({ onCancel, initialDate, initialHour, init
     }
 
     const hours = +(((endMin - startMin) / 60).toFixed(2));
-    const out = { ...entry, type: selectedType === "none" ? undefined : selectedType, hours };
 
-    setStatus(`Saved locally: ${JSON.stringify(out)}`);
-  };
-
-  const callProtectedApi = async () => {
-    setStatus("Acquiring token...");
-    if (!account) {
-      setStatus("No signed-in account found.");
-      return;
-    }
     try {
-      const request = {
-        scopes: [protectedResources.timesheetApi.scope],
-        account
-      };
-
-      let response;
-      try {
-        response = await instance.acquireTokenSilent(request);
-      } catch (silentError) {
-        response = await instance.acquireTokenPopup(request);
-      }
-
-      const token = response.accessToken;
-      setStatus("Calling protected API...");
-
-      const apiBase = import.meta.env.VITE_API_BASE_URL ?? "https://example.com";
-      const resp = await axios.post(
-        `${apiBase}/api/timesheet/demo`,
-        { entry: { ...entry, hours: +(((minutesFrom(entry.endTime!) - minutesFrom(entry.startTime!)) / 60).toFixed(2)), type: selectedType } },
-        {
-          headers: {
-            Authorization: `Bearer ${token}`
-          }
-        }
-      );
-
-      setStatus(`API responded: ${JSON.stringify(resp.data)}`);
+      setStatus("Saving...");
+      await createEntry({
+        projectId: Number(entry.project ?? 0),
+        phaseId: entry.phase ? Number(entry.phase) : null,
+        taskId: selectedType === "internal" ? null : entry.task ? Number(entry.task) : null,
+        date: entry.workDate,
+        startTime: entry.startTime,
+        endTime: entry.endTime,
+        hours,
+        notes: entry.notes
+      });
+      setStatus("Saved.");
+      onSaved?.();
     } catch (err) {
-      setStatus(`API call error: ${(err as any)?.message ?? err}`);
+      setStatus(`Save failed: ${(err as any)?.message ?? err}`);
     }
   };
 
@@ -254,10 +245,9 @@ export default function TimesheetForm({ onCancel, initialDate, initialHour, init
 
   return (
     <section>
-      <div className="new-entry-header" style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 12 }}>
+      <div className="new-entry-header" style={{ display: "flex", flexDirection: "column", gap: 6, marginBottom: 12 }}>
         <h2 style={{ margin: 0 }}>New Entry</h2>
-
-        <div className="date-picker" style={{ marginLeft: "auto" }}>
+        <div className="date-picker">
           <span className="date-display" aria-live="polite">
             {entry.workDate
               ? new Date(`${entry.workDate}T00:00:00`).toLocaleDateString("en-US", {
@@ -299,7 +289,7 @@ export default function TimesheetForm({ onCancel, initialDate, initialHour, init
         </div>
       </div>
 
-      <form onSubmit={submitLocal} className="form">
+      <form onSubmit={submitEntry} className="form">
         {/* Top area: keep selected button visible and hide the other.
             - Initial (none): show both
             - Project selected: Project visible, Internal hidden
