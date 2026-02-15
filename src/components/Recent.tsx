@@ -15,6 +15,15 @@ export default function Recent({ onSelectDate }: Props): JSX.Element {
     getWeekEntries()
       .then((data) => {
         console.log("Fetched entries:", data);
+        if (data.length > 0) {
+          console.log("First entry details:", {
+            date: data[0].date,
+            dateType: typeof data[0].date,
+            start_time: data[0].start_time,
+            end_time: data[0].end_time,
+            project: data[0].project
+          });
+        }
         setEntries(data);
       })
       .catch((err) => {
