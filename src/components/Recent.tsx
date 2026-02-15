@@ -61,6 +61,20 @@ export default function Recent({ onSelectDate }: Props): JSX.Element {
     });
   };
 
+  const getEntryForTimeSlot = (date: Date, hour: number, minute: number): WeekEntry | undefined => {
+    const dateStr = date.toISOString().split("T")[0];
+    const slotMinutes = hour * 60 + minute;
+
+    return entries.find((entry) => {
+      if (!entry.date.startsWith(dateStr)) return false;
+      const [startH, startM] = entry.start_time.split(":").map(Number);
+      const [endH, endM] = entry.end_time.split(":").map(Number);
+      const startMinutes = startH * 60 + startM;
+      const endMinutes = endH * 60 + endM;
+      return slotMinutes === startMinutes;
+    });
+  };
+
   const canSelectTimeSlot = (date: Date, hour: number, minute: number): boolean => {
     // Cannot select future date/time
     const targetDateTime = new Date(date);
@@ -137,6 +151,7 @@ export default function Recent({ onSelectDate }: Props): JSX.Element {
                         const isOccupied = isTimeSlotOccupied(day, hour, minute);
                         const isFuture = !canSelectTimeSlot(day, hour, minute);
                         const isToday = day.toDateString() === now.toDateString();
+                        const entry = getEntryForTimeSlot(day, hour, minute);
 
                         return (
                           <button
@@ -145,7 +160,16 @@ export default function Recent({ onSelectDate }: Props): JSX.Element {
                             onClick={() => handleTimeSlotClick(day, hour, minute)}
                             disabled={isFuture || isOccupied}
                             title={isFuture ? "Cannot select future time" : isOccupied ? "Time slot occupied" : `Click to add entry for ${timeLabel} on ${day.toLocaleDateString()}`}
-                          />
+                            style={{ overflow: "hidden", whiteSpace: "normal", wordBreak: "break-word", padding: "2px" }}
+                          >
+                            {entry && (
+                              <span className="entry-cell-content">
+                                <div className="entry-cell-time" style={{ fontSize: "9px", fontWeight: "600" }}>{formatTime(entry.start_time)}</div>
+                                {entry.project && <div className="entry-cell-project" style={{ fontSize: "8px" }}>{entry.project.name}</div>}
+                                <div className="entry-cell-hours" style={{ fontSize: "8px", fontWeight: "500" }}>{Number(entry.hours)}h</div>
+                              </span>
+                            )}
+                          </button>
                         );
                       })}
                     </Fragment>
