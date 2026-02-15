@@ -13,8 +13,14 @@ export default function Recent({ onSelectDate }: Props): JSX.Element {
   useEffect(() => {
     setLoading(true);
     getWeekEntries()
-      .then(setEntries)
-      .catch(() => setError("Failed to load entries"))
+      .then((data) => {
+        console.log("Fetched entries:", data);
+        setEntries(data);
+      })
+      .catch((err) => {
+        console.error("Failed to load entries:", err);
+        setError("Failed to load entries");
+      })
       .finally(() => setLoading(false));
   }, []);
 
@@ -65,7 +71,7 @@ export default function Recent({ onSelectDate }: Props): JSX.Element {
     const dateStr = date.toISOString().split("T")[0];
     const slotMinutes = hour * 60 + minute;
 
-    return entries.find((entry) => {
+    const foundEntry = entries.find((entry) => {
       if (!entry.date.startsWith(dateStr)) return false;
       const [startH, startM] = entry.start_time.split(":").map(Number);
       const [endH, endM] = entry.end_time.split(":").map(Number);
@@ -73,6 +79,12 @@ export default function Recent({ onSelectDate }: Props): JSX.Element {
       const endMinutes = endH * 60 + endM;
       return slotMinutes === startMinutes;
     });
+
+    if (foundEntry) {
+      console.log("Found entry for slot:", { dateStr, hour, minute, entry: foundEntry });
+    }
+
+    return foundEntry;
   };
 
   const canSelectTimeSlot = (date: Date, hour: number, minute: number): boolean => {
