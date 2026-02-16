@@ -222,24 +222,7 @@ export default function TimesheetForm({
   };
 
   // compute end options based on start
-  // Adjust start time if 08:00 is blocked
-  useEffect(() => {
-    if (!initialHour && dayEntries.length > 0) {
-      const defaultStart = "08:00";
-      if (isStartBlocked(defaultStart)) {
-        // Find next available time
-        const nextAvailable = timeOptions.find((opt) => !isStartBlocked(opt.value));
-        if (nextAvailable && nextAvailable.value !== entry.startTime) {
-          const newEndTime = getInitialEndTime(nextAvailable.value);
-          setEntry((prev) => ({
-            ...prev,
-            startTime: nextAvailable.value,
-            endTime: newEndTime,
-          }));
-        }
-      }
-    }
-  }, [dayEntries, initialHour]);
+  const startMin = entry.startTime ? minutesFrom(entry.startTime) : 0;
   const minEnd = startMin + STEP_MINUTES;
   const endOptions = timeOptions.filter((opt) => minutesFrom(opt.value) >= minEnd);
 
@@ -248,21 +231,12 @@ export default function TimesheetForm({
     return entryDate === entry.workDate;
   });
 
-  console.log("Date selected:", entry.workDate, "Day entries:", dayEntries.length, dayEntries);
-  if (dayEntries.length > 0) {
-    console.log("First entry start_time:", dayEntries[0].start_time, "end_time:", dayEntries[0].end_time);
-  }
-
   const isStartBlocked = (value: string) => {
     const startMinutes = minutesFrom(value);
     const blocked = dayEntries.some((e) => {
       const entryStart = minutesFromEntryTime(e.start_time);
       const entryEnd = minutesFromEntryTime(e.end_time);
-      const result = startMinutes >= entryStart && startMinutes < entryEnd;
-      if (result) {
-        console.log(`Blocking start ${value} (${startMinutes}min) - overlaps entry [${entryStart}-${entryEnd}min]`);
-      }
-      return result;
+      return startMinutes >= entryStart && startMinutes < entryEnd;
     });
     return blocked;
   };
@@ -274,11 +248,7 @@ export default function TimesheetForm({
     const blocked = dayEntries.some((e) => {
       const entryStart = minutesFromEntryTime(e.start_time);
       const entryEnd = minutesFromEntryTime(e.end_time);
-      const result = startMinutes < entryEnd && endMinutes > entryStart;
-      if (result) {
-        console.log(`Blocking end ${value} - range [${startMinutes}-${endMinutes}min] overlaps entry [${entryStart}-${entryEnd}min]`);
-      }
-      return result;
+      return startMinutes < entryEnd && endMinutes > entryStart;
     });
     return blocked;
   };
