@@ -18,17 +18,16 @@ export default function Recent({ onSelectDate }: Props): JSX.Element {
       .finally(() => setLoading(false));
   }, []);
 
-  // Calculate current week (Monday to Sunday) in UTC to align with entry dates
+  // Calculate current week (Monday to Sunday) in local time
   const now = new Date();
-  const nowUtc = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
-  const dayOfWeekUtc = nowUtc.getUTCDay(); // 0 = Sunday, 1 = Monday, etc.
-  const diffToMonday = dayOfWeekUtc === 0 ? -6 : 1 - dayOfWeekUtc;
-  const mondayUtc = new Date(nowUtc);
-  mondayUtc.setUTCDate(nowUtc.getUTCDate() + diffToMonday);
+  const dayOfWeek = now.getDay(); // 0 = Sunday, 1 = Monday, etc.
+  const diffToMonday = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
+  const monday = new Date(now);
+  monday.setDate(now.getDate() + diffToMonday);
 
   const weekDays = Array.from({ length: 7 }, (_, i) => {
-    const day = new Date(mondayUtc);
-    day.setUTCDate(mondayUtc.getUTCDate() + i);
+    const day = new Date(monday);
+    day.setDate(monday.getDate() + i);
     return day;
   });
 
@@ -43,17 +42,17 @@ export default function Recent({ onSelectDate }: Props): JSX.Element {
     return `${displayHour}:${m} ${ampm}`;
   };
 
-  const toDateKeyUTC = (value: Date) => {
-    const y = value.getUTCFullYear();
-    const m = String(value.getUTCMonth() + 1).padStart(2, "0");
-    const d = String(value.getUTCDate()).padStart(2, "0");
+  const toDateKeyLocal = (value: Date) => {
+    const y = value.getFullYear();
+    const m = String(value.getMonth() + 1).padStart(2, "0");
+    const d = String(value.getDate()).padStart(2, "0");
     return `${y}-${m}-${d}`;
   };
 
   const getEntryDateKey = (value: string) => value.split("T")[0];
 
   const getEntriesForDate = (date: Date) => {
-    const dateStr = toDateKeyUTC(date);
+    const dateStr = toDateKeyLocal(date);
     return entries.filter((e) => getEntryDateKey(e.date) === dateStr);
   };
 
@@ -64,7 +63,7 @@ export default function Recent({ onSelectDate }: Props): JSX.Element {
   };
 
   const isTimeSlotOccupied = (date: Date, hour: number, minute: number): boolean => {
-    const dateStr = toDateKeyUTC(date);
+    const dateStr = toDateKeyLocal(date);
     const slotMinutes = hour * 60 + minute;
     
     return entries.some((entry) => {
@@ -79,7 +78,7 @@ export default function Recent({ onSelectDate }: Props): JSX.Element {
   };
 
   const getEntryForTimeSlot = (date: Date, hour: number, minute: number): WeekEntry | undefined => {
-    const dateStr = toDateKeyUTC(date);
+    const dateStr = toDateKeyLocal(date);
     const slotMinutes = hour * 60 + minute;
 
     return entries.find((entry) => {
@@ -95,13 +94,14 @@ export default function Recent({ onSelectDate }: Props): JSX.Element {
 
   const canSelectTimeSlot = (date: Date, hour: number, minute: number): boolean => {
     // Cannot select future date/time (compare in UTC)
-    const targetDateTime = new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate(), hour, minute, 0, 0));
+    const targetDateTime = new Date(date);
+    targetDateTime.setHours(hour, minute, 0, 0);
     return targetDateTime <= now;
   };
 
   const handleTimeSlotClick = (date: Date, hour: number, minute: number) => {
     if (!canSelectTimeSlot(date, hour, minute)) return;
-    const dateStr = toDateKeyUTC(date);
+    const dateStr = toDateKeyLocal(date);
     onSelectDate?.(dateStr, hour, minute);
   };
 
@@ -131,14 +131,14 @@ export default function Recent({ onSelectDate }: Props): JSX.Element {
           {/* Header row with days */}
           <div className="grid-header grid-time-label">Time</div>
           {weekDays.map((day) => {
-            const isToday = toDateKeyUTC(day) === toDateKeyUTC(now);
+            const isToday = toDateKeyLocal(day) === toDateKeyLocal(now);
             return (
               <div key={day.toISOString()} className={`grid-header grid-day-header ${isToday ? "today" : ""}`}>
                 <div className="grid-day-name">
-                  {day.toLocaleDateString("en-US", { weekday: "short", timeZone: "UTC" })}
+                  {day.toLocaleDateString("en-US", { weekday: "short" })}
                 </div>
                 <div className="grid-day-date">
-                  {day.getUTCDate()}
+                  {day.getDate()}
                 </div>
               </div>
             );
@@ -164,10 +164,10 @@ export default function Recent({ onSelectDate }: Props): JSX.Element {
                   return (
                     <Fragment key={`hour-${hour}-h-${half}`}>
                       {weekDays.map((day) => {
-                        const dateStr = toDateKeyUTC(day);
+                        const dateStr = toDateKeyLocal(day);
                         const isOccupied = isTimeSlotOccupied(day, hour, minute);
                         const isFuture = !canSelectTimeSlot(day, hour, minute);
-                        const isToday = toDateKeyUTC(day) === toDateKeyUTC(now);
+                        const isToday = toDateKeyLocal(day) === toDateKeyLocal(now);
                         const entry = getEntryForTimeSlot(day, hour, minute);
 
                         return (
