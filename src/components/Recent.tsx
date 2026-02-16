@@ -13,23 +13,8 @@ export default function Recent({ onSelectDate }: Props): JSX.Element {
   useEffect(() => {
     setLoading(true);
     getWeekEntries()
-      .then((data) => {
-        console.log("Fetched entries:", data);
-        if (data.length > 0) {
-          console.log("First entry details:", {
-            date: data[0].date,
-            dateType: typeof data[0].date,
-            start_time: data[0].start_time,
-            end_time: data[0].end_time,
-            project: data[0].project
-          });
-        }
-        setEntries(data);
-      })
-      .catch((err) => {
-        console.error("Failed to load entries:", err);
-        setError("Failed to load entries");
-      })
+      .then(setEntries)
+      .catch(() => setError("Failed to load entries"))
       .finally(() => setLoading(false));
   }, []);
 
@@ -62,14 +47,28 @@ export default function Recent({ onSelectDate }: Props): JSX.Element {
     return entries.filter((e) => e.date.startsWith(dateStr));
   };
 
+  const toDateKey = (value: Date) => {
+    const y = value.getFullYear();
+    const m = String(value.getMonth() + 1).padStart(2, "0");
+    const d = String(value.getDate()).padStart(2, "0");
+    return `${y}-${m}-${d}`;
+  };
+
+  const getTimeParts = (value: string): [number, number] => {
+    const timePart = value.includes("T") ? value.split("T")[1] : value;
+    const [h, m] = timePart.split(":").map((part) => parseInt(part, 10));
+    return [h || 0, m || 0];
+  };
+
   const isTimeSlotOccupied = (date: Date, hour: number, minute: number): boolean => {
-    const dateStr = date.toISOString().split("T")[0];
+    const dateStr = toDateKey(date);
     const slotMinutes = hour * 60 + minute;
     
     return entries.some((entry) => {
-      if (!entry.date.startsWith(dateStr)) return false;
-      const [startH, startM] = entry.start_time.split(":").map(Number);
-      const [endH, endM] = entry.end_time.split(":").map(Number);
+      const entryDateStr = toDateKey(new Date(entry.date));
+      if (entryDateStr !== dateStr) return false;
+      const [startH, startM] = getTimeParts(entry.start_time);
+      const [endH, endM] = getTimeParts(entry.end_time);
       const startMinutes = startH * 60 + startM;
       const endMinutes = endH * 60 + endM;
       return slotMinutes >= startMinutes && slotMinutes < endMinutes;
@@ -77,23 +76,18 @@ export default function Recent({ onSelectDate }: Props): JSX.Element {
   };
 
   const getEntryForTimeSlot = (date: Date, hour: number, minute: number): WeekEntry | undefined => {
-    const dateStr = date.toISOString().split("T")[0];
+    const dateStr = toDateKey(date);
     const slotMinutes = hour * 60 + minute;
 
-    const foundEntry = entries.find((entry) => {
-      if (!entry.date.startsWith(dateStr)) return false;
-      const [startH, startM] = entry.start_time.split(":").map(Number);
-      const [endH, endM] = entry.end_time.split(":").map(Number);
+    return entries.find((entry) => {
+      const entryDateStr = toDateKey(new Date(entry.date));
+      if (entryDateStr !== dateStr) return false;
+      const [startH, startM] = getTimeParts(entry.start_time);
+      const [endH, endM] = getTimeParts(entry.end_time);
       const startMinutes = startH * 60 + startM;
       const endMinutes = endH * 60 + endM;
       return slotMinutes === startMinutes;
     });
-
-    if (foundEntry) {
-      console.log("Found entry for slot:", { dateStr, hour, minute, entry: foundEntry });
-    }
-
-    return foundEntry;
   };
 
   const canSelectTimeSlot = (date: Date, hour: number, minute: number): boolean => {
@@ -105,7 +99,7 @@ export default function Recent({ onSelectDate }: Props): JSX.Element {
 
   const handleTimeSlotClick = (date: Date, hour: number, minute: number) => {
     if (!canSelectTimeSlot(date, hour, minute)) return;
-    const dateStr = date.toISOString().split("T")[0];
+    const dateStr = toDateKey(date);
     onSelectDate?.(dateStr, hour, minute);
   };
 
