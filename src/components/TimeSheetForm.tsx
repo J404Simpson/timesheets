@@ -44,7 +44,13 @@ function minutesFrom(value24: string) {
 }
 
 function minutesFromEntryTime(value: string) {
-  const [h, m] = value.split(":").map((s) => parseInt(s, 10));
+  // Handle both ISO timestamps and HH:MM format
+  let timePart = value;
+  if (value.includes("T")) {
+    // Extract time from ISO string like "1970-01-01T09:00:00.000Z"
+    timePart = value.split("T")[1];
+  }
+  const [h, m] = timePart.split(":").map((s) => parseInt(s, 10));
   return (h || 0) * 60 + (m || 0);
 }
 
