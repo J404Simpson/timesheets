@@ -94,21 +94,6 @@ export default function TimesheetForm({
       });
   }, []);
 
-  // Reload entries when date changes
-  useEffect(() => {
-    if (entry.workDate) {
-      getWeekEntries()
-        .then(setWeekEntries)
-        .catch(() => {});
-    }
-  }, [entry.workDate]);
-
-  // Reload entries when date changes or after successful save
-  const reloadEntries = () => {
-    getWeekEntries()
-      .then(setWeekEntries)
-      .catch(() => {});
-  };
   const today = new Date().toISOString().slice(0, 10);
   const STEP_MINUTES = 15; // 0.25 hour increments
   const timeOptions = generateTimeOptions(STEP_MINUTES);
@@ -223,7 +208,8 @@ export default function TimesheetForm({
       });
       setStatus("Saved.");
       onSaved?.();
-      reloadEntries();
+      // Reload entries after save
+      getWeekEntries().then(setWeekEntries).catch(() => {});
     } catch (err) {
       setStatus(`Save failed: ${(err as any)?.message ?? err}`);
     }
