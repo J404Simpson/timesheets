@@ -226,15 +226,21 @@ export default function TimesheetForm({
   });
 
   console.log("Date selected:", entry.workDate, "Day entries:", dayEntries.length, dayEntries);
+  if (dayEntries.length > 0) {
+    console.log("First entry start_time:", dayEntries[0].start_time, "end_time:", dayEntries[0].end_time);
+  }
 
   const isStartBlocked = (value: string) => {
     const startMinutes = minutesFrom(value);
     const blocked = dayEntries.some((e) => {
       const entryStart = minutesFromEntryTime(e.start_time);
       const entryEnd = minutesFromEntryTime(e.end_time);
-      return startMinutes >= entryStart && startMinutes < entryEnd;
+      const result = startMinutes >= entryStart && startMinutes < entryEnd;
+      if (result) {
+        console.log(`Blocking start ${value} (${startMinutes}min) - overlaps entry [${entryStart}-${entryEnd}min]`);
+      }
+      return result;
     });
-    if (blocked) console.log("Start time blocked:", value);
     return blocked;
   };
 
@@ -245,10 +251,12 @@ export default function TimesheetForm({
     const blocked = dayEntries.some((e) => {
       const entryStart = minutesFromEntryTime(e.start_time);
       const entryEnd = minutesFromEntryTime(e.end_time);
-      // Block if the new entry [start, end) overlaps with existing [entryStart, entryEnd)
-      return startMinutes < entryEnd && endMinutes > entryStart;
+      const result = startMinutes < entryEnd && endMinutes > entryStart;
+      if (result) {
+        console.log(`Blocking end ${value} - range [${startMinutes}-${endMinutes}min] overlaps entry [${entryStart}-${entryEnd}min]`);
+      }
+      return result;
     });
-    if (blocked) console.log("End time blocked:", value);
     return blocked;
   };
 
