@@ -42,16 +42,18 @@ export default function Recent({ onSelectDate }: Props): JSX.Element {
     return `${displayHour}:${m} ${ampm}`;
   };
 
-  const getEntriesForDate = (date: Date) => {
-    const dateStr = date.toISOString().split("T")[0];
-    return entries.filter((e) => e.date.startsWith(dateStr));
+  const toDateKeyUTC = (value: Date) => {
+    const y = value.getUTCFullYear();
+    const m = String(value.getUTCMonth() + 1).padStart(2, "0");
+    const d = String(value.getUTCDate()).padStart(2, "0");
+    return `${y}-${m}-${d}`;
   };
 
-  const toDateKey = (value: Date) => {
-    const y = value.getFullYear();
-    const m = String(value.getMonth() + 1).padStart(2, "0");
-    const d = String(value.getDate()).padStart(2, "0");
-    return `${y}-${m}-${d}`;
+  const getEntryDateKey = (value: string) => value.split("T")[0];
+
+  const getEntriesForDate = (date: Date) => {
+    const dateStr = toDateKeyUTC(date);
+    return entries.filter((e) => getEntryDateKey(e.date) === dateStr);
   };
 
   const getTimeParts = (value: string): [number, number] => {
@@ -61,11 +63,11 @@ export default function Recent({ onSelectDate }: Props): JSX.Element {
   };
 
   const isTimeSlotOccupied = (date: Date, hour: number, minute: number): boolean => {
-    const dateStr = toDateKey(date);
+    const dateStr = toDateKeyUTC(date);
     const slotMinutes = hour * 60 + minute;
     
     return entries.some((entry) => {
-      const entryDateStr = toDateKey(new Date(entry.date));
+      const entryDateStr = getEntryDateKey(entry.date);
       if (entryDateStr !== dateStr) return false;
       const [startH, startM] = getTimeParts(entry.start_time);
       const [endH, endM] = getTimeParts(entry.end_time);
@@ -76,11 +78,11 @@ export default function Recent({ onSelectDate }: Props): JSX.Element {
   };
 
   const getEntryForTimeSlot = (date: Date, hour: number, minute: number): WeekEntry | undefined => {
-    const dateStr = toDateKey(date);
+    const dateStr = toDateKeyUTC(date);
     const slotMinutes = hour * 60 + minute;
 
     return entries.find((entry) => {
-      const entryDateStr = toDateKey(new Date(entry.date));
+      const entryDateStr = getEntryDateKey(entry.date);
       if (entryDateStr !== dateStr) return false;
       const [startH, startM] = getTimeParts(entry.start_time);
       const [endH, endM] = getTimeParts(entry.end_time);
@@ -99,7 +101,7 @@ export default function Recent({ onSelectDate }: Props): JSX.Element {
 
   const handleTimeSlotClick = (date: Date, hour: number, minute: number) => {
     if (!canSelectTimeSlot(date, hour, minute)) return;
-    const dateStr = toDateKey(date);
+    const dateStr = toDateKeyUTC(date);
     onSelectDate?.(dateStr, hour, minute);
   };
 
@@ -162,7 +164,7 @@ export default function Recent({ onSelectDate }: Props): JSX.Element {
                   return (
                     <Fragment key={`hour-${hour}-h-${half}`}>
                       {weekDays.map((day) => {
-                        const dateStr = day.toISOString().split("T")[0];
+                        const dateStr = toDateKeyUTC(day);
                         const isOccupied = isTimeSlotOccupied(day, hour, minute);
                         const isFuture = !canSelectTimeSlot(day, hour, minute);
                         const isToday = day.toDateString() === now.toDateString();
