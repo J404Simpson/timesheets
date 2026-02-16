@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
-import { createEntry, getActiveProjects, getPhasesForProject, Project as ApiProject, Phase as ApiPhase } from "../api/timesheet";
+import { createEntry, getActiveProjects, getPhasesForProject, getWeekEntries, Project as ApiProject, Phase as ApiPhase, type WeekEntry } from "../api/timesheet";
 import { getTasksForPhaseAndEmployee, Task as ApiTask } from "../api/task";
 
 type Entry = {
@@ -43,6 +43,11 @@ function minutesFrom(value24: string) {
   return h * 60 + m;
 }
 
+function minutesFromEntryTime(value: string) {
+  const [h, m] = value.split(":").map((s) => parseInt(s, 10));
+  return (h || 0) * 60 + (m || 0);
+}
+
 
 // Remove hardcoded projects, use state for fetched projects
 
@@ -66,6 +71,7 @@ export default function TimesheetForm({
   const [phases, setPhases] = useState<ApiPhase[]>([]);
   const [loadingPhases, setLoadingPhases] = useState(false);
   const [phaseError, setPhaseError] = useState<string | null>(null);
+  const [weekEntries, setWeekEntries] = useState<WeekEntry[]>([]);
 
   useEffect(() => {
     setLoadingProjects(true);
@@ -78,6 +84,14 @@ export default function TimesheetForm({
         setProjectError("Failed to load projects");
       })
       .finally(() => setLoadingProjects(false));
+  }, []);
+
+  useEffect(() => {
+    getWeekEntries()
+      .then(setWeekEntries)
+      .catch(() => {
+        // ignore entry load errors for time disabling
+      });
   }, []);
   const today = new Date().toISOString().slice(0, 10);
   const STEP_MINUTES = 15; // 0.25 hour increments
@@ -202,6 +216,27 @@ export default function TimesheetForm({
   const startMin = entry.startTime ? minutesFrom(entry.startTime) : 0;
   const minEnd = startMin + STEP_MINUTES;
   const endOptions = timeOptions.filter((opt) => minutesFrom(opt.value) >= minEnd);
+
+  const dayEntries = weekEntries.filter((e) => e.date.split("T")[0] === entry.workDate);
+  const isStartBlocked = (value: string) => {
+    const startMinutes = minutesFrom(value);
+    return dayEntries.some((e) => {
+      const entryStart = minutesFromEntryTime(e.start_time);
+      const entryEnd = minutesFromEntryTime(e.end_time);
+      return startMinutes >= entryStart && startMinutes < entryEnd;
+    });
+  };
+
+  const isEndBlocked = (value: string) => {
+    if (!entry.startTime) return false;
+    const startMinutes = minutesFrom(entry.startTime);
+    const endMinutes = minutesFrom(value);
+    return dayEntries.some((e) => {
+      const entryStart = minutesFromEntryTime(e.start_time);
+      const entryEnd = minutesFromEntryTime(e.end_time);
+      return startMinutes < entryEnd && endMinutes > entryStart;
+    });
+  };
 
   const selectedProject = entry.project != null ? projects.find((p) => String(p.id) === entry.project) : undefined;
   // Fetch phases when project changes
@@ -413,7 +448,7 @@ export default function TimesheetForm({
               Start
               <select name="startTime" value={entry.startTime} onChange={handleChange} aria-label="Start time">
                 {timeOptions.map((opt) => (
-                  <option key={opt.value} value={opt.value}>
+                  <option key={opt.value} value={opt.value} disabled={isStartBlocked(opt.value)}>
                     {opt.label}
                   </option>
                 ))}
@@ -424,7 +459,7 @@ export default function TimesheetForm({
               End
               <select name="endTime" value={entry.endTime} onChange={handleChange} aria-label="End time">
                 {endOptions.map((opt) => (
-                  <option key={opt.value} value={opt.value}>
+                  <option key={opt.value} value={opt.value} disabled={isEndBlocked(opt.value)}>
                     {opt.label}
                   </option>
                 ))}
