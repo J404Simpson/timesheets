@@ -395,6 +395,13 @@ label {
   border-radius: 0;
 }
 
+.entry-cell-content,
+.entry-cell-time,
+.entry-cell-project,
+.entry-cell-hours {
+  color: #0f172a;
+}
+
 .grid-cell.half {
   min-height: 16px;
 }
