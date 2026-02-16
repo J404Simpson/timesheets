@@ -94,6 +94,15 @@ export default function TimesheetForm({
       });
   }, []);
 
+  // Reload entries when date changes
+  useEffect(() => {
+    if (entry.workDate) {
+      getWeekEntries()
+        .then(setWeekEntries)
+        .catch(() => {});
+    }
+  }, [entry.workDate]);
+
   // Reload entries when date changes or after successful save
   const reloadEntries = () => {
     getWeekEntries()
@@ -230,25 +239,31 @@ export default function TimesheetForm({
     return entryDate === entry.workDate;
   });
 
+  console.log("Date selected:", entry.workDate, "Day entries:", dayEntries.length, dayEntries);
+
   const isStartBlocked = (value: string) => {
     const startMinutes = minutesFrom(value);
-    return dayEntries.some((e) => {
+    const blocked = dayEntries.some((e) => {
       const entryStart = minutesFromEntryTime(e.start_time);
       const entryEnd = minutesFromEntryTime(e.end_time);
       return startMinutes >= entryStart && startMinutes < entryEnd;
     });
+    if (blocked) console.log("Start time blocked:", value);
+    return blocked;
   };
 
   const isEndBlocked = (value: string) => {
     if (!entry.startTime) return false;
     const startMinutes = minutesFrom(entry.startTime);
     const endMinutes = minutesFrom(value);
-    return dayEntries.some((e) => {
+    const blocked = dayEntries.some((e) => {
       const entryStart = minutesFromEntryTime(e.start_time);
       const entryEnd = minutesFromEntryTime(e.end_time);
       // Block if the new entry [start, end) overlaps with existing [entryStart, entryEnd)
       return startMinutes < entryEnd && endMinutes > entryStart;
     });
+    if (blocked) console.log("End time blocked:", value);
+    return blocked;
   };
 
   const selectedProject = entry.project != null ? projects.find((p) => String(p.id) === entry.project) : undefined;
