@@ -112,7 +112,7 @@ export default function TimesheetForm({
     if (initialHour !== undefined) {
       return `${String(initialHour).padStart(2, "0")}:00`;
     }
-    return "09:00";
+    return "08:00"; // Changed from 09:00 to 08:00
   };
 
   const getInitialEndTime = (startTime: string): string => {
@@ -222,7 +222,24 @@ export default function TimesheetForm({
   };
 
   // compute end options based on start
-  const startMin = entry.startTime ? minutesFrom(entry.startTime) : 0;
+  // Adjust start time if 08:00 is blocked
+  useEffect(() => {
+    if (!initialHour && dayEntries.length > 0) {
+      const defaultStart = "08:00";
+      if (isStartBlocked(defaultStart)) {
+        // Find next available time
+        const nextAvailable = timeOptions.find((opt) => !isStartBlocked(opt.value));
+        if (nextAvailable && nextAvailable.value !== entry.startTime) {
+          const newEndTime = getInitialEndTime(nextAvailable.value);
+          setEntry((prev) => ({
+            ...prev,
+            startTime: nextAvailable.value,
+            endTime: newEndTime,
+          }));
+        }
+      }
+    }
+  }, [dayEntries, initialHour]);
   const minEnd = startMin + STEP_MINUTES;
   const endOptions = timeOptions.filter((opt) => minutesFrom(opt.value) >= minEnd);
 
