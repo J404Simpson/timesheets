@@ -21,6 +21,8 @@ const App: React.FC = () => {
   const [selectedDate, setSelectedDate] = useState<string | undefined>(undefined);
   const [selectedHour, setSelectedHour] = useState<number | undefined>(undefined);
   const [selectedMinute, setSelectedMinute] = useState<number | undefined>(undefined);
+  const [selectedEndHour, setSelectedEndHour] = useState<number | undefined>(undefined);
+  const [selectedEndMinute, setSelectedEndMinute] = useState<number | undefined>(undefined);
   const [pendingUser, setPendingUser] = useState<{
     firstName: string;
     lastName: string;
@@ -74,10 +76,12 @@ const App: React.FC = () => {
     setView("history");
   };
 
-  const handleDateSelect = (date: string, hour?: number, minute?: number) => {
+  const handleDateSelect = (date: string, hour?: number, minute?: number, endHour?: number, endMinute?: number) => {
     setSelectedDate(date);
     setSelectedHour(hour);
     setSelectedMinute(minute);
+    setSelectedEndHour(endHour);
+    setSelectedEndMinute(endMinute);
     setShowNewEntryForm(true);
   };
 
@@ -160,12 +164,17 @@ const App: React.FC = () => {
                 {/* Removed the New Entry header from App; TimeSheetForm renders it now */}
                 <TimeSheetForm
                   initialDate={selectedDate}
+                  initialEndHour={selectedEndHour}
+                  initialEndMinute={selectedEndMinute}
                   initialMinute={selectedMinute}
+                  initialHour={selectedHour}
                   onSaved={() => {
                     setShowNewEntryForm(false);
                     setSelectedDate(undefined);
                     setSelectedHour(undefined);
                     setSelectedMinute(undefined);
+                    setSelectedEndHour(undefined);
+                    setSelectedEndMinute(undefined);
                     setView("recent");
                   }}
                   onCancel={() => {
@@ -173,7 +182,8 @@ const App: React.FC = () => {
                     setSelectedDate(undefined);
                     setSelectedHour(undefined);
                     setSelectedMinute(undefined);
-                    setSelectedHour(undefined);
+                    setSelectedEndHour(undefined);
+                    setSelectedEndMinute(undefined);
                     setView("recent");
                   }}
                 />

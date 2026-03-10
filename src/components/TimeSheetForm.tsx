@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
-import { createEntry, getActiveProjects, getPhasesForProject, getWeekEntries, Project as ApiProject, Phase as ApiPhase, type WeekEntry } from "../api/timesheet";
-import { getTasksForPhaseAndEmployee, Task as ApiTask } from "../api/task";
+import { createEntry, getActiveProjects, getPhasesForProject, getWeekEntries, type Project as ApiProject, type Phase as ApiPhase, type WeekEntry } from "../api/timesheet";
+import { getTasksForPhaseAndEmployee, type Task as ApiTask } from "../api/task";
 
 type Entry = {
   workDate: string;
@@ -68,13 +68,17 @@ export default function TimesheetForm({
   onSaved,
   initialDate,
   initialHour,
-  initialMinute
+  initialMinute,
+  initialEndHour,
+  initialEndMinute
 }: {
   onCancel?: () => void;
   onSaved?: () => void;
   initialDate?: string;
   initialHour?: number;
   initialMinute?: number;
+  initialEndHour?: number;
+  initialEndMinute?: number;
 }) {
   const dateInputRef = useRef<HTMLInputElement | null>(null);
   const [projects, setProjects] = useState<ApiProject[]>([]);
@@ -122,6 +126,15 @@ export default function TimesheetForm({
   };
 
   const getInitialEndTime = (startTime: string): string => {
+    if (initialEndHour !== undefined && initialEndMinute !== undefined) {
+      const endCandidate = `${String(initialEndHour).padStart(2, "0")}:${String(initialEndMinute).padStart(2, "0")}`;
+      const endCandidateMinutes = minutesFrom(endCandidate);
+      const startMinutes = minutesFrom(startTime);
+      if (endCandidateMinutes >= startMinutes + STEP_MINUTES) {
+        return endCandidate;
+      }
+    }
+
     const startMin = minutesFrom(startTime);
     const minEnd = startMin + STEP_MINUTES;
     const candidate = timeOptions.find((opt) => minutesFrom(opt.value) >= minEnd);
@@ -259,7 +272,6 @@ export default function TimesheetForm({
     return blocked;
   };
 
-  const selectedProject = entry.project != null ? projects.find((p) => String(p.id) === entry.project) : undefined;
   // Fetch phases when project changes
   useEffect(() => {
     if (selectedType === "project" && entry.project != null) {

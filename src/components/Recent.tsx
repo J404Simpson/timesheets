@@ -2,13 +2,35 @@ import { useEffect, useState, Fragment } from "react";
 import { getWeekEntries, type WeekEntry } from "../api/timesheet";
 
 type Props = {
-  onSelectDate?: (date: string, hour?: number, minute?: number) => void;
+  onSelectDate?: (
+    date: string,
+    hour?: number,
+    minute?: number,
+    endHour?: number,
+    endMinute?: number
+  ) => void;
+};
+
+type TimeRangeSelection = {
+  dateKey: string;
+  startSlot: number;
+  endSlot: number;
+};
+
+type DragState = {
+  dateKey: string;
+  startSlot: number;
+  currentSlot: number;
+  active: boolean;
 };
 
 export default function Recent({ onSelectDate }: Props): JSX.Element {
   const [entries, setEntries] = useState<WeekEntry[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [dragState, setDragState] = useState<DragState | null>(null);
+  const [selection, setSelection] = useState<TimeRangeSelection | null>(null);
+  const [justFinishedSelectionAt, setJustFinishedSelectionAt] = useState<number>(0);
 
   useEffect(() => {
     setLoading(true);
@@ -99,10 +121,93 @@ export default function Recent({ onSelectDate }: Props): JSX.Element {
     return targetDateTime <= now;
   };
 
+  const toSlotIndex = (hour: number, minute: number) => hour * 4 + Math.floor(minute / 15);
+
+  const slotToHourMinute = (slot: number): [number, number] => {
+    const normalized = Math.max(0, Math.min(95, slot));
+    return [Math.floor(normalized / 4), (normalized % 4) * 15];
+  };
+
+  const isSlotSelectable = (date: Date, hour: number, minute: number) => {
+    // Avoid selecting the last quarter-hour of the day because end-time options
+    // in New Entry cannot represent 24:00.
+    if (hour === 23 && minute === 45) return false;
+    return canSelectTimeSlot(date, hour, minute) && !isTimeSlotOccupied(date, hour, minute);
+  };
+
+  const isRangeSelectable = (date: Date, startSlot: number, endSlot: number) => {
+    const min = Math.min(startSlot, endSlot);
+    const max = Math.max(startSlot, endSlot);
+    for (let slot = min; slot <= max; slot++) {
+      const [hour, minute] = slotToHourMinute(slot);
+      if (!isSlotSelectable(date, hour, minute)) {
+        return false;
+      }
+    }
+    return true;
+  };
+
+  const isCellInSelection = (date: Date, slot: number) => {
+    if (!selection) return false;
+    const dateKey = toDateKeyLocal(date);
+    if (dateKey !== selection.dateKey) return false;
+    return slot >= selection.startSlot && slot <= selection.endSlot;
+  };
+
+  const handleSlotMouseDown = (date: Date, hour: number, minute: number) => {
+    if (!isSlotSelectable(date, hour, minute)) return;
+    const dateKey = toDateKeyLocal(date);
+    const slot = toSlotIndex(hour, minute);
+    setDragState({ dateKey, startSlot: slot, currentSlot: slot, active: true });
+    setSelection(null);
+  };
+
+  const handleSlotMouseEnter = (date: Date, hour: number, minute: number) => {
+    if (!dragState?.active) return;
+    const dateKey = toDateKeyLocal(date);
+    if (dateKey !== dragState.dateKey) return;
+    const slot = toSlotIndex(hour, minute);
+    const [startHour, startMinute] = slotToHourMinute(dragState.startSlot);
+    const dragDate = new Date(date);
+    if (!isRangeSelectable(dragDate, dragState.startSlot, slot)) {
+      if (!isSlotSelectable(dragDate, startHour, startMinute)) {
+        setDragState(null);
+      }
+      return;
+    }
+    setDragState((prev) => (prev ? { ...prev, currentSlot: slot } : prev));
+  };
+
+  const handleSlotMouseUp = () => {
+    if (!dragState?.active) return;
+    const startSlot = Math.min(dragState.startSlot, dragState.currentSlot);
+    const endSlot = Math.max(dragState.startSlot, dragState.currentSlot);
+    setSelection({ dateKey: dragState.dateKey, startSlot, endSlot });
+    setDragState(null);
+    setJustFinishedSelectionAt(Date.now());
+  };
+
+  useEffect(() => {
+    if (!dragState?.active) return;
+    const onWindowMouseUp = () => {
+      handleSlotMouseUp();
+    };
+    window.addEventListener("mouseup", onWindowMouseUp);
+    return () => window.removeEventListener("mouseup", onWindowMouseUp);
+  }, [dragState]);
+
   const handleTimeSlotClick = (date: Date, hour: number, minute: number) => {
-    if (!canSelectTimeSlot(date, hour, minute)) return;
-    const dateStr = toDateKeyLocal(date);
-    onSelectDate?.(dateStr, hour, minute);
+    const nowTs = Date.now();
+    if (nowTs - justFinishedSelectionAt < 250) return;
+
+    const slot = toSlotIndex(hour, minute);
+    if (!isCellInSelection(date, slot) || !selection) return;
+
+    const [startHour, startMinute] = slotToHourMinute(selection.startSlot);
+    const endSlotExclusive = Math.min(96, selection.endSlot + 1);
+    const [endHour, endMinute] = endSlotExclusive === 96 ? [23, 45] : slotToHourMinute(endSlotExclusive);
+    onSelectDate?.(selection.dateKey, startHour, startMinute, endHour, endMinute);
+    setSelection(null);
   };
 
   if (loading) {
@@ -151,32 +256,45 @@ export default function Recent({ onSelectDate }: Props): JSX.Element {
             return (
               <Fragment key={`hour-${hour}`}>
                 {/* Time label spans the full hour */}
-                <div className="grid-time-cell span-2">
+                <div className="grid-time-cell span-4">
                   <span className="time-label">{hourLabel}</span>
                 </div>
 
-                {/* Two half-hour rows per hour */}
-                {Array.from({ length: 2 }, (_, half) => {
-                  const minute = half * 30;
+                {/* Four quarter-hour rows per hour */}
+                {Array.from({ length: 4 }, (_, quarter) => {
+                  const minute = quarter * 15;
                   const timeLabel = `${hour.toString().padStart(2, "0")}:${minute.toString().padStart(2, "0")}`;
-                  const isHalfDivider = minute === 30;
+                  const isHourDivider = minute === 45;
 
                   return (
-                    <Fragment key={`hour-${hour}-h-${half}`}>
+                    <Fragment key={`hour-${hour}-q-${quarter}`}>
                       {weekDays.map((day) => {
                         const dateStr = toDateKeyLocal(day);
                         const isOccupied = isTimeSlotOccupied(day, hour, minute);
                         const isFuture = !canSelectTimeSlot(day, hour, minute);
                         const isToday = toDateKeyLocal(day) === toDateKeyLocal(now);
                         const entry = getEntryForTimeSlot(day, hour, minute);
+                        const slot = toSlotIndex(hour, minute);
+                        const isSelected = isCellInSelection(day, slot);
 
                         return (
                           <button
                             key={`${dateStr}-${hour}-${minute}`}
-                            className={`grid-cell half ${isHalfDivider ? "half-divider" : ""} ${isOccupied ? "occupied" : ""} ${isFuture ? "future" : ""} ${!isFuture && !isOccupied ? "available" : ""} ${isToday ? "today-col" : ""}`}
+                            className={`grid-cell quarter ${isHourDivider ? "hour-divider" : ""} ${isOccupied ? "occupied" : ""} ${isFuture ? "future" : ""} ${!isFuture && !isOccupied ? "available" : ""} ${isToday ? "today-col" : ""} ${isSelected ? "selected-range" : ""}`}
+                            onMouseDown={() => handleSlotMouseDown(day, hour, minute)}
+                            onMouseEnter={() => handleSlotMouseEnter(day, hour, minute)}
+                            onMouseUp={handleSlotMouseUp}
                             onClick={() => handleTimeSlotClick(day, hour, minute)}
                             disabled={isFuture || isOccupied}
-                            title={isFuture ? "Cannot select future time" : isOccupied ? "Time slot occupied" : `Click to add entry for ${timeLabel} on ${day.toLocaleDateString()}`}
+                            title={
+                              isFuture
+                                ? "Cannot select future time"
+                                : isOccupied
+                                  ? "Time slot occupied"
+                                  : isSelected
+                                    ? "Click highlighted range to create entry"
+                                    : `Click and drag to select time range from ${timeLabel}`
+                            }
                             style={{ overflow: "hidden", whiteSpace: "normal", wordBreak: "break-word", padding: "2px" }}
                           >
                             {entry && (
