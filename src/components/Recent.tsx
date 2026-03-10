@@ -307,12 +307,41 @@ export default function Recent({ onSelectDate }: Props): JSX.Element {
                     <Fragment key={`hour-${hour}-q-${quarter}`}>
                       {weekDays.map((day) => {
                         const dateStr = toDateKeyLocal(day);
+                        const slot = toSlotIndex(hour, minute);
+                        const slotMinutes = hour * 60 + minute;
+                        
+                        // Check if this slot is covered by a spanning entry that started earlier
+                        const coveringEntry = entries.find((entry) => {
+                          const entryDateStr = getEntryDateKey(entry.date);
+                          if (entryDateStr !== dateStr) return false;
+                          const [startH, startM] = getTimeParts(entry.start_time);
+                          const [endH, endM] = getTimeParts(entry.end_time);
+                          const startMinutes = startH * 60 + startM;
+                          const endMinutes = endH * 60 + endM;
+                          return slotMinutes > startMinutes && slotMinutes < endMinutes;
+                        });
+
+                        // Skip rendering if this slot is covered by a spanning entry
+                        if (coveringEntry) {
+                          return null;
+                        }
+
                         const isOccupied = isTimeSlotOccupied(day, hour, minute);
                         const isFuture = !canSelectTimeSlot(day, hour, minute);
                         const isToday = toDateKeyLocal(day) === toDateKeyLocal(now);
                         const entry = getEntryForTimeSlot(day, hour, minute);
-                        const slot = toSlotIndex(hour, minute);
                         const isSelected = isCellInSelection(day, slot);
+
+                        // Calculate span if this is the start of an entry
+                        let rowSpan = 1;
+                        if (entry) {
+                          const [startH, startM] = getTimeParts(entry.start_time);
+                          const [endH, endM] = getTimeParts(entry.end_time);
+                          const startMinutes = startH * 60 + startM;
+                          const endMinutes = endH * 60 + endM;
+                          const durationMinutes = endMinutes - startMinutes;
+                          rowSpan = Math.ceil(durationMinutes / 15);
+                        }
 
                         return (
                           <button
@@ -332,7 +361,13 @@ export default function Recent({ onSelectDate }: Props): JSX.Element {
                                     ? "Click highlighted range to create entry"
                                     : `Click and drag to select time range from ${timeLabel}`
                             }
-                            style={{ overflow: "hidden", whiteSpace: "normal", wordBreak: "break-word", padding: "2px" }}
+                            style={{ 
+                              overflow: "hidden", 
+                              whiteSpace: "normal", 
+                              wordBreak: "break-word", 
+                              padding: "2px",
+                              gridRow: rowSpan > 1 ? `span ${rowSpan}` : undefined
+                            }}
                           >
                             {entry && (
                               <span className="entry-cell-content">
