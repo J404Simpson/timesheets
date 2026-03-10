@@ -54,6 +54,12 @@ function minutesFromEntryTime(value: string) {
   return (h || 0) * 60 + (m || 0);
 }
 
+const HIDDEN_PROJECT_IDS = new Set([1, 2]);
+
+function shouldShowProject(project: ApiProject): boolean {
+  return !HIDDEN_PROJECT_IDS.has(project.id);
+}
+
 
 // Remove hardcoded projects, use state for fetched projects
 
@@ -83,7 +89,7 @@ export default function TimesheetForm({
     setLoadingProjects(true);
     getActiveProjects()
       .then((data) => {
-        setProjects(data);
+        setProjects(data.filter(shouldShowProject));
         setProjectError(null);
       })
       .catch(() => {
