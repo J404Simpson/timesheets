@@ -158,6 +158,18 @@ export default function Recent({ onSelectDate }: Props): JSX.Element {
     if (!isSlotSelectable(date, hour, minute)) return;
     const dateKey = toDateKeyLocal(date);
     const slot = toSlotIndex(hour, minute);
+
+    // If a range is already selected and user clicks within it,
+    // keep the existing selection so click can create the full-range entry.
+    if (
+      selection &&
+      selection.dateKey === dateKey &&
+      slot >= selection.startSlot &&
+      slot <= selection.endSlot
+    ) {
+      return;
+    }
+
     setDragState({ dateKey, startSlot: slot, currentSlot: slot, active: true });
     setSelection(null);
   };
