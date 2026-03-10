@@ -180,6 +180,16 @@ export default function Recent({ onSelectDate }: Props): JSX.Element {
 
   const handleSlotMouseUp = () => {
     if (!dragState?.active) return;
+    
+    // If no drag occurred (start and current are the same), treat as a click
+    if (dragState.startSlot === dragState.currentSlot) {
+      const [hour, minute] = slotToHourMinute(dragState.startSlot);
+      onSelectDate?.(dragState.dateKey, hour, minute);
+      setDragState(null);
+      return;
+    }
+    
+    // Otherwise, create a selection for the dragged range
     const startSlot = Math.min(dragState.startSlot, dragState.currentSlot);
     const endSlot = Math.max(dragState.startSlot, dragState.currentSlot);
     setSelection({ dateKey: dragState.dateKey, startSlot, endSlot });
@@ -197,14 +207,15 @@ export default function Recent({ onSelectDate }: Props): JSX.Element {
   }, [dragState]);
 
   const handleTimeSlotClick = (date: Date, hour: number, minute: number) => {
-    const nowTs = Date.now();
-    if (nowTs - justFinishedSelectionAt < 250) return;
-
     const slot = toSlotIndex(hour, minute);
     const dateKey = toDateKeyLocal(date);
     
     // If clicking on a selected range, create entry with that range
     if (isCellInSelection(date, slot) && selection) {
+      const nowTs = Date.now();
+      // Allow immediate click on selection, but prevent accidental double-trigger
+      if (nowTs - justFinishedSelectionAt < 100) return;
+      
       const [startHour, startMinute] = slotToHourMinute(selection.startSlot);
       const endSlotExclusive = Math.min(96, selection.endSlot + 1);
       const [endHour, endMinute] = endSlotExclusive === 96 ? [23, 45] : slotToHourMinute(endSlotExclusive);
@@ -212,6 +223,10 @@ export default function Recent({ onSelectDate }: Props): JSX.Element {
       setSelection(null);
       return;
     }
+    
+    // Don't allow single-click shortly after finishing a drag
+    const nowTs = Date.now();
+    if (nowTs - justFinishedSelectionAt < 250) return;
     
     // Otherwise, create entry starting at this time slot
     if (isSlotSelectable(date, hour, minute)) {
