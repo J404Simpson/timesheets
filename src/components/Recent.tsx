@@ -201,13 +201,23 @@ export default function Recent({ onSelectDate }: Props): JSX.Element {
     if (nowTs - justFinishedSelectionAt < 250) return;
 
     const slot = toSlotIndex(hour, minute);
-    if (!isCellInSelection(date, slot) || !selection) return;
-
-    const [startHour, startMinute] = slotToHourMinute(selection.startSlot);
-    const endSlotExclusive = Math.min(96, selection.endSlot + 1);
-    const [endHour, endMinute] = endSlotExclusive === 96 ? [23, 45] : slotToHourMinute(endSlotExclusive);
-    onSelectDate?.(selection.dateKey, startHour, startMinute, endHour, endMinute);
-    setSelection(null);
+    const dateKey = toDateKeyLocal(date);
+    
+    // If clicking on a selected range, create entry with that range
+    if (isCellInSelection(date, slot) && selection) {
+      const [startHour, startMinute] = slotToHourMinute(selection.startSlot);
+      const endSlotExclusive = Math.min(96, selection.endSlot + 1);
+      const [endHour, endMinute] = endSlotExclusive === 96 ? [23, 45] : slotToHourMinute(endSlotExclusive);
+      onSelectDate?.(selection.dateKey, startHour, startMinute, endHour, endMinute);
+      setSelection(null);
+      return;
+    }
+    
+    // Otherwise, create entry starting at this time slot
+    if (isSlotSelectable(date, hour, minute)) {
+      onSelectDate?.(dateKey, hour, minute);
+      setSelection(null);
+    }
   };
 
   if (loading) {
