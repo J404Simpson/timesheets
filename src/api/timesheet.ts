@@ -116,13 +116,14 @@ export type WeekEntry = {
   };
 };
 
-export async function getWeekEntries(): Promise<WeekEntry[]> {
+export async function getWeekEntries(weekOf?: string): Promise<WeekEntry[]> {
   const accessToken = await acquireTokenSilent([protectedResources.timesheetApi.scope]);
   const apiBase = import.meta.env.VITE_API_URL;
   const response = await axios.get(`${apiBase}/api/entries/week`, {
     headers: {
       Authorization: `Bearer ${accessToken}`,
     },
+    params: weekOf ? { weekOf } : undefined,
   });
   return response.data.entries;
 }

@@ -31,21 +31,39 @@ export default function Recent({ onSelectDate }: Props): JSX.Element {
   const [dragState, setDragState] = useState<DragState | null>(null);
   const [selection, setSelection] = useState<TimeRangeSelection | null>(null);
   const [justFinishedSelectionAt, setJustFinishedSelectionAt] = useState<number>(0);
+  // 0 = this week, -1 = last week
+  const [weekOffset, setWeekOffset] = useState(0);
+
+  const toDateKeyLocal = (value: Date) => {
+    const y = value.getFullYear();
+    const m = String(value.getMonth() + 1).padStart(2, "0");
+    const d = String(value.getDate()).padStart(2, "0");
+    return `${y}-${m}-${d}`;
+  };
 
   useEffect(() => {
     setLoading(true);
-    getWeekEntries()
+    setSelection(null);
+    let weekOf: string | undefined;
+    if (weekOffset !== 0) {
+      const ref = new Date();
+      ref.setDate(ref.getDate() + weekOffset * 7);
+      weekOf = toDateKeyLocal(ref);
+    }
+    getWeekEntries(weekOf)
       .then(setEntries)
       .catch(() => setError("Failed to load entries"))
       .finally(() => setLoading(false));
-  }, []);
+  }, [weekOffset]);
 
-  // Calculate current week (Monday to Sunday) in local time
+  // Calculate the reference week's Monday in local time
   const now = new Date();
-  const dayOfWeek = now.getDay(); // 0 = Sunday, 1 = Monday, etc.
+  const referenceDate = new Date(now);
+  referenceDate.setDate(now.getDate() + weekOffset * 7);
+  const dayOfWeek = referenceDate.getDay();
   const diffToMonday = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
-  const monday = new Date(now);
-  monday.setDate(now.getDate() + diffToMonday);
+  const monday = new Date(referenceDate);
+  monday.setDate(referenceDate.getDate() + diffToMonday);
 
   const weekDays = Array.from({ length: 7 }, (_, i) => {
     const day = new Date(monday);
@@ -62,13 +80,6 @@ export default function Recent({ onSelectDate }: Props): JSX.Element {
     const ampm = hour >= 12 ? "PM" : "AM";
     const displayHour = hour === 0 ? 12 : hour > 12 ? hour - 12 : hour;
     return `${displayHour}:${m} ${ampm}`;
-  };
-
-  const toDateKeyLocal = (value: Date) => {
-    const y = value.getFullYear();
-    const m = String(value.getMonth() + 1).padStart(2, "0");
-    const d = String(value.getDate()).padStart(2, "0");
-    return `${y}-${m}-${d}`;
   };
 
   const getEntryDateKey = (value: string) => value.split("T")[0];
@@ -267,7 +278,17 @@ export default function Recent({ onSelectDate }: Props): JSX.Element {
 
   return (
     <section className="recent-activity">
-      <h3>This Week</h3>
+      <div className="week-nav">
+        <h3>{weekOffset === 0 ? "This Week" : "Last Week"}</h3>
+        <button
+          className="date-picker-btn"
+          onClick={() => setWeekOffset(weekOffset === 0 ? -1 : 0)}
+          title={weekOffset === 0 ? "View last week" : "Back to this week"}
+          aria-label={weekOffset === 0 ? "View last week" : "Back to this week"}
+        >
+          {weekOffset === 0 ? "←" : "→"}
+        </button>
+      </div>
       <div className="week-grid-container">
         <div className="week-grid">
           {/* Header row with days */}
@@ -390,7 +411,7 @@ export default function Recent({ onSelectDate }: Props): JSX.Element {
         {/* Entries summary below grid */}
         {entries.length > 0 && (
           <div className="week-entries-summary">
-            <h4>This Week's Entries</h4>
+            <h4>{weekOffset === 0 ? "This Week's Entries" : "Last Week's Entries"}</h4>
             <div className="entries-by-day">
               {weekDays.map((day) => {
                 const dayEntries = getEntriesForDate(day);

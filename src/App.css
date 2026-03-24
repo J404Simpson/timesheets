@@ -283,6 +283,18 @@ label {
   margin-bottom: 6px;
 }
 
+/* Week navigation heading row */
+.week-nav {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 0;
+}
+
+.week-nav h3 {
+  margin: 0;
+}
+
 /* Week Calendar Styles */
 .week-calendar {
   display: grid;
