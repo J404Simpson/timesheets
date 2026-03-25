@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { createEntry, getActiveProjects, getPhasesForProject, getWeekEntries, type Project as ApiProject, type Phase as ApiPhase, type WeekEntry } from "../api/timesheet";
-import { getTasksForPhaseAndEmployee, type Task as ApiTask } from "../api/task";
+import { getTasksForPhaseAndEmployee, getTasksForProjectPhase, type Task as ApiTask } from "../api/task";
 
 type Entry = {
   workDate: string;
@@ -59,6 +59,9 @@ const HIDDEN_PROJECT_IDS = new Set([1, 2]);
 function shouldShowProject(project: ApiProject): boolean {
   return !HIDDEN_PROJECT_IDS.has(project.id);
 }
+
+const SUSTAINING_PROJECT_ID = 2;
+const SUSTAINING_PHASE_ID = 1;
 
 
 // Remove hardcoded projects, use state for fetched projects
@@ -186,7 +189,7 @@ export default function TimesheetForm({
 
     // validation
     if (selectedType === "none") {
-      setStatus("Please select Project or Internal Meeting.");
+      setStatus("Please select Project or Sustaining.");
       return;
     }
 
@@ -203,6 +206,11 @@ export default function TimesheetForm({
         setStatus("Please select a task.");
         return;
       }
+    }
+
+    if (selectedType === "internal" && !entry.task) {
+      setStatus("Please select a task.");
+      return;
     }
 
     if (!entry.startTime || !entry.endTime) {
@@ -224,7 +232,7 @@ export default function TimesheetForm({
       await createEntry({
         projectId: Number(entry.project ?? 0),
         phaseId: entry.phase ? Number(entry.phase) : null,
-        taskId: selectedType === "internal" ? null : entry.task ? Number(entry.task) : null,
+        taskId: entry.task ? Number(entry.task) : null,
         date: entry.workDate,
         startTime: entry.startTime,
         endTime: entry.endTime,
@@ -290,9 +298,23 @@ export default function TimesheetForm({
     }
   }, [selectedType, entry.project]);
 
+  // Fetch tasks for Sustaining (project 2, phase 1) automatically
+  useEffect(() => {
+    if (selectedType !== "internal") return;
+    if (entry.project !== String(SUSTAINING_PROJECT_ID) || entry.phase !== String(SUSTAINING_PHASE_ID)) return;
+
+    setLoadingTasks(true);
+    setTaskError(null);
+    setTasks([]);
+    getTasksForProjectPhase(SUSTAINING_PROJECT_ID, SUSTAINING_PHASE_ID)
+      .then((fetchedTasks) => setTasks(fetchedTasks))
+      .catch(() => setTaskError("Failed to load tasks"))
+      .finally(() => setLoadingTasks(false));
+  }, [selectedType, entry.project, entry.phase]);
+
   // determine when to show time inputs
   const timeInputsVisible = (() => {
-    if (selectedType === "internal") return true;
+    if (selectedType === "internal") return entry.task != null;
     if (selectedType === "project" && entry.project != null) {
       if (loadingPhases) return false;
       if (phases.length === 0) return true; // No phases for this project
@@ -385,13 +407,37 @@ export default function TimesheetForm({
               onClick={() => {
                 setSelectedType("internal");
                 setStatus(null);
-                setEntry((prev) => ({ ...prev, project: "0", phase: undefined, task: undefined }));
+                setEntry((prev) => ({
+                  ...prev,
+                  project: String(SUSTAINING_PROJECT_ID),
+                  phase: String(SUSTAINING_PHASE_ID),
+                  task: undefined,
+                }));
               }}
             >
-              Internal Meeting
+              Sustaining
             </button>
           )}
         </div>
+
+        {/* Sustaining task dropdown (project 2, phase 1 fixed in background) */}
+        {selectedType === "internal" && (
+          <label>
+            <select
+              name="task"
+              value={entry.task ?? ""}
+              onChange={handleChange}
+              disabled={loadingTasks || !!taskError || tasks.length === 0}
+            >
+              <option value="">{loadingTasks ? "Loading tasks..." : taskError ? taskError : "Select a task"}</option>
+              {tasks.map((task) => (
+                <option key={task.id} value={task.id}>
+                  {task.name}
+                </option>
+              ))}
+            </select>
+          </label>
+        )}
 
         {/* Project dropdown shows after selecting Project */}
         {selectedType === "project" && (
@@ -523,7 +569,7 @@ export default function TimesheetForm({
             </button>
           )}
 
-          {/* Back appears only when Project or Internal Meeting is selected and reverts that selection */}
+          {/* Back appears only when Project or Sustaining is selected and reverts that selection */}
           {(selectedType === "project" || selectedType === "internal") && (
             <button
               type="button"

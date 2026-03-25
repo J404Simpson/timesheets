@@ -19,3 +19,19 @@ export async function getTasksForPhaseAndEmployee(phaseId: number): Promise<Task
   });
   return response.data.tasks;
 }
+
+export async function getTasksForProjectPhase(projectId: number, phaseId: number): Promise<Task[]> {
+  const accessToken = await acquireTokenSilent([
+    protectedResources.timesheetApi.scope,
+  ]);
+  const apiBase = import.meta.env.VITE_API_URL;
+  const response = await axios.get(
+    `${apiBase}/api/projects/${projectId}/phases/${phaseId}/tasks`,
+    {
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+      },
+    }
+  );
+  return response.data.tasks;
+}
