@@ -107,15 +107,35 @@ export default function Recent({ onSelectDate }: Props): JSX.Element {
       };
     }
 
-    const phaseTask = phaseName && taskName
-      ? `${phaseName} - ${taskName}`
-      : phaseName || taskName;
-
     return {
       title: projectName,
-      subtitle: phaseTask,
+      subtitle: taskName,
       hours: hoursText,
     };
+  };
+
+  const getVisibleEntryDisplay = (entry: WeekEntry, rowSpan: number) => {
+    const display = getEntryDisplay(entry);
+    const isLeave = (entry.project?.name ?? "").trim().toLowerCase() === "leave";
+
+    // Leave is always title-only per requirement.
+    if (isLeave) {
+      return { title: display.title, subtitle: "", hours: "" };
+    }
+
+    // Adapt content to available height.
+    // 15 min (rowSpan=1): title only
+    // 30-45 min (rowSpan 2-3): title + hours
+    // 60+ min (rowSpan>=4): title + subtitle + hours
+    if (rowSpan <= 1) {
+      return { title: display.title, subtitle: "", hours: "" };
+    }
+
+    if (rowSpan <= 3) {
+      return { title: display.title, subtitle: "", hours: display.hours };
+    }
+
+    return display;
   };
 
   const getEntriesForDate = (date: Date) => {
@@ -426,7 +446,7 @@ export default function Recent({ onSelectDate }: Props): JSX.Element {
                           >
                             {entry && (
                               (() => {
-                                const display = getEntryDisplay(entry);
+                                const display = getVisibleEntryDisplay(entry, rowSpan);
                                 return (
                                   <span className="entry-cell-content">
                                     {display.title && (
