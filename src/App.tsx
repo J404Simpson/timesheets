@@ -5,8 +5,9 @@ import Profile from "./components/Profile";
 import { useMsal } from "@azure/msal-react";
 import Recent from "./components/Recent";
 import History from "./components/History";
+import Admin from "./components/Admin";
 import TimeSheetForm from "./components/TimeSheetForm";
-import { notifyLogin } from "./api/timesheet";
+import { notifyLogin, getCurrentUser } from "./api/timesheet";
 import DepartmentModal from "./components/DepartmentModal";
 import { createEmployee } from "./api/department";
 
@@ -16,7 +17,7 @@ const App: React.FC = () => {
   const isAuthenticated = Array.isArray(accounts) && accounts.length > 0;
 
   const [showNewEntryForm, setShowNewEntryForm] = useState(false);
-  const [view, setView] = useState<"recent" | "history">("recent");
+  const [view, setView] = useState<"recent" | "history" | "admin">("recent");
   const [showDepartmentModal, setShowDepartmentModal] = useState(false);
   const [selectedDate, setSelectedDate] = useState<string | undefined>(undefined);
   const [selectedHour, setSelectedHour] = useState<number | undefined>(undefined);
@@ -30,6 +31,7 @@ const App: React.FC = () => {
     object_id: string;
   } | null>(null);
   const [isOnboarded, setIsOnboarded] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
 
   // Notify API when user logs in
   useEffect(() => {
@@ -46,8 +48,16 @@ const App: React.FC = () => {
             setPendingUser({ firstName, lastName, email, object_id });
             setShowDepartmentModal(true);
             setIsOnboarded(false);
+            setIsAdmin(false);
           } else {
             setIsOnboarded(true);
+            getCurrentUser()
+              .then((employee) => {
+                setIsAdmin(employee?.admin === true);
+              })
+              .catch(() => {
+                setIsAdmin(false);
+              });
           }
         })
         .catch(() => {
@@ -75,6 +85,19 @@ const App: React.FC = () => {
     setShowNewEntryForm(false);
     setView("history");
   };
+
+  const goAdmin = (e: React.MouseEvent) => {
+    e.preventDefault();
+    if (!isAuthenticated || !isAdmin) return;
+    setShowNewEntryForm(false);
+    setView("admin");
+  };
+
+  useEffect(() => {
+    if (!isAdmin && view === "admin") {
+      setView("recent");
+    }
+  }, [isAdmin, view]);
 
   const handleDateSelect = (date: string, hour?: number, minute?: number, endHour?: number, endMinute?: number) => {
     setSelectedDate(date);
@@ -124,6 +147,19 @@ const App: React.FC = () => {
           >
             History
           </a>
+
+          {isAdmin && (
+            <a
+              className={`nav-link ${!isAuthenticated || showDepartmentModal ? "disabled" : ""}`}
+              href={isAuthenticated && !showDepartmentModal ? "#admin" : undefined}
+              role="button"
+              aria-disabled={!isAuthenticated || showDepartmentModal}
+              tabIndex={isAuthenticated && !showDepartmentModal ? 0 : -1}
+              onClick={goAdmin}
+            >
+              Admin
+            </a>
+          )}
         </nav>
 
         <div className="auth-area">{isAuthenticated ? <Profile /> : null}</div>
@@ -156,8 +192,12 @@ const App: React.FC = () => {
             {isOnboarded && !showDepartmentModal && (!showNewEntryForm ? (
               view === "recent" ? (
                 <Recent onSelectDate={handleDateSelect} />
-              ) : (
+              ) : view === "history" ? (
                 <History />
+              ) : isAdmin ? (
+                <Admin />
+              ) : (
+                <Recent onSelectDate={handleDateSelect} />
               )
             ) : (
               <section id="new-entry-form" className="new-entry-section" aria-live="polite">

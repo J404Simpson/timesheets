@@ -116,6 +116,27 @@ export type WeekEntry = {
   };
 };
 
+export type CurrentEmployee = {
+  id: number;
+  object_id: string;
+  email: string;
+  first_name?: string | null;
+  last_name?: string | null;
+  admin?: boolean | null;
+  department_id?: number | null;
+};
+
+export async function getCurrentUser(): Promise<CurrentEmployee> {
+  const accessToken = await acquireTokenSilent([protectedResources.timesheetApi.scope]);
+  const apiBase = import.meta.env.VITE_API_URL;
+  const response = await axios.get(`${apiBase}/api/me`, {
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+    },
+  });
+  return response.data.employee;
+}
+
 export async function getWeekEntries(weekOf?: string): Promise<WeekEntry[]> {
   const accessToken = await acquireTokenSilent([protectedResources.timesheetApi.scope]);
   const apiBase = import.meta.env.VITE_API_URL;
