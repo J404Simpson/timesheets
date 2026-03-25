@@ -84,6 +84,40 @@ export default function Recent({ onSelectDate }: Props): JSX.Element {
 
   const getEntryDateKey = (value: string) => value.split("T")[0];
 
+  const getEntryDisplay = (entry: WeekEntry) => {
+    const projectName = entry.project?.name?.trim() ?? "";
+    const projectNameLower = projectName.toLowerCase();
+    const phaseName = entry.project_phase?.phase?.name?.trim() ?? "";
+    const taskName = entry.task?.name?.trim() ?? "";
+    const hoursText = `${Number(entry.hours)}h`;
+
+    if (projectNameLower === "leave") {
+      return {
+        title: projectName || "Leave",
+        subtitle: "",
+        hours: "",
+      };
+    }
+
+    if (projectNameLower === "sustaining") {
+      return {
+        title: projectName || "Sustaining",
+        subtitle: taskName,
+        hours: hoursText,
+      };
+    }
+
+    const phaseTask = phaseName && taskName
+      ? `${phaseName} - ${taskName}`
+      : phaseName || taskName;
+
+    return {
+      title: projectName,
+      subtitle: phaseTask,
+      hours: hoursText,
+    };
+  };
+
   const getEntriesForDate = (date: Date) => {
     const dateStr = toDateKeyLocal(date);
     return entries.filter((e) => getEntryDateKey(e.date) === dateStr);
@@ -391,11 +425,28 @@ export default function Recent({ onSelectDate }: Props): JSX.Element {
                             }}
                           >
                             {entry && (
-                              <span className="entry-cell-content">
-                                <div className="entry-cell-time" style={{ fontSize: "9px", fontWeight: "600" }}>{formatTime(entry.start_time)}</div>
-                                {entry.project && <div className="entry-cell-project" style={{ fontSize: "8px" }}>{entry.project.name}</div>}
-                                <div className="entry-cell-hours" style={{ fontSize: "8px", fontWeight: "500" }}>{Number(entry.hours)}h</div>
-                              </span>
+                              (() => {
+                                const display = getEntryDisplay(entry);
+                                return (
+                                  <span className="entry-cell-content">
+                                    {display.title && (
+                                      <div className="entry-cell-project" style={{ fontSize: "8px", fontWeight: "700" }}>
+                                        {display.title}
+                                      </div>
+                                    )}
+                                    {display.subtitle && (
+                                      <div className="entry-cell-project" style={{ fontSize: "8px" }}>
+                                        {display.subtitle}
+                                      </div>
+                                    )}
+                                    {display.hours && (
+                                      <div className="entry-cell-hours" style={{ fontSize: "8px", fontWeight: "500" }}>
+                                        {display.hours}
+                                      </div>
+                                    )}
+                                  </span>
+                                );
+                              })()
                             )}
                           </button>
                         );
