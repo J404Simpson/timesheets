@@ -479,35 +479,6 @@ export default function Recent({ onSelectDate }: Props): JSX.Element {
           })}
         </div>
 
-        {/* Entries summary below grid */}
-        {entries.length > 0 && (
-          <div className="week-entries-summary">
-            <h4>{weekOffset === 0 ? "This Week's Entries" : "Last Week's Entries"}</h4>
-            <div className="entries-by-day">
-              {weekDays.map((day) => {
-                const dayEntries = getEntriesForDate(day);
-                if (dayEntries.length === 0) return null;
-                
-                return (
-                  <div key={day.toISOString()} className="day-entries">
-                    <div className="day-entries-header">
-                      {day.toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" })}
-                    </div>
-                    {dayEntries.map((entry) => (
-                      <div key={entry.id} className="entry-summary">
-                        <span className="entry-time-summary">
-                          {formatTime(entry.start_time)} - {formatTime(entry.end_time)}
-                        </span>
-                        {entry.project != null && <span className="entry-project-summary">{entry.project.name}</span>}
-                        <span className="entry-hours-summary">{Number(entry.hours)}h</span>
-                      </div>
-                    ))}
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        )}
       </div>
     </section>
   );

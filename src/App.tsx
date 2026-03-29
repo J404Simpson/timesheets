@@ -4,7 +4,6 @@ import SignInButton from "./components/SignInButton";
 import Profile from "./components/Profile";
 import { useMsal } from "@azure/msal-react";
 import Recent from "./components/Recent";
-import History from "./components/History";
 import Admin from "./components/Admin";
 import TimeSheetForm from "./components/TimeSheetForm";
 import { notifyLogin, getCurrentUser } from "./api/timesheet";
@@ -17,7 +16,7 @@ const App: React.FC = () => {
   const isAuthenticated = Array.isArray(accounts) && accounts.length > 0;
 
   const [showNewEntryForm, setShowNewEntryForm] = useState(false);
-  const [view, setView] = useState<"recent" | "history" | "admin">("recent");
+  const [view, setView] = useState<"recent" | "admin">("recent");
   const [showDepartmentModal, setShowDepartmentModal] = useState(false);
   const [selectedDate, setSelectedDate] = useState<string | undefined>(undefined);
   const [selectedHour, setSelectedHour] = useState<number | undefined>(undefined);
@@ -79,13 +78,6 @@ const App: React.FC = () => {
     setView("recent");
   };
 
-  const goHistory = (e: React.MouseEvent) => {
-    e.preventDefault();
-    if (!isAuthenticated) return;
-    setShowNewEntryForm(false);
-    setView("history");
-  };
-
   const goAdmin = (e: React.MouseEvent) => {
     e.preventDefault();
     if (!isAuthenticated || !isAdmin) return;
@@ -137,17 +129,6 @@ const App: React.FC = () => {
             Recent
           </a>
 
-          <a
-            className={`nav-link ${!isAuthenticated || showDepartmentModal ? "disabled" : ""}`}
-            href={isAuthenticated && !showDepartmentModal ? "#history" : undefined}
-            role="button"
-            aria-disabled={!isAuthenticated || showDepartmentModal}
-            tabIndex={isAuthenticated && !showDepartmentModal ? 0 : -1}
-            onClick={goHistory}
-          >
-            History
-          </a>
-
           {isAdmin && (
             <a
               className={`nav-link ${!isAuthenticated || showDepartmentModal ? "disabled" : ""}`}
@@ -192,8 +173,6 @@ const App: React.FC = () => {
             {isOnboarded && !showDepartmentModal && (!showNewEntryForm ? (
               view === "recent" ? (
                 <Recent onSelectDate={handleDateSelect} />
-              ) : view === "history" ? (
-                <History />
               ) : isAdmin ? (
                 <Admin />
               ) : (
