@@ -297,6 +297,7 @@ export default function TimesheetForm({
 
   // compute end options based on start
   const startMin = entry.startTime ? minutesFrom(entry.startTime) : 0;
+  const endMin = entry.endTime ? minutesFrom(entry.endTime) : 0;
   const minEnd = startMin + STEP_MINUTES;
   const endOptions = timeOptions.filter((opt) => minutesFrom(opt.value) >= minEnd);
 
