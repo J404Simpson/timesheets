@@ -115,10 +115,6 @@ export default function TimesheetForm({
       });
   }, []);
 
-  useEffect(() => {
-    loadWeekEntries(entry.workDate);
-  }, [entry.workDate, loadWeekEntries]);
-
 
   const today = new Date().toISOString().slice(0, 10);
   const STEP_MINUTES = 15; // 0.25 hour increments
@@ -200,6 +196,10 @@ export default function TimesheetForm({
   const [tasks, setTasks] = useState<ApiTask[]>([]);
   const [loadingTasks, setLoadingTasks] = useState(false);
   const [taskError, setTaskError] = useState<string | null>(null);
+
+  useEffect(() => {
+    loadWeekEntries(entry.workDate);
+  }, [entry.workDate, loadWeekEntries]);
 
   const handleField = (name: keyof Entry, value?: string) => {
     setEntry((prev) => ({ ...prev, [name]: value }));
