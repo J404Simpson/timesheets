@@ -501,8 +501,7 @@ export default function TimesheetForm({
 
   return (
     <section>
-      <div className="new-entry-header" style={{ display: "flex", flexDirection: "column", gap: 6, marginBottom: 12 }}>
-        <h2 style={{ margin: 0 }}>{editingEntry ? "Edit Entry" : "New Entry"}</h2>
+      <div className="new-entry-header" style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 8, marginBottom: 14 }}>
         <div className="date-picker">
           <span className="date-display" aria-live="polite">
             {entry.workDate
@@ -551,11 +550,11 @@ export default function TimesheetForm({
             - Project selected: Project visible, Internal hidden
             - Internal selected: Internal visible, Project hidden
         */}
-        <div style={{ display: "flex", gap: 8, marginBottom: 12 }}>
+        <div className="entry-type-row">
           {selectedType !== "internal" && (
             <button
               type="button"
-              className="btn"
+              className="btn entry-type-choice"
               onClick={() => {
                 setSelectedType("project");
                 setEntry((prev) => ({ ...prev, project: undefined, phase: undefined }));
@@ -568,7 +567,7 @@ export default function TimesheetForm({
           {selectedType !== "project" && (
             <button
               type="button"
-              className="btn"
+              className="btn entry-type-choice"
               onClick={() => {
                 setSelectedType("internal");
                 setEntry((prev) => ({
