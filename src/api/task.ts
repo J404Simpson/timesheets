@@ -1,6 +1,5 @@
 import axios from "axios";
 import { acquireTokenSilent, protectedResources } from "../auth/msalConfig";
-import { getApiBaseUrl } from "./baseUrl";
 
 export type Task = {
   id: number;
@@ -12,7 +11,7 @@ export async function getTasksForPhaseAndEmployee(phaseId: number): Promise<Task
   const accessToken = await acquireTokenSilent([
     protectedResources.timesheetApi.scope,
   ]);
-  const apiBase = getApiBaseUrl();
+  const apiBase = import.meta.env.VITE_API_URL;
   const response = await axios.get(`${apiBase}/api/phases/${phaseId}/tasks`, {
     headers: {
       Authorization: `Bearer ${accessToken}`,
@@ -25,7 +24,7 @@ export async function getTasksForProjectPhase(projectId: number, phaseId: number
   const accessToken = await acquireTokenSilent([
     protectedResources.timesheetApi.scope,
   ]);
-  const apiBase = getApiBaseUrl();
+  const apiBase = import.meta.env.VITE_API_URL;
   const response = await axios.get(
     `${apiBase}/api/projects/${projectId}/phases/${phaseId}/tasks`,
     {

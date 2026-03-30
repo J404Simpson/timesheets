@@ -13,6 +13,7 @@ jobs:
   build:
     runs-on: ubuntu-latest
     permissions:
+      id-token: write
       contents: read
 
     steps:
@@ -25,13 +26,41 @@ jobs:
           node-version: '22'
           cache: 'npm'
 
+      - name: Login to Azure
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZUREAPPSERVICE_CLIENTID_B8A142C0FE934CD0BB968BA6664FB294 }}
+          tenant-id: ${{ secrets.AZUREAPPSERVICE_TENANTID_06F307D8629844F0A53FF1B7E7D7EE5D }}
+          subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID_5F98CC1A970849959F442026A4DE0215 }}
+
+      - name: Load VITE settings from Azure App Service
+        run: |
+          set -euo pipefail
+          APP_NAME="Timesheets"
+          RESOURCE_GROUP=$(az webapp list --query "[?name=='${APP_NAME}'].resourceGroup | [0]" -o tsv)
+
+          if [ -z "${RESOURCE_GROUP}" ]; then
+            echo "Could not find Azure resource group for ${APP_NAME}."
+            exit 1
+          fi
+
+          SETTINGS_JSON=$(az webapp config appsettings list \
+            --name "${APP_NAME}" \
+            --resource-group "${RESOURCE_GROUP}" \
+            --output json)
+
+          for key in VITE_API_URL VITE_AAD_CLIENT_ID VITE_AAD_TENANT_ID VITE_AAD_API_SCOPE; do
+            value=$(echo "${SETTINGS_JSON}" | jq -r ".[] | select(.name == \"${key}\") | .value" | head -n 1)
+            if [ -n "${value}" ] && [ "${value}" != "null" ]; then
+              echo "${key}=${value}" >> "${GITHUB_ENV}"
+            fi
+          done
+
       - name: Install dependencies
         run: npm ci
 
       - name: Build app (if present)
         run: npm run build --if-present
-        env:
-          VITE_API_URL: ${{ vars.VITE_API_URL }}
 
       - name: Run tests (if present)
         run: npm run test --if-present
