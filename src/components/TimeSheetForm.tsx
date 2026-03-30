@@ -445,6 +445,21 @@ export default function TimesheetForm({
       .finally(() => setLoadingTasks(false));
   }, [selectedType, entry.phase]);
 
+  // Auto-populate task for Meetings phase.
+  useEffect(() => {
+    if (selectedType !== "project") return;
+    if (!entry.phase || tasks.length === 0) return;
+
+    const selectedPhase = phases.find((ph) => String(ph.id) === String(entry.phase));
+    if (!selectedPhase || selectedPhase.name.trim().toLowerCase() !== "meetings") return;
+
+    const meetingTask = tasks.find((task) => task.name.trim().toLowerCase() === "meeting") ?? tasks[0];
+    if (!meetingTask) return;
+
+    if (String(entry.task ?? "") === String(meetingTask.id)) return;
+    setEntry((prev) => ({ ...prev, task: String(meetingTask.id) }));
+  }, [selectedType, entry.phase, entry.task, phases, tasks]);
+
   // Fetch tasks for Sustaining (project 2, phase 1) automatically
   useEffect(() => {
     if (selectedType !== "internal") return;

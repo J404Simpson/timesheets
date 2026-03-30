@@ -69,6 +69,7 @@ const App: React.FC = () => {
   const openCreate = (e: React.MouseEvent) => {
     e.preventDefault();
     if (!isAuthenticated) return;
+    setView("recent");
     setShowNewEntryForm(true);
   };
 
@@ -92,6 +93,32 @@ const App: React.FC = () => {
     }
   }, [isAdmin, view]);
 
+  const closeEntryForm = () => {
+    setShowNewEntryForm(false);
+    setSelectedDate(undefined);
+    setSelectedHour(undefined);
+    setSelectedMinute(undefined);
+    setSelectedEndHour(undefined);
+    setSelectedEndMinute(undefined);
+    setEditingEntry(undefined);
+    setView("recent");
+  };
+
+  useEffect(() => {
+    if (!showNewEntryForm) return;
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        closeEntryForm();
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [showNewEntryForm]);
+
   const handleDateSelect = (date: string, hour?: number, minute?: number, endHour?: number, endMinute?: number) => {
     setSelectedDate(date);
     setSelectedHour(hour);
@@ -99,6 +126,7 @@ const App: React.FC = () => {
     setSelectedEndHour(endHour);
     setSelectedEndMinute(endMinute);
     setEditingEntry(undefined);
+    setView("recent");
     setShowNewEntryForm(true);
   };
 
@@ -109,6 +137,7 @@ const App: React.FC = () => {
     setSelectedMinute(undefined);
     setSelectedEndHour(undefined);
     setSelectedEndMinute(undefined);
+    setView("recent");
     setShowNewEntryForm(true);
   };
 
@@ -182,47 +211,49 @@ const App: React.FC = () => {
                 }
               }}
             />
-            {isOnboarded && !showDepartmentModal && (!showNewEntryForm ? (
-              view === "recent" ? (
-                <Recent onSelectDate={handleDateSelect} onEditEntry={handleEditEntry} />
-              ) : isAdmin ? (
-                <Admin />
-              ) : (
-                <Recent onSelectDate={handleDateSelect} onEditEntry={handleEditEntry} />
-              )
-            ) : (
-              <section id="new-entry-form" className="new-entry-section" aria-live="polite">
-                {/* Removed the New Entry header from App; TimeSheetForm renders it now */}
-                <TimeSheetForm
-                  initialDate={selectedDate}
-                  initialEndHour={selectedEndHour}
-                  initialEndMinute={selectedEndMinute}
-                  initialMinute={selectedMinute}
-                  initialHour={selectedHour}
-                  editingEntry={editingEntry}
-                  onSaved={() => {
-                    setShowNewEntryForm(false);
-                    setSelectedDate(undefined);
-                    setSelectedHour(undefined);
-                    setSelectedMinute(undefined);
-                    setSelectedEndHour(undefined);
-                    setSelectedEndMinute(undefined);
-                    setEditingEntry(undefined);
-                    setView("recent");
-                  }}
-                  onCancel={() => {
-                    setShowNewEntryForm(false);
-                    setSelectedDate(undefined);
-                    setSelectedHour(undefined);
-                    setSelectedMinute(undefined);
-                    setSelectedEndHour(undefined);
-                    setSelectedEndMinute(undefined);
-                    setEditingEntry(undefined);
-                    setView("recent");
-                  }}
-                />
-              </section>
-            ))}
+            {isOnboarded && !showDepartmentModal && (
+              <>
+                {view === "admin" && isAdmin ? (
+                  <Admin />
+                ) : (
+                  <Recent onSelectDate={handleDateSelect} onEditEntry={handleEditEntry} />
+                )}
+
+                {showNewEntryForm && (
+                  <div className="entry-modal-backdrop" role="presentation" onClick={closeEntryForm}>
+                    <section
+                      id="new-entry-form"
+                      className="entry-modal"
+                      role="dialog"
+                      aria-modal="true"
+                      aria-live="polite"
+                      aria-label={editingEntry ? "Edit entry" : "Create entry"}
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <button
+                        type="button"
+                        className="entry-modal-close"
+                        onClick={closeEntryForm}
+                        aria-label="Close entry form"
+                      >
+                        x
+                      </button>
+
+                      <TimeSheetForm
+                        initialDate={selectedDate}
+                        initialEndHour={selectedEndHour}
+                        initialEndMinute={selectedEndMinute}
+                        initialMinute={selectedMinute}
+                        initialHour={selectedHour}
+                        editingEntry={editingEntry}
+                        onSaved={closeEntryForm}
+                        onCancel={closeEntryForm}
+                      />
+                    </section>
+                  </div>
+                )}
+              </>
+            )}
           </>
         )}
       </main>
