@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import { createEntry, getActiveProjects, getPhasesForProject, getWeekEntries, type Project as ApiProject, type Phase as ApiPhase, type WeekEntry } from "../api/timesheet";
 import { getTasksForPhaseAndEmployee, getTasksForProjectPhase, type Task as ApiTask } from "../api/task";
 
@@ -105,13 +105,18 @@ export default function TimesheetForm({
       .finally(() => setLoadingProjects(false));
   }, []);
 
-  useEffect(() => {
-    getWeekEntries()
+  const loadWeekEntries = useCallback((weekOf?: string) => {
+    getWeekEntries(weekOf)
       .then(setWeekEntries)
       .catch(() => {
         // ignore entry load errors for time disabling
       });
   }, []);
+
+  useEffect(() => {
+    loadWeekEntries(entry.workDate);
+  }, [entry.workDate, loadWeekEntries]);
+
 
   const today = new Date().toISOString().slice(0, 10);
   const STEP_MINUTES = 15; // 0.25 hour increments
