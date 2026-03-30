@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
-import { createEntry, updateEntry, getActiveProjects, getPhasesForProject, getWeekEntries, type Project as ApiProject, type Phase as ApiPhase, type WeekEntry } from "../api/timesheet";
+import { createEntry, updateEntry, deleteEntry, getActiveProjects, getPhasesForProject, getWeekEntries, type Project as ApiProject, type Phase as ApiPhase, type WeekEntry } from "../api/timesheet";
 import { getTasksForPhaseAndEmployee, getTasksForProjectPhase, type Task as ApiTask } from "../api/task";
 
 type Entry = {
@@ -195,6 +195,7 @@ export default function TimesheetForm({
   const [tasks, setTasks] = useState<ApiTask[]>([]);
   const [loadingTasks, setLoadingTasks] = useState(false);
   const [taskError, setTaskError] = useState<string | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   useEffect(() => {
     loadWeekEntries(entry.workDate);
@@ -446,6 +447,23 @@ export default function TimesheetForm({
     }
   };
 
+  const handleDelete = async () => {
+    if (!editingEntry) return;
+    const confirmed = window.confirm("Delete this entry?");
+    if (!confirmed) return;
+
+    try {
+      setIsDeleting(true);
+      await deleteEntry(editingEntry.id);
+      onSaved?.();
+      getWeekEntries().then(setWeekEntries).catch(() => {});
+    } catch (err) {
+      console.error("Entry delete failed", err);
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
   return (
     <section>
       <div className="new-entry-header" style={{ display: "flex", flexDirection: "column", gap: 6, marginBottom: 12 }}>
@@ -680,8 +698,8 @@ export default function TimesheetForm({
             </button>
           )}
 
-          {/* Back appears only when Project or Sustaining is selected and reverts that selection */}
-          {(selectedType === "project" || selectedType === "internal") && (
+          {/* Back appears in create mode only when Project or Sustaining is selected */}
+          {!editingEntry && (selectedType === "project" || selectedType === "internal") && (
             <button
               type="button"
               className="btn secondary"
@@ -690,6 +708,20 @@ export default function TimesheetForm({
               title="Revert selection"
             >
               Back
+            </button>
+          )}
+
+          {/* Delete replaces Back in edit mode */}
+          {editingEntry && (
+            <button
+              type="button"
+              className="btn secondary"
+              onClick={handleDelete}
+              disabled={isDeleting}
+              aria-label="Delete entry"
+              title="Delete this entry"
+            >
+              {isDeleting ? "Deleting..." : "Delete"}
             </button>
           )}
 

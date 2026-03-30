@@ -181,3 +181,14 @@ export async function updateEntry(entryId: number, payload: CreateEntryPayload):
   });
   return response.data;
 }
+
+export async function deleteEntry(entryId: number): Promise<any> {
+  const accessToken = await acquireTokenSilent([protectedResources.timesheetApi.scope]);
+  const apiBase = import.meta.env.VITE_API_URL;
+  const response = await axios.delete(`${apiBase}/api/entries/${entryId}`, {
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+    },
+  });
+  return response.data;
+}
