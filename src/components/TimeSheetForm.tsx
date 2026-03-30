@@ -192,7 +192,6 @@ export default function TimesheetForm({
 
   const [entry, setEntry] = useState<Entry>(getInitialEntry());
   const [selectedType, setSelectedType] = useState<"none" | "project" | "internal">(getInitialSelectedType());
-  const [status, setStatus] = useState<string | null>(null);
   const [tasks, setTasks] = useState<ApiTask[]>([]);
   const [loadingTasks, setLoadingTasks] = useState(false);
   const [taskError, setTaskError] = useState<string | null>(null);
@@ -203,7 +202,6 @@ export default function TimesheetForm({
 
   const handleField = (name: keyof Entry, value?: string) => {
     setEntry((prev) => ({ ...prev, [name]: value }));
-    setStatus(null);
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
@@ -218,12 +216,10 @@ export default function TimesheetForm({
         startTime: value,
         endTime: candidate ? candidate.value : prev.endTime
       }));
-      setStatus(null);
       return;
     }
 
     setEntry((prev) => ({ ...prev, [name as keyof Entry]: value }));
-    setStatus(null);
   };
 
   const submitEntry = async (e: React.FormEvent) => {
@@ -231,71 +227,69 @@ export default function TimesheetForm({
 
     // validation
     if (selectedType === "none") {
-      setStatus("Please select Project or Sustaining.");
       return;
     }
 
     if (selectedType === "project") {
       if (entry.project == null) {
-        setStatus("Please select a project.");
         return;
       }
       if (phases.length > 0 && !entry.phase) {
-        setStatus("Please select a phase.");
         return;
       }
       if (tasks.length > 0 && !entry.task) {
-        setStatus("Please select a task.");
         return;
       }
     }
 
     if (selectedType === "internal" && !entry.task) {
-      setStatus("Please select a task.");
       return;
     }
 
     if (!entry.startTime || !entry.endTime) {
-      setStatus("Please select start and end times.");
       return;
     }
 
     const startMin = minutesFrom(entry.startTime);
     const endMin = minutesFrom(entry.endTime);
     if (endMin < startMin + STEP_MINUTES) {
-      setStatus(`End time must be at least ${STEP_MINUTES} minutes after start time.`);
       return;
     }
 
     const hours = +(((endMin - startMin) / 60).toFixed(2));
 
-    try {
-      setStatus("Saving...");
-      const payload = {
-        projectId: Number(entry.project ?? 0),
-        phaseId: entry.phase ? Number(entry.phase) : null,
-        taskId: entry.task ? Number(entry.task) : null,
-        date: entry.workDate,
-        startTime: entry.startTime,
-        endTime: entry.endTime,
-        hours,
-        notes: entry.notes
-      };
+    const payload = {
+      projectId: Number(entry.project ?? 0),
+      phaseId: entry.phase ? Number(entry.phase) : null,
+      taskId: entry.task ? Number(entry.task) : null,
+      date: entry.workDate,
+      startTime: entry.startTime,
+      endTime: entry.endTime,
+      hours,
+      notes: entry.notes
+    };
 
+    const saveEntry = async () => {
       if (editingEntry) {
         await updateEntry(editingEntry.id, payload);
       } else {
         await createEntry(payload);
       }
-      setStatus("Saved.");
+    };
+
+    try {
+      await saveEntry();
       onSaved?.();
       // Reload entries after save
       getWeekEntries().then(setWeekEntries).catch(() => {});
-    } catch (err: any) {
-      if (err?.response?.status === 409) {
-        setStatus("This time range overlaps an existing entry. Please choose a different time.");
-      } else {
-        setStatus("Unable to save right now. Please try again.");
+    } catch (err) {
+      // Retry once for transient failures and keep UI free of technical errors.
+      try {
+        await saveEntry();
+        onSaved?.();
+        getWeekEntries().then(setWeekEntries).catch(() => {});
+      } catch (finalErr) {
+        console.error("Entry save failed", finalErr ?? err);
       }
     }
   };
@@ -363,6 +357,18 @@ export default function TimesheetForm({
         });
       })?.value;
   };
+
+  // determine when to show time inputs
+  const timeInputsVisible = (() => {
+    if (selectedType === "internal") return entry.task != null;
+    if (selectedType === "project" && entry.project != null) {
+      if (loadingPhases) return false;
+      if (phases.length === 0) return true; // No phases for this project
+      if (tasks.length > 0) return entry.task != null; // Only show if a task is selected
+      return false;
+    }
+    return false;
+  })();
 
   useEffect(() => {
     if (!timeInputsVisible || !entry.workDate) return;
@@ -432,24 +438,11 @@ export default function TimesheetForm({
       .finally(() => setLoadingTasks(false));
   }, [selectedType, entry.project, entry.phase]);
 
-  // determine when to show time inputs
-  const timeInputsVisible = (() => {
-    if (selectedType === "internal") return entry.task != null;
-    if (selectedType === "project" && entry.project != null) {
-      if (loadingPhases) return false;
-      if (phases.length === 0) return true; // No phases for this project
-      if (tasks.length > 0) return entry.task != null; // Only show if a task is selected
-      return false;
-    }
-    return false;
-  })();
-
   // Back handler: only revert the top-level selection (project/internal) and clear project/phase
   const handleBack = () => {
     if (selectedType === "project" || selectedType === "internal") {
       setSelectedType("none");
       setEntry((prev) => ({ ...prev, project: undefined, phase: undefined, task: undefined }));
-      setStatus(null);
     }
   };
 
@@ -512,7 +505,6 @@ export default function TimesheetForm({
               className="btn"
               onClick={() => {
                 setSelectedType("project");
-                setStatus(null);
                 setEntry((prev) => ({ ...prev, project: undefined, phase: undefined }));
               }}
             >
@@ -526,7 +518,6 @@ export default function TimesheetForm({
               className="btn"
               onClick={() => {
                 setSelectedType("internal");
-                setStatus(null);
                 setEntry((prev) => ({
                   ...prev,
                   project: String(SUSTAINING_PROJECT_ID),
@@ -549,7 +540,7 @@ export default function TimesheetForm({
               onChange={handleChange}
               disabled={loadingTasks || !!taskError || tasks.length === 0}
             >
-              <option value="">{loadingTasks ? "Loading tasks..." : taskError ? taskError : "Select a task"}</option>
+              <option value="">{loadingTasks ? "Loading tasks..." : "Select a task"}</option>
               {tasks.map((task) => (
                 <option key={task.id} value={task.id}>
                   {task.name}
@@ -572,7 +563,7 @@ export default function TimesheetForm({
                 }}
                 disabled={loadingProjects || !!projectError}
               >
-                <option value="">{loadingProjects ? "Loading projects..." : projectError ? projectError : "Select a project"}</option>
+                <option value="">{loadingProjects ? "Loading projects..." : "Select a project"}</option>
                 {projects.map((p) => (
                   <option key={p.id} value={p.id}>
                     {p.name}
@@ -611,7 +602,7 @@ export default function TimesheetForm({
               }}
               disabled={loadingPhases || !!phaseError || phases.length === 0}
             >
-              <option value="">{loadingPhases ? "Loading phases..." : phaseError ? phaseError : "Select a phase"}</option>
+              <option value="">{loadingPhases ? "Loading phases..." : "Select a phase"}</option>
               {phases.map((ph) => (
                 <option key={ph.id} value={ph.id}>
                   {ph.name}
@@ -630,7 +621,7 @@ export default function TimesheetForm({
               onChange={handleChange}
               disabled={loadingTasks || !!taskError || tasks.length === 0}
             >
-              <option value="">{loadingTasks ? "Loading tasks..." : taskError ? taskError : "Select a task"}</option>
+              <option value="">{loadingTasks ? "Loading tasks..." : "Select a task"}</option>
               {tasks.map((task) => (
                 <option key={task.id} value={task.id}>
                   {task.name}
@@ -716,7 +707,6 @@ export default function TimesheetForm({
         </div>
       </form>
 
-      {status && <p className="status">{status}</p>}
     </section>
   );
 }
