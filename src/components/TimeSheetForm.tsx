@@ -291,8 +291,12 @@ export default function TimesheetForm({
       onSaved?.();
       // Reload entries after save
       getWeekEntries().then(setWeekEntries).catch(() => {});
-    } catch (err) {
-      setStatus(`Save failed: ${(err as any)?.message ?? err}`);
+    } catch (err: any) {
+      if (err?.response?.status === 409) {
+        setStatus("This time range overlaps an existing entry. Please choose a different time.");
+      } else {
+        setStatus("Unable to save right now. Please try again.");
+      }
     }
   };
 
@@ -306,9 +310,14 @@ export default function TimesheetForm({
     return entryDate === entry.workDate;
   });
 
+  const blockingEntries = dayEntries.filter((e) => {
+    if (!editingEntry) return true;
+    return e.id !== editingEntry.id;
+  });
+
   const isStartBlocked = (value: string) => {
     const startMinutes = minutesFrom(value);
-    const blocked = dayEntries.some((e) => {
+    const blocked = blockingEntries.some((e) => {
       const entryStart = minutesFromEntryTime(e.start_time);
       const entryEnd = minutesFromEntryTime(e.end_time);
       return startMinutes >= entryStart && startMinutes < entryEnd;
@@ -320,13 +329,76 @@ export default function TimesheetForm({
     if (!entry.startTime) return false;
     const startMinutes = minutesFrom(entry.startTime);
     const endMinutes = minutesFrom(value);
-    const blocked = dayEntries.some((e) => {
+    const blocked = blockingEntries.some((e) => {
       const entryStart = minutesFromEntryTime(e.start_time);
       const entryEnd = minutesFromEntryTime(e.end_time);
       return startMinutes < entryEnd && endMinutes > entryStart;
     });
     return blocked;
   };
+
+  const findValidStartTime = (preferred?: string) => {
+    const preferredIndex = preferred
+      ? timeOptions.findIndex((opt) => opt.value === preferred)
+      : -1;
+
+    const ordered = preferredIndex >= 0
+      ? [...timeOptions.slice(preferredIndex), ...timeOptions.slice(0, preferredIndex)]
+      : timeOptions;
+
+    return ordered.find((opt) => !isStartBlocked(opt.value))?.value;
+  };
+
+  const findValidEndTime = (startValue: string) => {
+    const startMinutes = minutesFrom(startValue);
+    const minEndMinutes = startMinutes + STEP_MINUTES;
+    return timeOptions
+      .filter((opt) => minutesFrom(opt.value) >= minEndMinutes)
+      .find((opt) => {
+        const endMinutes = minutesFrom(opt.value);
+        return !blockingEntries.some((e) => {
+          const entryStart = minutesFromEntryTime(e.start_time);
+          const entryEnd = minutesFromEntryTime(e.end_time);
+          return startMinutes < entryEnd && endMinutes > entryStart;
+        });
+      })?.value;
+  };
+
+  useEffect(() => {
+    if (!timeInputsVisible || !entry.workDate) return;
+
+    setEntry((prev) => {
+      const preferredStart = prev.startTime;
+      const validStart = preferredStart && !isStartBlocked(preferredStart)
+        ? preferredStart
+        : findValidStartTime(preferredStart);
+
+      if (!validStart) {
+        return prev;
+      }
+
+      const validEnd = prev.endTime && !isEndBlocked(prev.endTime)
+        ? prev.endTime
+        : findValidEndTime(validStart);
+
+      if (!validEnd) {
+        return {
+          ...prev,
+          startTime: validStart,
+        };
+      }
+
+      if (prev.startTime === validStart && prev.endTime === validEnd) {
+        return prev;
+      }
+
+      return {
+        ...prev,
+        startTime: validStart,
+        endTime: validEnd,
+      };
+    });
+  }, [timeInputsVisible, entry.workDate, dayEntries.length, editingEntry?.id]);
 
   // Fetch phases when project changes
   useEffect(() => {
