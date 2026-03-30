@@ -242,7 +242,7 @@ body{
   flex: 0 0 auto;
 }
 
-.entry-modal .form-dropdown-menu {
+.form-dropdown-menu {
   --dropdown-option-height: 2.25rem;
   margin: 0;
   padding: 6px;
@@ -261,7 +261,7 @@ body{
   z-index: 1200;
 }
 
-.entry-modal .form-dropdown-option {
+.form-dropdown-option {
   width: 100%;
   min-height: var(--dropdown-option-height);
   border: none;
@@ -274,12 +274,12 @@ body{
   cursor: pointer;
 }
 
-.entry-modal .form-dropdown-option:hover:not(:disabled),
-.entry-modal .form-dropdown-option.selected {
+.form-dropdown-option:hover:not(:disabled),
+.form-dropdown-option.selected {
   background: rgba(37, 99, 235, 0.12);
 }
 
-.entry-modal .form-dropdown-option:disabled {
+.form-dropdown-option:disabled {
   color: #94a3b8;
   cursor: not-allowed;
 }

@@ -105,6 +105,12 @@ function FormDropdown({
       rowHeight + verticalPadding,
       Math.min(options.length, 16) * rowHeight + verticalPadding,
     );
+    const maxWidth = window.innerWidth - viewportPadding * 2;
+    const width = Math.min(rect.width, maxWidth);
+    const left = Math.min(
+      Math.max(viewportPadding, rect.left),
+      window.innerWidth - viewportPadding - width,
+    );
     const spaceBelow = window.innerHeight - rect.bottom - viewportPadding;
     const spaceAbove = rect.top - viewportPadding;
     const openUpward = spaceBelow < preferredHeight && spaceAbove > spaceBelow;
@@ -119,8 +125,8 @@ function FormDropdown({
 
     setMenuStyle({
       top,
-      left: rect.left,
-      width: rect.width,
+      left,
+      width,
       maxHeight,
     });
   }, [options.length]);
