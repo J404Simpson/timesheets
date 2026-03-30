@@ -8,7 +8,7 @@
   "scripts": {
     "dev": "vite",
     "build": "npm run prebuild && vite build",
-    "start": "serve -s dist -l ${PORT:-8080}",
+    "start": "node server.js",
     "set-path": "echo $PATH && export PATH=$(npm bin):$PATH",
     "lint": "eslint 'src/**/*.{ts,tsx}' --ext .ts,.tsx --cache",
     "lint:fix": "eslint 'src/**/*.{ts,tsx}' --ext .ts,.tsx --fix --cache",
@@ -22,7 +22,6 @@
     "react": "18.2.0",
     "react-dom": "18.2.0",
     "react-router-dom": "^6.30.3",
-    "serve": "^14.2.6",
     "vite": "^7.2.6"
   },
   "devDependencies": {
