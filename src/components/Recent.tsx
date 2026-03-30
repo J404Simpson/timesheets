@@ -426,13 +426,26 @@ export default function Recent({ onSelectDate, onEditEntry }: Props): JSX.Elemen
                             onMouseDown={() => handleSlotMouseDown(day, hour, minute)}
                             onMouseEnter={() => handleSlotMouseEnter(day, hour, minute)}
                             onMouseUp={handleSlotMouseUp}
-                            onClick={() => handleTimeSlotClick(day, hour, minute)}
-                            disabled={isFuture || isOccupied}
+                            onClick={() => {
+                              if (entry) {
+                                const isLeave = (entry.project?.name ?? "").trim().toLowerCase() === "leave";
+                                if (!isLeave) {
+                                  onEditEntry?.(entry);
+                                }
+                                return;
+                              }
+                              handleTimeSlotClick(day, hour, minute);
+                            }}
+                            disabled={isFuture || (isOccupied && !entry)}
                             title={
                               isFuture
                                 ? "Cannot select future time"
-                                : isOccupied
-                                  ? "Time slot occupied"
+                                : entry
+                                  ? (entry.project?.name ?? "").trim().toLowerCase() === "leave"
+                                    ? "Leave entries cannot be edited"
+                                    : "Click to edit entry"
+                                  : isOccupied
+                                    ? "Time slot occupied"
                                   : isSelected
                                     ? "Click highlighted range to create entry"
                                     : `Click and drag to select time range from ${timeLabel}`
@@ -442,24 +455,19 @@ export default function Recent({ onSelectDate, onEditEntry }: Props): JSX.Elemen
                               whiteSpace: "normal", 
                               wordBreak: "break-word", 
                               padding: "2px",
-                              gridRow: rowSpan > 1 ? `span ${rowSpan}` : undefined
+                              gridRow: rowSpan > 1 ? `span ${rowSpan}` : undefined,
+                              cursor: entry
+                                ? (entry.project?.name ?? "").trim().toLowerCase() === "leave"
+                                  ? "not-allowed"
+                                  : "pointer"
+                                : undefined
                             }}
                           >
                             {entry && (
                               (() => {
                                 const display = getVisibleEntryDisplay(entry, rowSpan);
-                                const isLeave = (entry.project?.name ?? "").trim().toLowerCase() === "leave";
                                 return (
-                                  <span 
-                                    className="entry-cell-content"
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      if (!isLeave && onEditEntry) {
-                                        onEditEntry(entry);
-                                      }
-                                    }}
-                                    style={{ cursor: isLeave ? "default" : "pointer" }}
-                                  >
+                                  <span className="entry-cell-content">
                                     {display.title && (
                                       <div className="entry-cell-project" style={{ fontSize: "8px", fontWeight: "700" }}>
                                         {display.title}
