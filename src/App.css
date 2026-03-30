@@ -244,11 +244,6 @@ body{
 
 .entry-modal .form-dropdown-menu {
   --dropdown-option-height: 2.25rem;
-  position: absolute;
-  top: calc(100% + 4px);
-  left: 0;
-  right: 0;
-  z-index: 30;
   margin: 0;
   padding: 6px;
   list-style: none;
@@ -256,8 +251,14 @@ body{
   border-radius: 8px;
   background: #ffffff;
   box-shadow: 0 12px 28px rgba(15, 23, 42, 0.2);
-  height: min(calc(var(--dropdown-option-height) * 16), 50vh);
+  max-height: min(calc(var(--dropdown-option-height) * 16), 50vh);
   overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.form-dropdown-menu-portal {
+  position: fixed;
+  z-index: 1200;
 }
 
 .entry-modal .form-dropdown-option {

@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
+import { createPortal } from "react-dom";
 import { createEntry, updateEntry, deleteEntry, getActiveProjects, getPhasesForProject, getWeekEntries, type Project as ApiProject, type Phase as ApiPhase, type WeekEntry } from "../api/timesheet";
 import { getTasksForPhaseAndEmployee, getTasksForProjectPhase, type Task as ApiTask } from "../api/task";
 
@@ -88,11 +89,49 @@ function FormDropdown({
 }) {
   const [isOpen, setIsOpen] = useState(false);
   const rootRef = useRef<HTMLDivElement | null>(null);
+  const triggerRef = useRef<HTMLButtonElement | null>(null);
+  const menuRef = useRef<HTMLUListElement | null>(null);
+  const [menuStyle, setMenuStyle] = useState<React.CSSProperties>({});
+
+  const updateMenuPosition = useCallback(() => {
+    if (!triggerRef.current) return;
+
+    const rect = triggerRef.current.getBoundingClientRect();
+    const rowHeight = 36;
+    const verticalPadding = 12;
+    const gap = 4;
+    const viewportPadding = 8;
+    const preferredHeight = Math.max(
+      rowHeight + verticalPadding,
+      Math.min(options.length, 16) * rowHeight + verticalPadding,
+    );
+    const spaceBelow = window.innerHeight - rect.bottom - viewportPadding;
+    const spaceAbove = rect.top - viewportPadding;
+    const openUpward = spaceBelow < preferredHeight && spaceAbove > spaceBelow;
+    const availableSpace = Math.max(
+      rowHeight + verticalPadding,
+      openUpward ? spaceAbove : spaceBelow,
+    );
+    const maxHeight = Math.min(preferredHeight, availableSpace);
+    const top = openUpward
+      ? Math.max(viewportPadding, rect.top - maxHeight - gap)
+      : rect.bottom + gap;
+
+    setMenuStyle({
+      top,
+      left: rect.left,
+      width: rect.width,
+      maxHeight,
+    });
+  }, [options.length]);
 
   useEffect(() => {
     const handleOutsideClick = (event: MouseEvent) => {
+      const target = event.target as Node;
       if (!rootRef.current) return;
-      if (!rootRef.current.contains(event.target as Node)) {
+      const clickedTrigger = rootRef.current.contains(target);
+      const clickedMenu = menuRef.current?.contains(target);
+      if (!clickedTrigger && !clickedMenu) {
         setIsOpen(false);
       }
     };
@@ -118,12 +157,28 @@ function FormDropdown({
     }
   }, [disabled]);
 
+  useEffect(() => {
+    if (!isOpen || disabled) return;
+
+    updateMenuPosition();
+
+    const handleReposition = () => updateMenuPosition();
+    window.addEventListener("resize", handleReposition);
+    window.addEventListener("scroll", handleReposition, true);
+
+    return () => {
+      window.removeEventListener("resize", handleReposition);
+      window.removeEventListener("scroll", handleReposition, true);
+    };
+  }, [disabled, isOpen, updateMenuPosition]);
+
   const selected = options.find((opt) => opt.value === value);
   const display = selected?.label ?? "Select";
 
   return (
     <div ref={rootRef} className={`form-dropdown ${className ?? ""}`.trim()}>
       <button
+        ref={triggerRef}
         type="button"
         className="form-dropdown-trigger"
         aria-label={ariaLabel}
@@ -136,8 +191,14 @@ function FormDropdown({
         <span className="form-dropdown-caret" aria-hidden="true">▾</span>
       </button>
 
-      {isOpen && !disabled && (
-        <ul className="form-dropdown-menu" role="listbox" aria-label={ariaLabel}>
+      {isOpen && !disabled && createPortal(
+        <ul
+          ref={menuRef}
+          className="form-dropdown-menu form-dropdown-menu-portal"
+          role="listbox"
+          aria-label={ariaLabel}
+          style={menuStyle}
+        >
           {options.map((opt) => {
             const isSelected = opt.value === value;
             return (
@@ -158,7 +219,8 @@ function FormDropdown({
               </li>
             );
           })}
-        </ul>
+        </ul>,
+        document.body,
       )}
     </div>
   );
