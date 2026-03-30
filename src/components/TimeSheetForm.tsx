@@ -359,20 +359,55 @@ export default function TimesheetForm({
       })?.value;
   };
 
-  // determine when to show time inputs
-  const timeInputsVisible = (() => {
-    if (selectedType === "internal") return entry.task != null;
-    if (selectedType === "project" && entry.project != null) {
-      if (loadingPhases) return false;
-      if (phases.length === 0) return true; // No phases for this project
-      if (tasks.length > 0) return entry.task != null; // Only show if a task is selected
-      return false;
+  const showEntryFields = selectedType !== "none";
+  const showProjectFields = selectedType === "project";
+  const showInternalFields = selectedType === "internal";
+  const phaseRequired = showProjectFields && !!entry.project && phases.length > 0;
+  const taskRequiredForProject = showProjectFields && !!entry.phase && tasks.length > 0;
+
+  const canSubmit = (() => {
+    if (!showEntryFields || !entry.startTime || !entry.endTime) return false;
+    if (endMin < startMin + STEP_MINUTES) return false;
+
+    if (showProjectFields) {
+      if (!entry.project) return false;
+      if (phaseRequired && !entry.phase) return false;
+      if (taskRequiredForProject && !entry.task) return false;
+      return true;
     }
+
+    if (showInternalFields) {
+      return !!entry.task;
+    }
+
     return false;
   })();
 
+  const getPhasePlaceholder = () => {
+    if (!entry.project) return "Select a project first";
+    if (loadingPhases) return "Loading phases...";
+    if (phaseError) return "Unable to load phases";
+    if (phases.length === 0) return "No phase required";
+    return "Select a phase";
+  };
+
+  const getTaskPlaceholder = () => {
+    if (showInternalFields) {
+      if (loadingTasks) return "Loading tasks...";
+      if (taskError) return "Unable to load tasks";
+      return tasks.length === 0 ? "No tasks available" : "Select a task";
+    }
+
+    if (!entry.project) return "Select a project first";
+    if (phaseRequired && !entry.phase) return "Select a phase first";
+    if (loadingTasks) return "Loading tasks...";
+    if (taskError) return "Unable to load tasks";
+    if (phases.length === 0) return "No task required";
+    return tasks.length === 0 ? "No tasks available" : "Select a task";
+  };
+
   useEffect(() => {
-    if (!timeInputsVisible || !entry.workDate) return;
+    if (!showEntryFields || !entry.workDate) return;
 
     setEntry((prev) => {
       const preferredStart = prev.startTime;
@@ -405,7 +440,7 @@ export default function TimesheetForm({
         endTime: validEnd,
       };
     });
-  }, [timeInputsVisible, entry.workDate, dayEntries.length, editingEntry?.id]);
+  }, [showEntryFields, entry.workDate, dayEntries.length, editingEntry?.id]);
 
   // Fetch phases when project changes
   useEffect(() => {
@@ -558,7 +593,7 @@ export default function TimesheetForm({
               disabled={!!editingEntry}
               onClick={() => {
                 setSelectedType("project");
-                setEntry((prev) => ({ ...prev, project: undefined, phase: undefined }));
+                setEntry((prev) => ({ ...prev, project: undefined, phase: undefined, task: undefined }));
               }}
             >
               Project
@@ -585,8 +620,43 @@ export default function TimesheetForm({
           )}
         </div>
 
+        {showEntryFields && (
+          <>
+            <div className="entry-time-row">
+              <label>
+                Start
+                <select className="time-select" name="startTime" value={entry.startTime} onChange={handleChange} aria-label="Start time">
+                  {timeOptions.map((opt) => (
+                    <option key={opt.value} value={opt.value} disabled={isStartBlocked(opt.value)}>
+                      {opt.label}
+                    </option>
+                  ))}
+                </select>
+              </label>
+
+              <label>
+                End
+                <select className="time-select" name="endTime" value={entry.endTime} onChange={handleChange} aria-label="End time">
+                  {endOptions.map((opt) => (
+                    <option key={opt.value} value={opt.value} disabled={isEndBlocked(opt.value)}>
+                      {opt.label}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            </div>
+
+            <div className="entry-duration muted">
+              Duration:{" "}
+              {entry.startTime && entry.endTime
+                ? `${(((minutesFrom(entry.endTime) - minutesFrom(entry.startTime)) / 60) || 0).toFixed(2)} hrs`
+                : "—"}
+            </div>
+          </>
+        )}
+
         {/* Sustaining task dropdown (project 2, phase 1 fixed in background) */}
-        {selectedType === "internal" && (
+        {showInternalFields && (
           <label>
             <select
               name="task"
@@ -594,7 +664,7 @@ export default function TimesheetForm({
               onChange={handleChange}
               disabled={loadingTasks || !!taskError || tasks.length === 0}
             >
-              <option value="">{loadingTasks ? "Loading tasks..." : "Select a task"}</option>
+              <option value="">{getTaskPlaceholder()}</option>
               {tasks.map((task) => (
                 <option key={task.id} value={task.id}>
                   {task.name}
@@ -605,7 +675,7 @@ export default function TimesheetForm({
         )}
 
         {/* Project dropdown shows after selecting Project */}
-        {selectedType === "project" && (
+        {showProjectFields && (
           <>
             <label>
               <select
@@ -614,6 +684,7 @@ export default function TimesheetForm({
                 onChange={(e) => {
                   handleChange(e);
                   handleField("phase", undefined);
+                  handleField("task", undefined);
                 }}
                 disabled={loadingProjects || !!projectError}
               >
@@ -629,7 +700,7 @@ export default function TimesheetForm({
         )}
 
         {/* Phase shown if project has phases */}
-        {selectedType === "project" && entry.project != null && (
+        {showProjectFields && (
           <label>
             <select
               name="phase"
@@ -638,9 +709,9 @@ export default function TimesheetForm({
                 handleChange(e);
                 handleField("task", undefined);
               }}
-              disabled={loadingPhases || !!phaseError || phases.length === 0}
+              disabled={!entry.project || loadingPhases || !!phaseError || phases.length === 0}
             >
-              <option value="">{loadingPhases ? "Loading phases..." : "Select a phase"}</option>
+              <option value="">{getPhasePlaceholder()}</option>
               {phases.map((ph) => (
                 <option key={ph.id} value={ph.id}>
                   {ph.name}
@@ -651,15 +722,15 @@ export default function TimesheetForm({
         )}
 
         {/* Task dropdown shown after phase selection and tasks loaded */}
-        {selectedType === "project" && entry.project != null && entry.phase != null && (
+        {showProjectFields && (
           <label>
             <select
               name="task"
               value={entry.task ?? ""}
               onChange={handleChange}
-              disabled={loadingTasks || !!taskError || tasks.length === 0}
+              disabled={!entry.project || (phaseRequired && !entry.phase) || loadingTasks || !!taskError || tasks.length === 0}
             >
-              <option value="">{loadingTasks ? "Loading tasks..." : "Select a task"}</option>
+              <option value="">{getTaskPlaceholder()}</option>
               {tasks.map((task) => (
                 <option key={task.id} value={task.id}>
                   {task.name}
@@ -669,40 +740,8 @@ export default function TimesheetForm({
           </label>
         )}
 
-        {/* Time inputs and notes are shown only when ready */}
-        {timeInputsVisible && (
+        {showEntryFields && (
           <>
-            <label>
-              Start
-              <select name="startTime" value={entry.startTime} onChange={handleChange} aria-label="Start time">
-                {timeOptions.map((opt) => (
-                  <option key={opt.value} value={opt.value} disabled={isStartBlocked(opt.value)}>
-                    {opt.label}
-                  </option>
-                ))}
-              </select>
-            </label>
-
-            <label>
-              End
-              <select name="endTime" value={entry.endTime} onChange={handleChange} aria-label="End time">
-                {endOptions.map((opt) => (
-                  <option key={opt.value} value={opt.value} disabled={isEndBlocked(opt.value)}>
-                    {opt.label}
-                  </option>
-                ))}
-              </select>
-            </label>
-
-            <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-              <div className="muted">
-                Duration:{" "}
-                {entry.startTime && entry.endTime
-                  ? `${(((minutesFrom(entry.endTime) - minutesFrom(entry.startTime)) / 60) || 0).toFixed(2)} hrs`
-                  : "—"}
-              </div>
-            </div>
-
             <label>
               Notes
               <textarea name="notes" value={entry.notes} onChange={handleChange} />
@@ -710,10 +749,10 @@ export default function TimesheetForm({
           </>
         )}
 
-        {/* actions: Save shown only when time inputs visible; show Back only when top-level selection made; Cancel kept at bottom */}
+        {/* actions */}
         <div className="actions">
-          {timeInputsVisible && (
-            <button type="submit" className="btn btn-primary">
+          {showEntryFields && (
+            <button type="submit" className="btn btn-primary" disabled={!canSubmit}>
               {editingEntry ? "Update" : "Save"}
             </button>
           )}
