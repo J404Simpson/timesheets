@@ -287,15 +287,6 @@ body{
 
 .muted{ color:var(--muted); }
 
-.app-footer{
-  padding:14px 28px;
-  text-align:center;
-  font-size:13px;
-  color:var(--muted);
-  border-top:1px solid rgba(15,23,42,0.03);
-  width:100%;
-}
-
 .form {
   display: flex;
   flex-direction: column;
@@ -612,6 +603,39 @@ label {
   cursor: not-allowed;
   border: 2px solid #94a3b8;
   box-shadow: 0 1px 3px rgba(15, 23, 42, 0.1);
+}
+
+.grid-cell.occupied.entry-leave {
+  background: #dc2626;
+  border: 2px solid #b91c1c;
+}
+
+.grid-cell.occupied.entry-sustaining {
+  background: #93c5fd;
+  border: 2px solid #60a5fa;
+}
+
+.grid-cell.occupied.entry-project {
+  background: #1d4ed8;
+  border: 2px solid #1e40af;
+}
+
+.grid-cell.occupied.entry-leave .entry-cell-content,
+.grid-cell.occupied.entry-leave .entry-cell-time,
+.grid-cell.occupied.entry-leave .entry-cell-project,
+.grid-cell.occupied.entry-leave .entry-cell-hours,
+.grid-cell.occupied.entry-project .entry-cell-content,
+.grid-cell.occupied.entry-project .entry-cell-time,
+.grid-cell.occupied.entry-project .entry-cell-project,
+.grid-cell.occupied.entry-project .entry-cell-hours {
+  color: #f8fafc;
+}
+
+.grid-cell.occupied.entry-sustaining .entry-cell-content,
+.grid-cell.occupied.entry-sustaining .entry-cell-time,
+.grid-cell.occupied.entry-sustaining .entry-cell-project,
+.grid-cell.occupied.entry-sustaining .entry-cell-hours {
+  color: #0f172a;
 }
 
 .grid-cell.future {

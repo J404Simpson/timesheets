@@ -228,9 +228,6 @@ const App: React.FC = () => {
         )}
       </main>
 
-      <footer className="app-footer">
-        <small>© {new Date().getFullYear()} Timesheets (local)</small>
-      </footer>
     </div>
   );
 };

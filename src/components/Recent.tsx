@@ -73,23 +73,11 @@ export default function Recent({ onCreateEntry, onSelectDate, onEditEntry }: Pro
     return day;
   });
 
-  const formatTime = (timeStr: string) => {
-    // timeStr is ISO or HH:MM:SS format
-    const match = timeStr.match(/(\d{2}):(\d{2})/);
-    if (!match) return timeStr;
-    const [, h, m] = match;
-    const hour = parseInt(h, 10);
-    const ampm = hour >= 12 ? "PM" : "AM";
-    const displayHour = hour === 0 ? 12 : hour > 12 ? hour - 12 : hour;
-    return `${displayHour}:${m} ${ampm}`;
-  };
-
   const getEntryDateKey = (value: string) => value.split("T")[0];
 
   const getEntryDisplay = (entry: WeekEntry) => {
     const projectName = entry.project?.name?.trim() ?? "";
     const projectNameLower = projectName.toLowerCase();
-    const phaseName = entry.project_phase?.phase?.name?.trim() ?? "";
     const taskName = entry.task?.name?.trim() ?? "";
     const hoursText = `${Number(entry.hours)}h`;
 
@@ -138,11 +126,6 @@ export default function Recent({ onCreateEntry, onSelectDate, onEditEntry }: Pro
     }
 
     return display;
-  };
-
-  const getEntriesForDate = (date: Date) => {
-    const dateStr = toDateKeyLocal(date);
-    return entries.filter((e) => getEntryDateKey(e.date) === dateStr);
   };
 
   const getTimeParts = (value: string): [number, number] => {
@@ -314,6 +297,48 @@ export default function Recent({ onCreateEntry, onSelectDate, onEditEntry }: Pro
     }
   };
 
+  const isLeaveEntry = (entry: WeekEntry) => {
+    return (entry.project?.name ?? "").trim().toLowerCase() === "leave";
+  };
+
+  const getEntryTypeClass = (entry?: WeekEntry) => {
+    if (!entry) return "";
+    const projectNameLower = (entry.project?.name ?? "").trim().toLowerCase();
+    if (projectNameLower === "leave") return "entry-leave";
+    if (projectNameLower === "sustaining") return "entry-sustaining";
+    return "entry-project";
+  };
+
+  const getCellClassName = (
+    isHourDivider: boolean,
+    isOccupied: boolean,
+    isFuture: boolean,
+    isToday: boolean,
+    isSelected: boolean,
+    entry?: WeekEntry
+  ) => {
+    return `grid-cell quarter ${isHourDivider ? "hour-divider" : ""} ${isOccupied ? "occupied" : ""} ${isFuture ? "future" : ""} ${!isFuture && !isOccupied ? "available" : ""} ${isToday ? "today-col" : ""} ${isSelected ? "selected-range" : ""} ${getEntryTypeClass(entry)}`;
+  };
+
+  const getCellTitle = (
+    isFuture: boolean,
+    isOccupied: boolean,
+    isSelected: boolean,
+    timeLabel: string,
+    entry?: WeekEntry
+  ) => {
+    if (isFuture) return "Cannot select future time";
+    if (entry) return isLeaveEntry(entry) ? "Leave entries cannot be edited" : "Click to edit entry";
+    if (isOccupied) return "Time slot occupied";
+    if (isSelected) return "Click highlighted range to create entry";
+    return `Click and drag to select time range from ${timeLabel}`;
+  };
+
+  const getEntryCursor = (entry?: WeekEntry) => {
+    if (!entry) return undefined;
+    return isLeaveEntry(entry) ? "not-allowed" : "pointer";
+  };
+
   if (loading) {
     return (
       <section className="recent-activity">
@@ -412,14 +437,13 @@ export default function Recent({ onCreateEntry, onSelectDate, onEditEntry }: Pro
                         return (
                           <button
                             key={`${dateStr}-${hour}-${minute}`}
-                            className={`grid-cell quarter ${isHourDivider ? "hour-divider" : ""} ${isOccupied ? "occupied" : ""} ${isFuture ? "future" : ""} ${!isFuture && !isOccupied ? "available" : ""} ${isToday ? "today-col" : ""} ${isSelected ? "selected-range" : ""}`}
+                            className={getCellClassName(isHourDivider, isOccupied, isFuture, isToday, isSelected, entry)}
                             onMouseDown={() => handleSlotMouseDown(day, hour, minute)}
                             onMouseEnter={() => handleSlotMouseEnter(day, hour, minute)}
                             onMouseUp={handleSlotMouseUp}
                             onClick={() => {
                               if (entry) {
-                                const isLeave = (entry.project?.name ?? "").trim().toLowerCase() === "leave";
-                                if (!isLeave) {
+                                if (!isLeaveEntry(entry)) {
                                   onEditEntry?.(entry);
                                 }
                                 return;
@@ -427,30 +451,14 @@ export default function Recent({ onCreateEntry, onSelectDate, onEditEntry }: Pro
                               handleTimeSlotClick(day, hour, minute);
                             }}
                             disabled={isFuture || (isOccupied && !entry)}
-                            title={
-                              isFuture
-                                ? "Cannot select future time"
-                                : entry
-                                  ? (entry.project?.name ?? "").trim().toLowerCase() === "leave"
-                                    ? "Leave entries cannot be edited"
-                                    : "Click to edit entry"
-                                  : isOccupied
-                                    ? "Time slot occupied"
-                                  : isSelected
-                                    ? "Click highlighted range to create entry"
-                                    : `Click and drag to select time range from ${timeLabel}`
-                            }
+                            title={getCellTitle(isFuture, isOccupied, isSelected, timeLabel, entry)}
                             style={{ 
                               overflow: "hidden", 
                               whiteSpace: "normal", 
                               wordBreak: "break-word", 
                               padding: "2px",
                               gridRow: rowSpan > 1 ? `span ${rowSpan}` : undefined,
-                              cursor: entry
-                                ? (entry.project?.name ?? "").trim().toLowerCase() === "leave"
-                                  ? "not-allowed"
-                                  : "pointer"
-                                : undefined
+                              cursor: getEntryCursor(entry)
                             }}
                           >
                             {entry && (
