@@ -425,6 +425,26 @@ export default function TimesheetForm({
     }
   }, [selectedType, entry.project]);
 
+  // Fetch tasks for Project mode when phase is available (supports edit pre-population)
+  useEffect(() => {
+    if (selectedType !== "project") return;
+
+    const phaseId = Number(entry.phase);
+    if (Number.isNaN(phaseId) || phaseId <= 0) {
+      setTasks([]);
+      setTaskError(null);
+      return;
+    }
+
+    setLoadingTasks(true);
+    setTaskError(null);
+    setTasks([]);
+    getTasksForPhaseAndEmployee(phaseId)
+      .then((fetchedTasks) => setTasks(fetchedTasks))
+      .catch(() => setTaskError("Failed to load tasks"))
+      .finally(() => setLoadingTasks(false));
+  }, [selectedType, entry.phase]);
+
   // Fetch tasks for Sustaining (project 2, phase 1) automatically
   useEffect(() => {
     if (selectedType !== "internal") return;
@@ -598,25 +618,9 @@ export default function TimesheetForm({
             <select
               name="phase"
               value={entry.phase ?? ""}
-              onChange={async (e) => {
+              onChange={(e) => {
                 handleChange(e);
                 handleField("task", undefined);
-                const phaseId = Number(e.target.value);
-                if (phaseId != null && !isNaN(phaseId) && phaseId > 0) {
-                  setLoadingTasks(true);
-                  setTaskError(null);
-                  setTasks([]);
-                  try {
-                    const fetchedTasks = await getTasksForPhaseAndEmployee(phaseId);
-                    setTasks(fetchedTasks);
-                  } catch {
-                    setTaskError("Failed to load tasks");
-                  } finally {
-                    setLoadingTasks(false);
-                  }
-                } else {
-                  setTasks([]);
-                }
               }}
               disabled={loadingPhases || !!phaseError || phases.length === 0}
             >
