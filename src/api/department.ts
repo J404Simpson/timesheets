@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { acquireTokenSilent, protectedResources } from "../auth/msalConfig";
+import { getApiBaseUrl } from "./baseUrl";
 
 export type Department = {
   id: number;
@@ -11,7 +12,7 @@ export async function getDepartments(): Promise<Department[]> {
   const accessToken = await acquireTokenSilent([
     protectedResources.timesheetApi.scope,
   ]);
-  const apiBase = import.meta.env.VITE_API_URL;
+  const apiBase = getApiBaseUrl();
   const response = await axios.get(`${apiBase}/api/departments`, {
     headers: {
       Authorization: `Bearer ${accessToken}`,
@@ -30,7 +31,7 @@ export async function createEmployee(
   const accessToken = await acquireTokenSilent([
     protectedResources.timesheetApi.scope,
   ]);
-  const apiBase = import.meta.env.VITE_API_URL;
+  const apiBase = getApiBaseUrl();
   const response = await axios.post(
     `${apiBase}/api/employees`,
     { firstName, lastName, email, object_id, department_id },

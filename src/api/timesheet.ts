@@ -9,7 +9,7 @@ export type Phase = {
 export async function getPhasesForProject(projectId: number): Promise<Phase[]> {
   try {
     const accessToken = await acquireTokenSilent([protectedResources.timesheetApi.scope]);
-    const apiBase = import.meta.env.VITE_API_URL;
+    const apiBase = getApiBaseUrl();
     const response = await axios.get(`${apiBase}/api/projects/${projectId}/phases`, {
       headers: {
         Authorization: `Bearer ${accessToken}`,
@@ -31,7 +31,7 @@ export type Project = {
 export async function getActiveProjects(): Promise<Project[]> {
   try {
     const accessToken = await acquireTokenSilent([protectedResources.timesheetApi.scope]);
-    const apiBase = import.meta.env.VITE_API_URL;
+    const apiBase = getApiBaseUrl();
     const response = await axios.get(`${apiBase}/api/projects`, {
       headers: {
         Authorization: `Bearer ${accessToken}`,
@@ -45,9 +45,11 @@ export async function getActiveProjects(): Promise<Project[]> {
 import { acquireTokenSilent, protectedResources } from "../auth/msalConfig";
 import axios from "axios";
 import type { AxiosResponse } from "axios";
+import { getApiBaseUrl } from "./baseUrl";
 
-const LOGIN_URL = `${import.meta.env.VITE_API_URL}/login`;
-const BASE_URL = `${import.meta.env.VITE_API_URL}/timesheet`;
+const API_BASE = getApiBaseUrl();
+const LOGIN_URL = `${API_BASE}/login`;
+const BASE_URL = `${API_BASE}/timesheet`;
 
 // Function to notify the backend of user login
 export async function notifyLogin(
@@ -128,7 +130,7 @@ export type CurrentEmployee = {
 
 export async function getCurrentUser(): Promise<CurrentEmployee> {
   const accessToken = await acquireTokenSilent([protectedResources.timesheetApi.scope]);
-  const apiBase = import.meta.env.VITE_API_URL;
+  const apiBase = getApiBaseUrl();
   const response = await axios.get(`${apiBase}/api/me`, {
     headers: {
       Authorization: `Bearer ${accessToken}`,
@@ -139,7 +141,7 @@ export async function getCurrentUser(): Promise<CurrentEmployee> {
 
 export async function getWeekEntries(weekOf?: string): Promise<WeekEntry[]> {
   const accessToken = await acquireTokenSilent([protectedResources.timesheetApi.scope]);
-  const apiBase = import.meta.env.VITE_API_URL;
+  const apiBase = getApiBaseUrl();
   const response = await axios.get(`${apiBase}/api/entries/week`, {
     headers: {
       Authorization: `Bearer ${accessToken}`,
@@ -162,7 +164,7 @@ export type CreateEntryPayload = {
 
 export async function createEntry(payload: CreateEntryPayload): Promise<any> {
   const accessToken = await acquireTokenSilent([protectedResources.timesheetApi.scope]);
-  const apiBase = import.meta.env.VITE_API_URL;
+  const apiBase = getApiBaseUrl();
   const response = await axios.post(`${apiBase}/api/entries`, payload, {
     headers: {
       Authorization: `Bearer ${accessToken}`,
@@ -173,7 +175,7 @@ export async function createEntry(payload: CreateEntryPayload): Promise<any> {
 
 export async function updateEntry(entryId: number, payload: CreateEntryPayload): Promise<any> {
   const accessToken = await acquireTokenSilent([protectedResources.timesheetApi.scope]);
-  const apiBase = import.meta.env.VITE_API_URL;
+  const apiBase = getApiBaseUrl();
   const response = await axios.put(`${apiBase}/api/entries/${entryId}`, payload, {
     headers: {
       Authorization: `Bearer ${accessToken}`,
