@@ -170,3 +170,14 @@ export async function createEntry(payload: CreateEntryPayload): Promise<any> {
   });
   return response.data;
 }
+
+export async function updateEntry(entryId: number, payload: CreateEntryPayload): Promise<any> {
+  const accessToken = await acquireTokenSilent([protectedResources.timesheetApi.scope]);
+  const apiBase = import.meta.env.VITE_API_URL;
+  const response = await axios.put(`${apiBase}/api/entries/${entryId}`, payload, {
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+    },
+  });
+  return response.data;
+}

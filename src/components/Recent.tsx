@@ -9,6 +9,7 @@ type Props = {
     endHour?: number,
     endMinute?: number
   ) => void;
+  onEditEntry?: (entry: WeekEntry) => void;
 };
 
 type TimeRangeSelection = {
@@ -24,7 +25,7 @@ type DragState = {
   active: boolean;
 };
 
-export default function Recent({ onSelectDate }: Props): JSX.Element {
+export default function Recent({ onSelectDate, onEditEntry }: Props): JSX.Element {
   const [entries, setEntries] = useState<WeekEntry[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -447,8 +448,18 @@ export default function Recent({ onSelectDate }: Props): JSX.Element {
                             {entry && (
                               (() => {
                                 const display = getVisibleEntryDisplay(entry, rowSpan);
+                                const isLeave = (entry.project?.name ?? "").trim().toLowerCase() === "leave";
                                 return (
-                                  <span className="entry-cell-content">
+                                  <span 
+                                    className="entry-cell-content"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      if (!isLeave && onEditEntry) {
+                                        onEditEntry(entry);
+                                      }
+                                    }}
+                                    style={{ cursor: isLeave ? "default" : "pointer" }}
+                                  >
                                     {display.title && (
                                       <div className="entry-cell-project" style={{ fontSize: "8px", fontWeight: "700" }}>
                                         {display.title}

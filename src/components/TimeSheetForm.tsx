@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
-import { createEntry, getActiveProjects, getPhasesForProject, getWeekEntries, type Project as ApiProject, type Phase as ApiPhase, type WeekEntry } from "../api/timesheet";
+import { createEntry, updateEntry, getActiveProjects, getPhasesForProject, getWeekEntries, type Project as ApiProject, type Phase as ApiPhase, type WeekEntry } from "../api/timesheet";
 import { getTasksForPhaseAndEmployee, getTasksForProjectPhase, type Task as ApiTask } from "../api/task";
 
 type Entry = {
@@ -73,7 +73,8 @@ export default function TimesheetForm({
   initialHour,
   initialMinute,
   initialEndHour,
-  initialEndMinute
+  initialEndMinute,
+  editingEntry,
 }: {
   onCancel?: () => void;
   onSaved?: () => void;
@@ -82,6 +83,7 @@ export default function TimesheetForm({
   initialMinute?: number;
   initialEndHour?: number;
   initialEndMinute?: number;
+  editingEntry?: WeekEntry;
 }) {
   const dateInputRef = useRef<HTMLInputElement | null>(null);
   const [projects, setProjects] = useState<ApiProject[]>([]);
@@ -122,18 +124,30 @@ export default function TimesheetForm({
   const STEP_MINUTES = 15; // 0.25 hour increments
   const timeOptions = generateTimeOptions(STEP_MINUTES);
 
-  // Calculate initial start time based on selected hour and minute
+  // Calculate initial start time based on selected hour and minute (for new entries)
   const getInitialStartTime = (): string => {
+    if (editingEntry) {
+      const timePart = editingEntry.start_time.includes("T") 
+        ? editingEntry.start_time.split("T")[1] 
+        : editingEntry.start_time;
+      return timePart.substring(0, 5); // HH:MM
+    }
     if (initialHour !== undefined && initialMinute !== undefined) {
       return `${String(initialHour).padStart(2, "0")}:${String(initialMinute).padStart(2, "0")}`;
     }
     if (initialHour !== undefined) {
       return `${String(initialHour).padStart(2, "0")}:00`;
     }
-    return "08:00"; // Changed from 09:00 to 08:00
+    return "08:00";
   };
 
   const getInitialEndTime = (startTime: string): string => {
+    if (editingEntry) {
+      const timePart = editingEntry.end_time.includes("T") 
+        ? editingEntry.end_time.split("T")[1] 
+        : editingEntry.end_time;
+      return timePart.substring(0, 5); // HH:MM
+    }
     if (initialEndHour !== undefined && initialEndMinute !== undefined) {
       const endCandidate = `${String(initialEndHour).padStart(2, "0")}:${String(initialEndMinute).padStart(2, "0")}`;
       const endCandidateMinutes = minutesFrom(endCandidate);
@@ -152,13 +166,36 @@ export default function TimesheetForm({
   const initialStartTime = getInitialStartTime();
   const initialEndTime = getInitialEndTime(initialStartTime);
 
-  const [entry, setEntry] = useState<Entry>({
-    workDate: initialDate || today,
-    startTime: initialStartTime,
-    endTime: initialEndTime,
-    notes: ""
-  });
-  const [selectedType, setSelectedType] = useState<"none" | "project" | "internal">("none");
+  const getInitialEntry = (): Entry => {
+    if (editingEntry) {
+      return {
+        workDate: editingEntry.date.split("T")[0],
+        startTime: initialStartTime,
+        endTime: initialEndTime,
+        project: String(editingEntry.project?.id ?? 0),
+        phase: editingEntry.project_phase?.phase?.id ? String(editingEntry.project_phase.phase.id) : undefined,
+        task: editingEntry.task?.id ? String(editingEntry.task.id) : undefined,
+        notes: editingEntry.notes ?? "",
+      };
+    }
+    return {
+      workDate: initialDate || today,
+      startTime: initialStartTime,
+      endTime: initialEndTime,
+      notes: ""
+    };
+  };
+
+  const getInitialSelectedType = (): "none" | "project" | "internal" => {
+    if (!editingEntry) return "none";
+    const projectId = editingEntry.project?.id;
+    if (projectId === 2) return "internal"; // Sustaining
+    if (projectId) return "project";
+    return "none";
+  };
+
+  const [entry, setEntry] = useState<Entry>(getInitialEntry());
+  const [selectedType, setSelectedType] = useState<"none" | "project" | "internal">(getInitialSelectedType());
   const [status, setStatus] = useState<string | null>(null);
   const [tasks, setTasks] = useState<ApiTask[]>([]);
   const [loadingTasks, setLoadingTasks] = useState(false);
@@ -234,7 +271,7 @@ export default function TimesheetForm({
 
     try {
       setStatus("Saving...");
-      await createEntry({
+      const payload = {
         projectId: Number(entry.project ?? 0),
         phaseId: entry.phase ? Number(entry.phase) : null,
         taskId: entry.task ? Number(entry.task) : null,
@@ -243,7 +280,13 @@ export default function TimesheetForm({
         endTime: entry.endTime,
         hours,
         notes: entry.notes
-      });
+      };
+
+      if (editingEntry) {
+        await updateEntry(editingEntry.id, payload);
+      } else {
+        await createEntry(payload);
+      }
       setStatus("Saved.");
       onSaved?.();
       // Reload entries after save
@@ -341,7 +384,7 @@ export default function TimesheetForm({
   return (
     <section>
       <div className="new-entry-header" style={{ display: "flex", flexDirection: "column", gap: 6, marginBottom: 12 }}>
-        <h2 style={{ margin: 0 }}>New Entry</h2>
+        <h2 style={{ margin: 0 }}>{editingEntry ? "Edit Entry" : "New Entry"}</h2>
         <div className="date-picker">
           <span className="date-display" aria-live="polite">
             {entry.workDate
@@ -570,7 +613,7 @@ export default function TimesheetForm({
         <div className="actions">
           {timeInputsVisible && (
             <button type="submit" className="btn btn-primary">
-              Save
+              {editingEntry ? "Update" : "Save"}
             </button>
           )}
 

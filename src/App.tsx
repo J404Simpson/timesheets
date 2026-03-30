@@ -6,7 +6,7 @@ import { useMsal } from "@azure/msal-react";
 import Recent from "./components/Recent";
 import Admin from "./components/Admin";
 import TimeSheetForm from "./components/TimeSheetForm";
-import { notifyLogin, getCurrentUser } from "./api/timesheet";
+import { notifyLogin, getCurrentUser, type WeekEntry } from "./api/timesheet";
 import DepartmentModal from "./components/DepartmentModal";
 import { createEmployee } from "./api/department";
 
@@ -23,6 +23,7 @@ const App: React.FC = () => {
   const [selectedMinute, setSelectedMinute] = useState<number | undefined>(undefined);
   const [selectedEndHour, setSelectedEndHour] = useState<number | undefined>(undefined);
   const [selectedEndMinute, setSelectedEndMinute] = useState<number | undefined>(undefined);
+  const [editingEntry, setEditingEntry] = useState<WeekEntry | undefined>(undefined);
   const [pendingUser, setPendingUser] = useState<{
     firstName: string;
     lastName: string;
@@ -97,6 +98,17 @@ const App: React.FC = () => {
     setSelectedMinute(minute);
     setSelectedEndHour(endHour);
     setSelectedEndMinute(endMinute);
+    setEditingEntry(undefined);
+    setShowNewEntryForm(true);
+  };
+
+  const handleEditEntry = (entry: WeekEntry) => {
+    setEditingEntry(entry);
+    setSelectedDate(undefined);
+    setSelectedHour(undefined);
+    setSelectedMinute(undefined);
+    setSelectedEndHour(undefined);
+    setSelectedEndMinute(undefined);
     setShowNewEntryForm(true);
   };
 
@@ -172,11 +184,11 @@ const App: React.FC = () => {
             />
             {isOnboarded && !showDepartmentModal && (!showNewEntryForm ? (
               view === "recent" ? (
-                <Recent onSelectDate={handleDateSelect} />
+                <Recent onSelectDate={handleDateSelect} onEditEntry={handleEditEntry} />
               ) : isAdmin ? (
                 <Admin />
               ) : (
-                <Recent onSelectDate={handleDateSelect} />
+                <Recent onSelectDate={handleDateSelect} onEditEntry={handleEditEntry} />
               )
             ) : (
               <section id="new-entry-form" className="new-entry-section" aria-live="polite">
@@ -187,6 +199,7 @@ const App: React.FC = () => {
                   initialEndMinute={selectedEndMinute}
                   initialMinute={selectedMinute}
                   initialHour={selectedHour}
+                  editingEntry={editingEntry}
                   onSaved={() => {
                     setShowNewEntryForm(false);
                     setSelectedDate(undefined);
@@ -194,6 +207,7 @@ const App: React.FC = () => {
                     setSelectedMinute(undefined);
                     setSelectedEndHour(undefined);
                     setSelectedEndMinute(undefined);
+                    setEditingEntry(undefined);
                     setView("recent");
                   }}
                   onCancel={() => {
@@ -203,6 +217,7 @@ const App: React.FC = () => {
                     setSelectedMinute(undefined);
                     setSelectedEndHour(undefined);
                     setSelectedEndMinute(undefined);
+                    setEditingEntry(undefined);
                     setView("recent");
                   }}
                 />
