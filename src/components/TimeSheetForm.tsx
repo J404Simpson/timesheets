@@ -14,6 +14,12 @@ type Entry = {
   notes?: string;
 };
 
+type DropdownOption = {
+  value: string;
+  label: string;
+  disabled?: boolean;
+};
+
 function pad(n: number) {
   return n.toString().padStart(2, "0");
 }
@@ -62,6 +68,101 @@ function shouldShowProject(project: ApiProject): boolean {
 
 const SUSTAINING_PROJECT_ID = 2;
 const SUSTAINING_PHASE_ID = 1;
+
+function FormDropdown({
+  name,
+  value,
+  options,
+  onChange,
+  disabled,
+  ariaLabel,
+  className,
+}: {
+  name: string;
+  value: string;
+  options: DropdownOption[];
+  onChange: (name: string, value: string) => void;
+  disabled?: boolean;
+  ariaLabel?: string;
+  className?: string;
+}) {
+  const [isOpen, setIsOpen] = useState(false);
+  const rootRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    const handleOutsideClick = (event: MouseEvent) => {
+      if (!rootRef.current) return;
+      if (!rootRef.current.contains(event.target as Node)) {
+        setIsOpen(false);
+      }
+    };
+
+    const handleEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        setIsOpen(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleOutsideClick);
+    document.addEventListener("keydown", handleEscape);
+
+    return () => {
+      document.removeEventListener("mousedown", handleOutsideClick);
+      document.removeEventListener("keydown", handleEscape);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (disabled) {
+      setIsOpen(false);
+    }
+  }, [disabled]);
+
+  const selected = options.find((opt) => opt.value === value);
+  const display = selected?.label ?? "Select";
+
+  return (
+    <div ref={rootRef} className={`form-dropdown ${className ?? ""}`.trim()}>
+      <button
+        type="button"
+        className="form-dropdown-trigger"
+        aria-label={ariaLabel}
+        aria-haspopup="listbox"
+        aria-expanded={isOpen}
+        disabled={disabled}
+        onClick={() => setIsOpen((prev) => !prev)}
+      >
+        <span className="form-dropdown-value">{display}</span>
+        <span className="form-dropdown-caret" aria-hidden="true">▾</span>
+      </button>
+
+      {isOpen && !disabled && (
+        <ul className="form-dropdown-menu" role="listbox" aria-label={ariaLabel}>
+          {options.map((opt) => {
+            const isSelected = opt.value === value;
+            return (
+              <li key={`${name}-${opt.value}`} role="presentation">
+                <button
+                  type="button"
+                  role="option"
+                  aria-selected={isSelected}
+                  disabled={opt.disabled}
+                  className={`form-dropdown-option ${isSelected ? "selected" : ""}`.trim()}
+                  onClick={() => {
+                    onChange(name, opt.value);
+                    setIsOpen(false);
+                  }}
+                >
+                  {opt.label}
+                </button>
+              </li>
+            );
+          })}
+        </ul>
+      )}
+    </div>
+  );
+}
 
 
 // Remove hardcoded projects, use state for fetched projects
@@ -205,9 +306,7 @@ export default function TimesheetForm({
     setEntry((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
-    const { name, value } = e.target;
-
+  const applyFieldChange = (name: string, value: string) => {
     if (name === "startTime") {
       const startMin = minutesFrom(value);
       const minEnd = startMin + STEP_MINUTES;
@@ -221,6 +320,11 @@ export default function TimesheetForm({
     }
 
     setEntry((prev) => ({ ...prev, [name as keyof Entry]: value }));
+  };
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
+    const { name, value } = e.target;
+    applyFieldChange(name, value);
   };
 
   const submitEntry = async (e: React.FormEvent) => {
@@ -624,26 +728,36 @@ export default function TimesheetForm({
         {showEntryFields && (
           <>
             <div className="entry-time-row">
-              <label>
+              <label className="entry-time-field">
                 Start
-                <select className="time-select" name="startTime" value={entry.startTime} onChange={handleChange} aria-label="Start time">
-                  {timeOptions.map((opt) => (
-                    <option key={opt.value} value={opt.value} disabled={isStartBlocked(opt.value)}>
-                      {opt.label}
-                    </option>
-                  ))}
-                </select>
+                <FormDropdown
+                  className="time-select"
+                  name="startTime"
+                  value={entry.startTime ?? ""}
+                  ariaLabel="Start time"
+                  onChange={applyFieldChange}
+                  options={timeOptions.map((opt) => ({
+                    value: opt.value,
+                    label: opt.label,
+                    disabled: isStartBlocked(opt.value),
+                  }))}
+                />
               </label>
 
-              <label>
+              <label className="entry-time-field">
                 End
-                <select className="time-select" name="endTime" value={entry.endTime} onChange={handleChange} aria-label="End time">
-                  {endOptions.map((opt) => (
-                    <option key={opt.value} value={opt.value} disabled={isEndBlocked(opt.value)}>
-                      {opt.label}
-                    </option>
-                  ))}
-                </select>
+                <FormDropdown
+                  className="time-select"
+                  name="endTime"
+                  value={entry.endTime ?? ""}
+                  ariaLabel="End time"
+                  onChange={applyFieldChange}
+                  options={endOptions.map((opt) => ({
+                    value: opt.value,
+                    label: opt.label,
+                    disabled: isEndBlocked(opt.value),
+                  }))}
+                />
               </label>
             </div>
 
@@ -659,19 +773,17 @@ export default function TimesheetForm({
         {/* Sustaining task dropdown (project 2, phase 1 fixed in background) */}
         {showInternalFields && (
           <label>
-            <select
+            <FormDropdown
               name="task"
               value={entry.task ?? ""}
-              onChange={handleChange}
+              ariaLabel="Task"
+              onChange={applyFieldChange}
               disabled={loadingTasks || !!taskError || tasks.length === 0}
-            >
-              <option value="">{getTaskPlaceholder()}</option>
-              {tasks.map((task) => (
-                <option key={task.id} value={task.id}>
-                  {task.name}
-                </option>
-              ))}
-            </select>
+              options={[
+                { value: "", label: getTaskPlaceholder() },
+                ...tasks.map((task) => ({ value: String(task.id), label: task.name })),
+              ]}
+            />
           </label>
         )}
 
@@ -679,23 +791,21 @@ export default function TimesheetForm({
         {showProjectFields && (
           <>
             <label>
-              <select
+              <FormDropdown
                 name="project"
                 value={entry.project ?? ""}
-                onChange={(e) => {
-                  handleChange(e);
+                ariaLabel="Project"
+                onChange={(name, value) => {
+                  applyFieldChange(name, value);
                   handleField("phase", undefined);
                   handleField("task", undefined);
                 }}
                 disabled={loadingProjects || !!projectError}
-              >
-                <option value="">{loadingProjects ? "Loading projects..." : "Select a project"}</option>
-                {projects.map((p) => (
-                  <option key={p.id} value={p.id}>
-                    {p.name}
-                  </option>
-                ))}
-              </select>
+                options={[
+                  { value: "", label: loadingProjects ? "Loading projects..." : "Select a project" },
+                  ...projects.map((p) => ({ value: String(p.id), label: p.name })),
+                ]}
+              />
             </label>
           </>
         )}
@@ -703,41 +813,37 @@ export default function TimesheetForm({
         {/* Phase shown if project has phases */}
         {showProjectFields && (
           <label>
-            <select
+            <FormDropdown
               name="phase"
               value={entry.phase ?? ""}
-              onChange={(e) => {
-                handleChange(e);
+              ariaLabel="Phase"
+              onChange={(name, value) => {
+                applyFieldChange(name, value);
                 handleField("task", undefined);
               }}
               disabled={!entry.project || loadingPhases || !!phaseError || phases.length === 0}
-            >
-              <option value="">{getPhasePlaceholder()}</option>
-              {phases.map((ph) => (
-                <option key={ph.id} value={ph.id}>
-                  {ph.name}
-                </option>
-              ))}
-            </select>
+              options={[
+                { value: "", label: getPhasePlaceholder() },
+                ...phases.map((ph) => ({ value: String(ph.id), label: ph.name })),
+              ]}
+            />
           </label>
         )}
 
         {/* Task dropdown shown after phase selection and tasks loaded */}
         {showProjectFields && (
           <label>
-            <select
+            <FormDropdown
               name="task"
               value={entry.task ?? ""}
-              onChange={handleChange}
+              ariaLabel="Task"
+              onChange={applyFieldChange}
               disabled={!entry.project || (phaseRequired && !entry.phase) || loadingTasks || !!taskError || tasks.length === 0}
-            >
-              <option value="">{getTaskPlaceholder()}</option>
-              {tasks.map((task) => (
-                <option key={task.id} value={task.id}>
-                  {task.name}
-                </option>
-              ))}
-            </select>
+              options={[
+                { value: "", label: getTaskPlaceholder() },
+                ...tasks.map((task) => ({ value: String(task.id), label: task.name })),
+              ]}
+            />
           </label>
         )}
 

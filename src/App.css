@@ -170,6 +170,12 @@ body{
   font-size: 1rem;
   font-weight: 600;
   border-radius: 10px;
+  background: rgba(15, 23, 42, 0.06);
+  border-color: rgba(15, 23, 42, 0.12);
+}
+
+.entry-modal .entry-type-choice:hover:not(:disabled) {
+  background: rgba(15, 23, 42, 0.1);
 }
 
 .entry-modal .entry-time-row {
@@ -187,6 +193,103 @@ body{
 
 .entry-modal .time-select {
   max-height: 24rem;
+}
+
+.entry-modal .form-dropdown {
+  position: relative;
+  width: 100%;
+}
+
+.entry-modal .form-dropdown-trigger {
+  width: 100%;
+  min-height: 38px;
+  border: 1px solid rgba(15, 23, 42, 0.1);
+  border-radius: 6px;
+  background: #ffffff;
+  color: #0f172a;
+  padding: 8px 12px;
+  font-size: 14px;
+  font-family: inherit;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  cursor: pointer;
+}
+
+.entry-modal .form-dropdown-trigger:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+}
+
+.entry-modal .form-dropdown-trigger:disabled {
+  background: #f8fafc;
+  color: #94a3b8;
+  cursor: not-allowed;
+}
+
+.entry-modal .form-dropdown-value {
+  text-align: left;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.entry-modal .form-dropdown-caret {
+  color: #64748b;
+  font-size: 12px;
+  flex: 0 0 auto;
+}
+
+.entry-modal .form-dropdown-menu {
+  --dropdown-option-height: 2.25rem;
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  z-index: 30;
+  margin: 0;
+  padding: 6px;
+  list-style: none;
+  border: 1px solid rgba(15, 23, 42, 0.12);
+  border-radius: 8px;
+  background: #ffffff;
+  box-shadow: 0 12px 28px rgba(15, 23, 42, 0.2);
+  height: min(calc(var(--dropdown-option-height) * 16), 50vh);
+  overflow-y: auto;
+}
+
+.entry-modal .form-dropdown-option {
+  width: 100%;
+  min-height: var(--dropdown-option-height);
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: #0f172a;
+  text-align: left;
+  padding: 0 10px;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.entry-modal .form-dropdown-option:hover:not(:disabled),
+.entry-modal .form-dropdown-option.selected {
+  background: rgba(37, 99, 235, 0.12);
+}
+
+.entry-modal .form-dropdown-option:disabled {
+  color: #94a3b8;
+  cursor: not-allowed;
+}
+
+.entry-modal .entry-time-field {
+  align-items: center;
+  text-align: center;
+}
+
+.entry-modal .entry-time-field .time-select {
+  width: 100%;
 }
 
 .entry-modal label {
