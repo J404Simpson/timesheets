@@ -66,18 +66,11 @@ const App: React.FC = () => {
     }
   }, [isAuthenticated, accounts]);
 
-  const openCreate = (e: React.MouseEvent) => {
-    e.preventDefault();
+  const openCreate = (e?: React.MouseEvent) => {
+    e?.preventDefault();
     if (!isAuthenticated) return;
     setView("recent");
     setShowNewEntryForm(true);
-  };
-
-  const goRecent = (e: React.MouseEvent) => {
-    e.preventDefault();
-    if (!isAuthenticated) return;
-    setShowNewEntryForm(false);
-    setView("recent");
   };
 
   const goAdmin = (e: React.MouseEvent) => {
@@ -147,29 +140,6 @@ const App: React.FC = () => {
         <h1 className="app-title">Timesheets</h1>
 
         <nav className="app-nav" aria-label="Main navigation">
-          <a
-            className={`nav-link ${!isAuthenticated || showDepartmentModal ? "disabled" : ""}`}
-            href={isAuthenticated && !showDepartmentModal ? "#create" : undefined}
-            role="button"
-            aria-disabled={!isAuthenticated || showDepartmentModal}
-            tabIndex={isAuthenticated && !showDepartmentModal ? 0 : -1}
-            onClick={openCreate}
-            aria-controls="new-entry-form"
-          >
-            Create
-          </a>
-
-          <a
-            className={`nav-link ${!isAuthenticated || showDepartmentModal ? "disabled" : ""}`}
-            href={isAuthenticated && !showDepartmentModal ? "#recent" : undefined}
-            role="button"
-            aria-disabled={!isAuthenticated || showDepartmentModal}
-            tabIndex={isAuthenticated && !showDepartmentModal ? 0 : -1}
-            onClick={goRecent}
-          >
-            Recent
-          </a>
-
           {isAdmin && (
             <a
               className={`nav-link ${!isAuthenticated || showDepartmentModal ? "disabled" : ""}`}
@@ -216,7 +186,7 @@ const App: React.FC = () => {
                 {view === "admin" && isAdmin ? (
                   <Admin />
                 ) : (
-                  <Recent onSelectDate={handleDateSelect} onEditEntry={handleEditEntry} />
+                  <Recent onCreateEntry={() => openCreate()} onSelectDate={handleDateSelect} onEditEntry={handleEditEntry} />
                 )}
 
                 {showNewEntryForm && (

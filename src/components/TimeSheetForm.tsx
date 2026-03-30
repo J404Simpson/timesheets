@@ -555,6 +555,7 @@ export default function TimesheetForm({
             <button
               type="button"
               className="btn entry-type-choice"
+              disabled={!!editingEntry}
               onClick={() => {
                 setSelectedType("project");
                 setEntry((prev) => ({ ...prev, project: undefined, phase: undefined }));
@@ -568,6 +569,7 @@ export default function TimesheetForm({
             <button
               type="button"
               className="btn entry-type-choice"
+              disabled={!!editingEntry}
               onClick={() => {
                 setSelectedType("internal");
                 setEntry((prev) => ({

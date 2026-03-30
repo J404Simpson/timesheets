@@ -2,6 +2,7 @@ import { useEffect, useState, Fragment } from "react";
 import { getWeekEntries, type WeekEntry } from "../api/timesheet";
 
 type Props = {
+  onCreateEntry?: () => void;
   onSelectDate?: (
     date: string,
     hour?: number,
@@ -25,7 +26,7 @@ type DragState = {
   active: boolean;
 };
 
-export default function Recent({ onSelectDate, onEditEntry }: Props): JSX.Element {
+export default function Recent({ onCreateEntry, onSelectDate, onEditEntry }: Props): JSX.Element {
   const [entries, setEntries] = useState<WeekEntry[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -333,17 +334,6 @@ export default function Recent({ onSelectDate, onEditEntry }: Props): JSX.Elemen
 
   return (
     <section className="recent-activity">
-      <div className="week-nav">
-        <h3>{weekOffset === 0 ? "This Week" : "Last Week"}</h3>
-        <button
-          className="date-picker-btn"
-          onClick={() => setWeekOffset(weekOffset === 0 ? -1 : 0)}
-          title={weekOffset === 0 ? "View last week" : "Back to this week"}
-          aria-label={weekOffset === 0 ? "View last week" : "Back to this week"}
-        >
-          {weekOffset === 0 ? "←" : "→"}
-        </button>
-      </div>
       <div className="week-grid-container">
         <div className="week-grid">
           {/* Header row with days */}
@@ -498,6 +488,32 @@ export default function Recent({ onSelectDate, onEditEntry }: Props): JSX.Elemen
           })}
         </div>
 
+      </div>
+
+      <div className="week-nav">
+        <div className="week-nav-group week-nav-start">
+          <h3>{weekOffset === 0 ? "This Week" : "Last Week"}</h3>
+          <button
+            className="date-picker-btn"
+            onClick={() => setWeekOffset(weekOffset === 0 ? -1 : 0)}
+            title={weekOffset === 0 ? "View last week" : "Back to this week"}
+            aria-label={weekOffset === 0 ? "View last week" : "Back to this week"}
+          >
+            {weekOffset === 0 ? "←" : "→"}
+          </button>
+        </div>
+
+        <div className="week-nav-group week-nav-center">
+          <button
+            type="button"
+            className="btn primary week-nav-create"
+            onClick={onCreateEntry}
+          >
+            New Entry
+          </button>
+        </div>
+
+        <div className="week-nav-group week-nav-end" aria-hidden="true" />
       </div>
     </section>
   );

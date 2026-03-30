@@ -408,14 +408,39 @@ label {
 
 /* Week navigation heading row */
 .week-nav {
-  display: flex;
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
   align-items: center;
   gap: 10px;
-  margin-bottom: 0;
+  margin-top: 14px;
 }
 
 .week-nav h3 {
   margin: 0;
+}
+
+.week-nav-group {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.week-nav-start {
+  justify-self: start;
+}
+
+.week-nav-center {
+  justify-self: center;
+}
+
+.week-nav-end {
+  justify-self: end;
+  min-width: 1px;
+}
+
+.week-nav-create {
+  min-width: 132px;
+  justify-content: center;
 }
 
 /* Week Calendar Styles */
@@ -428,7 +453,7 @@ label {
 
 /* Week Grid Spreadsheet Styles */
 .week-grid-container {
-  margin-top: 16px;
+  margin-top: 0;
   background: var(--card);
   border: 1px solid rgba(15, 23, 42, 0.06);
   border-radius: 0;
@@ -714,6 +739,25 @@ label {
 }
 
 @media (max-width: 768px) {
+  .week-nav {
+    grid-template-columns: 1fr;
+    justify-items: stretch;
+  }
+
+  .week-nav-start,
+  .week-nav-center,
+  .week-nav-end {
+    justify-self: stretch;
+  }
+
+  .week-nav-center {
+    justify-content: center;
+  }
+
+  .week-nav-end {
+    display: none;
+  }
+
   .entry-modal-backdrop {
     padding: 16px 10px;
     align-items: stretch;
