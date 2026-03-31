@@ -13,12 +13,14 @@ type Props = {
     endHour?: number,
     endMinute?: number
   ) => void;
+  onBackToRecent?: () => void;
 };
 
 export default function Admin({
   onEditEntryForUser,
   onCreateEntryForUser,
   onSelectDateForUser,
+  onBackToRecent,
 }: Props): JSX.Element {
   const [activeSection, setActiveSection] = useState<"projects" | "sustaining" | "users">("users");
   const [users, setUsers] = useState<AdminUser[]>([]);
@@ -83,6 +85,14 @@ export default function Admin({
           onClick={() => setActiveSection("users")}
         >
           Users
+        </button>
+        <button
+          type="button"
+          className="btn admin-option"
+          onClick={onBackToRecent}
+          aria-label="Back to recent view"
+        >
+          ← Back
         </button>
       </div>
 

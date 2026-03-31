@@ -432,6 +432,11 @@ body{
   border: 1px solid rgba(15, 23, 42, 0.06);
   border-radius: 10px;
   padding: 16px;
+  height: calc(100vh - 170px);
+  min-height: 0;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
 }
 
 .admin-header {
@@ -477,6 +482,8 @@ body{
   display: grid;
   grid-template-columns: 320px minmax(0, 1fr);
   gap: 12px;
+  flex: 1;
+  min-height: 0;
 }
 
 .admin-users-list-panel,
@@ -485,6 +492,16 @@ body{
   border-radius: 10px;
   background: #ffffff;
   padding: 12px;
+  min-height: 0;
+}
+
+.admin-users-list-panel {
+  display: flex;
+  flex-direction: column;
+}
+
+.admin-users-recent-panel {
+  overflow: hidden;
 }
 
 .admin-users-list-header {
@@ -506,8 +523,25 @@ body{
   display: flex;
   flex-direction: column;
   gap: 6px;
-  max-height: 540px;
+  flex: 1;
+  min-height: 0;
   overflow: auto;
+}
+
+.admin-users-recent-panel .recent-activity {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.admin-users-recent-panel .week-grid-container {
+  flex: 1;
+  min-height: 0;
+}
+
+.admin-users-recent-panel .week-grid {
+  min-height: 0;
+  max-height: 100%;
 }
 
 .admin-user-item {
@@ -1075,6 +1109,12 @@ label {
 
   .admin-users-layout {
     grid-template-columns: 1fr;
+    overflow: auto;
+  }
+
+  .admin-panel {
+    height: auto;
+    overflow: visible;
   }
 
   .week-nav {

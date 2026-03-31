@@ -80,6 +80,11 @@ const App: React.FC = () => {
     setView("admin");
   };
 
+  const goRecentFromAdmin = () => {
+    setShowNewEntryForm(false);
+    setView("recent");
+  };
+
   useEffect(() => {
     if (!isAdmin && view === "admin") {
       setView("recent");
@@ -224,6 +229,7 @@ const App: React.FC = () => {
                     onEditEntryForUser={handleAdminEditEntry}
                     onCreateEntryForUser={handleAdminCreateEntry}
                     onSelectDateForUser={handleAdminDateSelect}
+                    onBackToRecent={goRecentFromAdmin}
                   />
                 ) : (
                   <Recent
