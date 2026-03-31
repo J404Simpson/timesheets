@@ -555,6 +555,27 @@ label {
   justify-content: center;
 }
 
+.week-nav-toggle {
+  min-width: 132px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background: #ffffff;
+  color: var(--text);
+  border: 1px solid rgba(15, 23, 42, 0.2);
+}
+
+.week-nav-toggle:hover {
+  background: #f8fafc;
+}
+
+.week-nav-toggle:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
+}
+
 /* Week Calendar Styles */
 .week-calendar {
   display: grid;

@@ -500,14 +500,15 @@ export default function Recent({ onCreateEntry, onSelectDate, onEditEntry }: Pro
 
       <div className="week-nav">
         <div className="week-nav-group week-nav-start">
-          <h3>{weekOffset === 0 ? "This Week" : "Last Week"}</h3>
           <button
-            className="date-picker-btn"
+            type="button"
+            className="btn week-nav-toggle"
             onClick={() => setWeekOffset(weekOffset === 0 ? -1 : 0)}
             title={weekOffset === 0 ? "View last week" : "Back to this week"}
             aria-label={weekOffset === 0 ? "View last week" : "Back to this week"}
           >
-            {weekOffset === 0 ? "←" : "→"}
+            <span>{weekOffset === 0 ? "Last Week" : "This Week"}</span>
+            <span aria-hidden="true">{weekOffset === 0 ? "←" : "→"}</span>
           </button>
         </div>
 
