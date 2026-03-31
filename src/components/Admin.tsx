@@ -156,16 +156,6 @@ export default function Admin({
                       onSelectDateForUser?.(selectedUser.id, date, hour, minute, endHour, endMinute)
                     }
                     onEditEntry={(entry) => onEditEntryForUser?.(entry, selectedUser.id)}
-                    footerEndContent={
-                      <button
-                        type="button"
-                        className="btn week-nav-toggle week-nav-admin"
-                        onClick={onBackToRecent}
-                        aria-label="Back to recent view"
-                      >
-                        Back
-                      </button>
-                    }
                   />
                 </>
               ) : (
@@ -175,6 +165,21 @@ export default function Admin({
           </div>
         )}
       </div>
+
+      {activeSection === "users" && (
+        <div className="admin-panel-footer">
+          <div className="admin-panel-footer-end">
+            <button
+              type="button"
+              className="btn week-nav-toggle week-nav-admin"
+              onClick={onBackToRecent}
+              aria-label="Back to recent view"
+            >
+              Back
+            </button>
+          </div>
+        </div>
+      )}
     </section>
   );
 }

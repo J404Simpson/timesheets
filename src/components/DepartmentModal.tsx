@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
-import { getDepartments, createEmployee, Department } from "../api/department";
+import { getDepartments } from "../api/department";
+import type { Department } from "../api/department";
 
 interface DepartmentModalProps {
   open: boolean;
