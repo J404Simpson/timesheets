@@ -64,36 +64,38 @@ export default function Admin({
 
   return (
     <section className="admin-panel" aria-live="polite">
-      <div className="admin-options" role="tablist" aria-label="Admin sections">
-        <button
-          type="button"
-          className={`btn admin-option ${activeSection === "projects" ? "is-active" : ""}`}
-          onClick={() => setActiveSection("projects")}
-        >
-          Projects
-        </button>
-        <button
-          type="button"
-          className={`btn admin-option ${activeSection === "sustaining" ? "is-active" : ""}`}
-          onClick={() => setActiveSection("sustaining")}
-        >
-          Sustaining
-        </button>
-        <button
-          type="button"
-          className={`btn admin-option ${activeSection === "users" ? "is-active" : ""}`}
-          onClick={() => setActiveSection("users")}
-        >
-          Users
-        </button>
-        <button
-          type="button"
-          className="btn admin-option"
-          onClick={onBackToRecent}
-          aria-label="Back to recent view"
-        >
-          ← Back
-        </button>
+      <div className="admin-options-bar">
+        <div className="admin-options" role="tablist" aria-label="Admin sections">
+          <button
+            type="button"
+            className={`btn admin-option ${activeSection === "projects" ? "is-active" : ""}`}
+            onClick={() => setActiveSection("projects")}
+          >
+            Projects
+          </button>
+          <button
+            type="button"
+            className={`btn admin-option ${activeSection === "sustaining" ? "is-active" : ""}`}
+            onClick={() => setActiveSection("sustaining")}
+          >
+            Sustaining
+          </button>
+          <button
+            type="button"
+            className={`btn admin-option ${activeSection === "users" ? "is-active" : ""}`}
+            onClick={() => setActiveSection("users")}
+          >
+            Users
+          </button>
+        </div>
+
+        <div className="admin-options-center">
+          {activeSection === "users" && selectedUser && (
+            <span className="admin-selected-user-label">{getUserDisplayName(selectedUser)}</span>
+          )}
+        </div>
+
+        <div className="admin-options-end" />
       </div>
 
       {activeSection === "projects" && <p className="muted">Projects configuration coming next.</p>}
@@ -145,7 +147,6 @@ export default function Admin({
           <section className="admin-users-recent-panel">
             {selectedUser ? (
               <>
-                <h3 className="admin-users-recent-title">Recent: {getUserDisplayName(selectedUser)}</h3>
                 <Recent
                   employeeId={selectedUser.id}
                   showCreateButton
@@ -160,6 +161,22 @@ export default function Admin({
               <p className="muted">Select a user to view recent entries.</p>
             )}
           </section>
+        </div>
+
+        <div className="admin-users-footer">
+          <div />
+          <div />
+          <div className="admin-users-footer-end">
+            <button
+              type="button"
+              className="btn week-nav-toggle"
+              onClick={onBackToRecent}
+              aria-label="Back to recent view"
+            >
+              <span aria-hidden="true">←</span>
+              <span>Back</span>
+            </button>
+          </div>
         </div>
       )}
     </section>
