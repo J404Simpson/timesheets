@@ -11,8 +11,10 @@ type Props = {
     endMinute?: number
   ) => void;
   onEditEntry?: (entry: WeekEntry) => void;
+  onGoAdmin?: () => void;
   employeeId?: number;
   showCreateButton?: boolean;
+  showAdminButton?: boolean;
 };
 
 type TimeRangeSelection = {
@@ -32,8 +34,10 @@ export default function Recent({
   onCreateEntry,
   onSelectDate,
   onEditEntry,
+  onGoAdmin,
   employeeId,
   showCreateButton = true,
+  showAdminButton = false,
 }: Props): JSX.Element {
   const [entries, setEntries] = useState<WeekEntry[]>([]);
   const [loading, setLoading] = useState(false);
@@ -535,7 +539,18 @@ export default function Recent({
           )}
         </div>
 
-        <div className="week-nav-group week-nav-end" aria-hidden="true" />
+        <div className="week-nav-group week-nav-end">
+          {showAdminButton && onGoAdmin && (
+            <button
+              type="button"
+              className="btn week-nav-toggle week-nav-admin"
+              onClick={onGoAdmin}
+              aria-label="Open admin"
+            >
+              Admin
+            </button>
+          )}
+        </div>
       </div>
     </section>
   );

@@ -74,8 +74,7 @@ const App: React.FC = () => {
     setShowNewEntryForm(true);
   };
 
-  const goAdmin = (e: React.MouseEvent) => {
-    e.preventDefault();
+  const goAdminFromRecent = () => {
     if (!isAuthenticated || !isAdmin) return;
     setShowNewEntryForm(false);
     setView("admin");
@@ -149,26 +148,42 @@ const App: React.FC = () => {
     setShowNewEntryForm(true);
   };
 
+  const handleAdminCreateEntry = (employeeId: number) => {
+    setEditingEntry(undefined);
+    setSelectedDate(undefined);
+    setSelectedHour(undefined);
+    setSelectedMinute(undefined);
+    setSelectedEndHour(undefined);
+    setSelectedEndMinute(undefined);
+    setTargetEmployeeId(employeeId);
+    setView("admin");
+    setShowNewEntryForm(true);
+  };
+
+  const handleAdminDateSelect = (
+    employeeId: number,
+    date: string,
+    hour?: number,
+    minute?: number,
+    endHour?: number,
+    endMinute?: number
+  ) => {
+    setSelectedDate(date);
+    setSelectedHour(hour);
+    setSelectedMinute(minute);
+    setSelectedEndHour(endHour);
+    setSelectedEndMinute(endMinute);
+    setEditingEntry(undefined);
+    setTargetEmployeeId(employeeId);
+    setView("admin");
+    setShowNewEntryForm(true);
+  };
+
   return (
     <div className="app">
       <header className="app-header">
         <div className="app-left">
           <h1 className="app-title">Timesheets</h1>
-
-          <nav className="app-nav" aria-label="Main navigation">
-            {isAdmin && (
-              <a
-                className={`nav-link ${!isAuthenticated || showDepartmentModal ? "disabled" : ""}`}
-                href={isAuthenticated && !showDepartmentModal ? "#admin" : undefined}
-                role="button"
-                aria-disabled={!isAuthenticated || showDepartmentModal}
-                tabIndex={isAuthenticated && !showDepartmentModal ? 0 : -1}
-                onClick={goAdmin}
-              >
-                Admin
-              </a>
-            )}
-          </nav>
         </div>
 
         <div className="app-logo" aria-hidden="true">
@@ -205,9 +220,19 @@ const App: React.FC = () => {
             {isOnboarded && !showDepartmentModal && (
               <>
                 {view === "admin" && isAdmin ? (
-                  <Admin onEditEntryForUser={handleAdminEditEntry} />
+                  <Admin
+                    onEditEntryForUser={handleAdminEditEntry}
+                    onCreateEntryForUser={handleAdminCreateEntry}
+                    onSelectDateForUser={handleAdminDateSelect}
+                  />
                 ) : (
-                  <Recent onCreateEntry={() => openCreate()} onSelectDate={handleDateSelect} onEditEntry={handleEditEntry} />
+                  <Recent
+                    onCreateEntry={() => openCreate()}
+                    onSelectDate={handleDateSelect}
+                    onEditEntry={handleEditEntry}
+                    onGoAdmin={goAdminFromRecent}
+                    showAdminButton={isAdmin && !showDepartmentModal}
+                  />
                 )}
 
                 {showNewEntryForm && (

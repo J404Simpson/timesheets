@@ -69,7 +69,7 @@ body{
 }
 
 .app-logo img {
-  height: 34px;
+  height: 52px;
   width: auto;
   display: block;
 }
@@ -1061,7 +1061,7 @@ label {
   }
 
   .app-logo img {
-    height: 30px;
+    height: 42px;
   }
 
   .admin-header {
@@ -1093,7 +1093,8 @@ label {
   }
 
   .week-nav-end {
-    display: none;
+    display: flex;
+    justify-content: center;
   }
 
   .entry-modal-backdrop {

@@ -4,9 +4,22 @@ import { getAdminUsers, type AdminUser, type WeekEntry } from "../api/timesheet"
 
 type Props = {
   onEditEntryForUser?: (entry: WeekEntry, employeeId: number) => void;
+  onCreateEntryForUser?: (employeeId: number) => void;
+  onSelectDateForUser?: (
+    employeeId: number,
+    date: string,
+    hour?: number,
+    minute?: number,
+    endHour?: number,
+    endMinute?: number
+  ) => void;
 };
 
-export default function Admin({ onEditEntryForUser }: Props): JSX.Element {
+export default function Admin({
+  onEditEntryForUser,
+  onCreateEntryForUser,
+  onSelectDateForUser,
+}: Props): JSX.Element {
   const [activeSection, setActiveSection] = useState<"projects" | "sustaining" | "users">("users");
   const [users, setUsers] = useState<AdminUser[]>([]);
   const [selectedUserId, setSelectedUserId] = useState<number | null>(null);
@@ -49,13 +62,6 @@ export default function Admin({ onEditEntryForUser }: Props): JSX.Element {
 
   return (
     <section className="admin-panel" aria-live="polite">
-      <header className="admin-header">
-        <div>
-          <h2 className="admin-title">Admin</h2>
-          <p className="muted admin-subtitle">Choose an admin area.</p>
-        </div>
-      </header>
-
       <div className="admin-options" role="tablist" aria-label="Admin sections">
         <button
           type="button"
@@ -132,7 +138,11 @@ export default function Admin({ onEditEntryForUser }: Props): JSX.Element {
                 <h3 className="admin-users-recent-title">Recent: {getUserDisplayName(selectedUser)}</h3>
                 <Recent
                   employeeId={selectedUser.id}
-                  showCreateButton={false}
+                  showCreateButton
+                  onCreateEntry={() => onCreateEntryForUser?.(selectedUser.id)}
+                  onSelectDate={(date, hour, minute, endHour, endMinute) =>
+                    onSelectDateForUser?.(selectedUser.id, date, hour, minute, endHour, endMinute)
+                  }
                   onEditEntry={(entry) => onEditEntryForUser?.(entry, selectedUser.id)}
                 />
               </>
