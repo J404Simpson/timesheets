@@ -520,18 +520,6 @@ body{
   min-height: 0;
 }
 
-.admin-users-footer {
-  display: grid;
-  grid-template-columns: 1fr auto 1fr;
-  align-items: center;
-  margin-top: 10px;
-  flex-shrink: 0;
-}
-
-.admin-users-footer-end {
-  justify-self: end;
-}
-
 .admin-users-list-panel,
 .admin-users-recent-panel {
   border: 1px solid rgba(15, 23, 42, 0.08);

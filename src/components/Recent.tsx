@@ -1,4 +1,4 @@
-import { useEffect, useState, Fragment } from "react";
+import { useEffect, useState, Fragment, type ReactNode } from "react";
 import { getWeekEntries, type WeekEntry } from "../api/timesheet";
 
 type Props = {
@@ -15,6 +15,7 @@ type Props = {
   employeeId?: number;
   showCreateButton?: boolean;
   showAdminButton?: boolean;
+  footerEndContent?: ReactNode;
 };
 
 type TimeRangeSelection = {
@@ -38,6 +39,7 @@ export default function Recent({
   employeeId,
   showCreateButton = true,
   showAdminButton = false,
+  footerEndContent,
 }: Props): JSX.Element {
   const [entries, setEntries] = useState<WeekEntry[]>([]);
   const [loading, setLoading] = useState(false);
@@ -540,7 +542,8 @@ export default function Recent({
         </div>
 
         <div className="week-nav-group week-nav-end">
-          {showAdminButton && onGoAdmin && (
+          {footerEndContent ??
+            (showAdminButton && onGoAdmin && (
             <button
               type="button"
               className="btn week-nav-toggle week-nav-admin"
@@ -549,7 +552,7 @@ export default function Recent({
             >
               Admin
             </button>
-          )}
+            ))}
         </div>
       </div>
     </section>
