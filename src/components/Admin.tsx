@@ -63,107 +63,109 @@ export default function Admin({
   };
 
   return (
-    <section className="admin-panel" aria-live="polite">
-      <div className="admin-options-bar">
-        <div className="admin-options" role="tablist" aria-label="Admin sections">
-          <button
-            type="button"
-            className={`btn admin-option ${activeSection === "projects" ? "is-active" : ""}`}
-            onClick={() => setActiveSection("projects")}
-          >
-            Projects
-          </button>
-          <button
-            type="button"
-            className={`btn admin-option ${activeSection === "sustaining" ? "is-active" : ""}`}
-            onClick={() => setActiveSection("sustaining")}
-          >
-            Sustaining
-          </button>
-          <button
-            type="button"
-            className={`btn admin-option ${activeSection === "users" ? "is-active" : ""}`}
-            onClick={() => setActiveSection("users")}
-          >
-            Users
-          </button>
+    <section className="admin-view" aria-live="polite">
+      <div className="admin-panel">
+        <div className="admin-options-bar">
+          <div className="admin-options" role="tablist" aria-label="Admin sections">
+            <button
+              type="button"
+              className={`btn admin-option ${activeSection === "projects" ? "is-active" : ""}`}
+              onClick={() => setActiveSection("projects")}
+            >
+              Projects
+            </button>
+            <button
+              type="button"
+              className={`btn admin-option ${activeSection === "sustaining" ? "is-active" : ""}`}
+              onClick={() => setActiveSection("sustaining")}
+            >
+              Sustaining
+            </button>
+            <button
+              type="button"
+              className={`btn admin-option ${activeSection === "users" ? "is-active" : ""}`}
+              onClick={() => setActiveSection("users")}
+            >
+              Users
+            </button>
+          </div>
+
+          <div className="admin-options-center">
+            {activeSection === "users" && selectedUser && (
+              <span className="admin-selected-user-label">{getUserDisplayName(selectedUser)}</span>
+            )}
+          </div>
+
+          <div className="admin-options-end" />
         </div>
 
-        <div className="admin-options-center">
-          {activeSection === "users" && selectedUser && (
-            <span className="admin-selected-user-label">{getUserDisplayName(selectedUser)}</span>
+        <div className="admin-content">
+          {activeSection === "projects" && <p className="muted">Projects configuration coming next.</p>}
+
+          {activeSection === "sustaining" && <p className="muted">Sustaining configuration coming next.</p>}
+
+          {activeSection === "users" && (
+            <div className="admin-users-layout">
+              <aside className="admin-users-list-panel">
+                <div className="admin-users-list-header">
+                  <h3>Users</h3>
+                  <button
+                    type="button"
+                    className="btn secondary"
+                    onClick={loadUsers}
+                    disabled={loadingUsers}
+                  >
+                    {loadingUsers ? "Refreshing..." : "Refresh"}
+                  </button>
+                </div>
+
+                {error && <p className="admin-error">{error}</p>}
+
+                {loadingUsers ? (
+                  <p className="muted">Loading users...</p>
+                ) : users.length === 0 ? (
+                  <p className="muted">No non-admin users found.</p>
+                ) : (
+                  <ul className="admin-user-list">
+                    {users.map((user) => {
+                      const selected = user.id === selectedUserId;
+                      return (
+                        <li key={user.id}>
+                          <button
+                            type="button"
+                            className={`admin-user-item ${selected ? "is-active" : ""}`}
+                            onClick={() => setSelectedUserId(user.id)}
+                          >
+                            <span className="admin-user-name">{getUserDisplayName(user)}</span>
+                            <span className="admin-user-email muted">{user.email}</span>
+                          </button>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                )}
+              </aside>
+
+              <section className="admin-users-recent-panel">
+                {selectedUser ? (
+                  <>
+                    <Recent
+                      employeeId={selectedUser.id}
+                      showCreateButton
+                      onCreateEntry={() => onCreateEntryForUser?.(selectedUser.id)}
+                      onSelectDate={(date, hour, minute, endHour, endMinute) =>
+                        onSelectDateForUser?.(selectedUser.id, date, hour, minute, endHour, endMinute)
+                      }
+                      onEditEntry={(entry) => onEditEntryForUser?.(entry, selectedUser.id)}
+                    />
+                  </>
+                ) : (
+                  <p className="muted">Select a user to view recent entries.</p>
+                )}
+              </section>
+            </div>
           )}
         </div>
-
-        <div className="admin-options-end" />
-      </div>
-
-      <div className="admin-content">
-        {activeSection === "projects" && <p className="muted">Projects configuration coming next.</p>}
-
-        {activeSection === "sustaining" && <p className="muted">Sustaining configuration coming next.</p>}
-
-        {activeSection === "users" && (
-          <div className="admin-users-layout">
-            <aside className="admin-users-list-panel">
-              <div className="admin-users-list-header">
-                <h3>Users</h3>
-                <button
-                  type="button"
-                  className="btn secondary"
-                  onClick={loadUsers}
-                  disabled={loadingUsers}
-                >
-                  {loadingUsers ? "Refreshing..." : "Refresh"}
-                </button>
-              </div>
-
-              {error && <p className="admin-error">{error}</p>}
-
-              {loadingUsers ? (
-                <p className="muted">Loading users...</p>
-              ) : users.length === 0 ? (
-                <p className="muted">No non-admin users found.</p>
-              ) : (
-                <ul className="admin-user-list">
-                  {users.map((user) => {
-                    const selected = user.id === selectedUserId;
-                    return (
-                      <li key={user.id}>
-                        <button
-                          type="button"
-                          className={`admin-user-item ${selected ? "is-active" : ""}`}
-                          onClick={() => setSelectedUserId(user.id)}
-                        >
-                          <span className="admin-user-name">{getUserDisplayName(user)}</span>
-                          <span className="admin-user-email muted">{user.email}</span>
-                        </button>
-                      </li>
-                    );
-                  })}
-                </ul>
-              )}
-            </aside>
-
-            <section className="admin-users-recent-panel">
-              {selectedUser ? (
-                <>
-                  <Recent
-                    employeeId={selectedUser.id}
-                    showCreateButton
-                    onCreateEntry={() => onCreateEntryForUser?.(selectedUser.id)}
-                    onSelectDate={(date, hour, minute, endHour, endMinute) =>
-                      onSelectDateForUser?.(selectedUser.id, date, hour, minute, endHour, endMinute)
-                    }
-                    onEditEntry={(entry) => onEditEntryForUser?.(entry, selectedUser.id)}
-                  />
-                </>
-              ) : (
-                <p className="muted">Select a user to view recent entries.</p>
-              )}
-            </section>
-          </div>
-        )}
       </div>
 
       {activeSection === "users" && (

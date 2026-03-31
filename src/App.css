@@ -427,12 +427,19 @@ body{
   border-radius:10px;
 }
 
+.admin-view {
+  height: calc(100vh - 170px);
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
 .admin-panel {
   background: var(--card);
   border: 1px solid rgba(15, 23, 42, 0.06);
   border-radius: 10px;
   padding: 16px;
-  height: calc(100vh - 170px);
+  flex: 1;
   min-height: 0;
   overflow: hidden;
   display: flex;
@@ -1159,6 +1166,7 @@ label {
     overflow: auto;
   }
 
+  .admin-view,
   .admin-panel {
     height: auto;
     overflow: visible;
