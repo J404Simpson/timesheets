@@ -14,6 +14,7 @@ type Props = {
     endMinute?: number
   ) => void;
   onBackToRecent?: () => void;
+  refreshToken?: number;
 };
 
 export default function Admin({
@@ -21,6 +22,7 @@ export default function Admin({
   onCreateEntryForUser,
   onSelectDateForUser,
   onBackToRecent,
+  refreshToken,
 }: Props): JSX.Element {
   const [activeSection, setActiveSection] = useState<"projects" | "sustaining" | "users">("users");
   const [users, setUsers] = useState<AdminUser[]>([]);
@@ -152,6 +154,7 @@ export default function Admin({
                     <Recent
                       employeeId={selectedUser.id}
                       showCreateButton
+                      refreshToken={refreshToken}
                       onCreateEntry={() => onCreateEntryForUser?.(selectedUser.id)}
                       onSelectDate={(date, hour, minute, endHour, endMinute) =>
                         onSelectDateForUser?.(selectedUser.id, date, hour, minute, endHour, endMinute)
@@ -169,8 +172,10 @@ export default function Admin({
       </div>
 
       {activeSection === "users" && (
-        <div className="admin-panel-footer">
-          <div className="admin-panel-footer-end">
+        <div className="week-nav admin-panel-footer">
+          <div className="week-nav-group week-nav-start" />
+          <div className="week-nav-group week-nav-center" />
+          <div className="week-nav-group week-nav-end">
             <button
               type="button"
               className="btn week-nav-toggle week-nav-admin"

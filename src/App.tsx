@@ -33,6 +33,7 @@ const App: React.FC = () => {
   } | null>(null);
   const [isOnboarded, setIsOnboarded] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [calendarRefreshToken, setCalendarRefreshToken] = useState(0);
 
   // Notify API when user logs in
   useEffect(() => {
@@ -100,6 +101,11 @@ const App: React.FC = () => {
     setSelectedEndMinute(undefined);
     setEditingEntry(undefined);
     setTargetEmployeeId(undefined);
+  };
+
+  const handleEntrySaved = () => {
+    closeEntryForm();
+    setCalendarRefreshToken((prev) => prev + 1);
   };
 
   useEffect(() => {
@@ -230,6 +236,7 @@ const App: React.FC = () => {
                     onCreateEntryForUser={handleAdminCreateEntry}
                     onSelectDateForUser={handleAdminDateSelect}
                     onBackToRecent={goRecentFromAdmin}
+                    refreshToken={calendarRefreshToken}
                   />
                 ) : (
                   <Recent
@@ -238,6 +245,7 @@ const App: React.FC = () => {
                     onEditEntry={handleEditEntry}
                     onGoAdmin={goAdminFromRecent}
                     showAdminButton={isAdmin && !showDepartmentModal}
+                    refreshToken={calendarRefreshToken}
                   />
                 )}
 
@@ -269,7 +277,7 @@ const App: React.FC = () => {
                         initialHour={selectedHour}
                         editingEntry={editingEntry}
                         targetEmployeeId={targetEmployeeId}
-                        onSaved={closeEntryForm}
+                        onSaved={handleEntrySaved}
                         onCancel={closeEntryForm}
                       />
                     </section>

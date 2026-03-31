@@ -16,6 +16,7 @@ type Props = {
   showCreateButton?: boolean;
   showAdminButton?: boolean;
   footerEndContent?: ReactNode;
+  refreshToken?: number;
 };
 
 type TimeRangeSelection = {
@@ -40,6 +41,7 @@ export default function Recent({
   showCreateButton = true,
   showAdminButton = false,
   footerEndContent,
+  refreshToken,
 }: Props): JSX.Element {
   const [entries, setEntries] = useState<WeekEntry[]>([]);
   const [loading, setLoading] = useState(false);
@@ -70,7 +72,7 @@ export default function Recent({
       .then(setEntries)
       .catch(() => setError("Failed to load entries"))
       .finally(() => setLoading(false));
-  }, [weekOffset, employeeId]);
+  }, [weekOffset, employeeId, refreshToken]);
 
   // Calculate the reference week's Monday in local time
   const now = new Date();
