@@ -126,6 +126,15 @@ export type CurrentEmployee = {
   department_id?: number | null;
 };
 
+export type AdminUser = {
+  id: number;
+  object_id: string;
+  email: string;
+  first_name?: string | null;
+  last_name?: string | null;
+  department_id?: number | null;
+};
+
 export async function getCurrentUser(): Promise<CurrentEmployee> {
   const accessToken = await acquireTokenSilent([protectedResources.timesheetApi.scope]);
   const apiBase = import.meta.env.VITE_API_URL;
@@ -137,14 +146,29 @@ export async function getCurrentUser(): Promise<CurrentEmployee> {
   return response.data.employee;
 }
 
-export async function getWeekEntries(weekOf?: string): Promise<WeekEntry[]> {
+export async function getAdminUsers(): Promise<AdminUser[]> {
   const accessToken = await acquireTokenSilent([protectedResources.timesheetApi.scope]);
   const apiBase = import.meta.env.VITE_API_URL;
+  const response = await axios.get(`${apiBase}/api/admin/users`, {
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+    },
+  });
+  return response.data.users;
+}
+
+export async function getWeekEntries(weekOf?: string, employeeId?: number): Promise<WeekEntry[]> {
+  const accessToken = await acquireTokenSilent([protectedResources.timesheetApi.scope]);
+  const apiBase = import.meta.env.VITE_API_URL;
+  const params: Record<string, string | number> = {};
+  if (weekOf) params.weekOf = weekOf;
+  if (employeeId != null) params.employeeId = employeeId;
+
   const response = await axios.get(`${apiBase}/api/entries/week`, {
     headers: {
       Authorization: `Bearer ${accessToken}`,
     },
-    params: weekOf ? { weekOf } : undefined,
+    params: Object.keys(params).length > 0 ? params : undefined,
   });
   return response.data.entries;
 }
@@ -160,35 +184,41 @@ export type CreateEntryPayload = {
   notes?: string;
 };
 
-export async function createEntry(payload: CreateEntryPayload): Promise<any> {
+export async function createEntry(payload: CreateEntryPayload, employeeId?: number): Promise<any> {
   const accessToken = await acquireTokenSilent([protectedResources.timesheetApi.scope]);
   const apiBase = import.meta.env.VITE_API_URL;
+  const params = employeeId != null ? { employeeId } : undefined;
   const response = await axios.post(`${apiBase}/api/entries`, payload, {
     headers: {
       Authorization: `Bearer ${accessToken}`,
     },
+    params,
   });
   return response.data;
 }
 
-export async function updateEntry(entryId: number, payload: CreateEntryPayload): Promise<any> {
+export async function updateEntry(entryId: number, payload: CreateEntryPayload, employeeId?: number): Promise<any> {
   const accessToken = await acquireTokenSilent([protectedResources.timesheetApi.scope]);
   const apiBase = import.meta.env.VITE_API_URL;
+  const params = employeeId != null ? { employeeId } : undefined;
   const response = await axios.put(`${apiBase}/api/entries/${entryId}`, payload, {
     headers: {
       Authorization: `Bearer ${accessToken}`,
     },
+    params,
   });
   return response.data;
 }
 
-export async function deleteEntry(entryId: number): Promise<any> {
+export async function deleteEntry(entryId: number, employeeId?: number): Promise<any> {
   const accessToken = await acquireTokenSilent([protectedResources.timesheetApi.scope]);
   const apiBase = import.meta.env.VITE_API_URL;
+  const params = employeeId != null ? { employeeId } : undefined;
   const response = await axios.delete(`${apiBase}/api/entries/${entryId}`, {
     headers: {
       Authorization: `Bearer ${accessToken}`,
     },
+    params,
   });
   return response.data;
 }

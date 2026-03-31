@@ -244,6 +244,7 @@ export default function TimesheetForm({
   initialEndHour,
   initialEndMinute,
   editingEntry,
+  targetEmployeeId,
 }: {
   onCancel?: () => void;
   onSaved?: () => void;
@@ -253,6 +254,7 @@ export default function TimesheetForm({
   initialEndHour?: number;
   initialEndMinute?: number;
   editingEntry?: WeekEntry;
+  targetEmployeeId?: number;
 }) {
   const dateInputRef = useRef<HTMLInputElement | null>(null);
   const [projects, setProjects] = useState<ApiProject[]>([]);
@@ -277,12 +279,12 @@ export default function TimesheetForm({
   }, []);
 
   const loadWeekEntries = useCallback((weekOf?: string) => {
-    getWeekEntries(weekOf)
+    getWeekEntries(weekOf, targetEmployeeId)
       .then(setWeekEntries)
       .catch(() => {
         // ignore entry load errors for time disabling
       });
-  }, []);
+  }, [targetEmployeeId]);
 
 
   const today = new Date().toISOString().slice(0, 10);
@@ -444,9 +446,9 @@ export default function TimesheetForm({
 
     const saveEntry = async () => {
       if (editingEntry) {
-        await updateEntry(editingEntry.id, payload);
+        await updateEntry(editingEntry.id, payload, targetEmployeeId);
       } else {
-        await createEntry(payload);
+        await createEntry(payload, targetEmployeeId);
       }
     };
 
@@ -454,13 +456,13 @@ export default function TimesheetForm({
       await saveEntry();
       onSaved?.();
       // Reload entries after save
-      getWeekEntries().then(setWeekEntries).catch(() => {});
+      getWeekEntries(undefined, targetEmployeeId).then(setWeekEntries).catch(() => {});
     } catch (err) {
       // Retry once for transient failures and keep UI free of technical errors.
       try {
         await saveEntry();
         onSaved?.();
-        getWeekEntries().then(setWeekEntries).catch(() => {});
+        getWeekEntries(undefined, targetEmployeeId).then(setWeekEntries).catch(() => {});
       } catch (finalErr) {
         console.error("Entry save failed", finalErr ?? err);
       }
@@ -697,9 +699,9 @@ export default function TimesheetForm({
 
     try {
       setIsDeleting(true);
-      await deleteEntry(editingEntry.id);
+      await deleteEntry(editingEntry.id, targetEmployeeId);
       onSaved?.();
-      getWeekEntries().then(setWeekEntries).catch(() => {});
+      getWeekEntries(undefined, targetEmployeeId).then(setWeekEntries).catch(() => {});
     } catch (err) {
       console.error("Entry delete failed", err);
     } finally {

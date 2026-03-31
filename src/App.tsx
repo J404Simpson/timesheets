@@ -24,6 +24,7 @@ const App: React.FC = () => {
   const [selectedEndHour, setSelectedEndHour] = useState<number | undefined>(undefined);
   const [selectedEndMinute, setSelectedEndMinute] = useState<number | undefined>(undefined);
   const [editingEntry, setEditingEntry] = useState<WeekEntry | undefined>(undefined);
+  const [targetEmployeeId, setTargetEmployeeId] = useState<number | undefined>(undefined);
   const [pendingUser, setPendingUser] = useState<{
     firstName: string;
     lastName: string;
@@ -94,7 +95,7 @@ const App: React.FC = () => {
     setSelectedEndHour(undefined);
     setSelectedEndMinute(undefined);
     setEditingEntry(undefined);
-    setView("recent");
+    setTargetEmployeeId(undefined);
   };
 
   useEffect(() => {
@@ -119,6 +120,7 @@ const App: React.FC = () => {
     setSelectedEndHour(endHour);
     setSelectedEndMinute(endMinute);
     setEditingEntry(undefined);
+    setTargetEmployeeId(undefined);
     setView("recent");
     setShowNewEntryForm(true);
   };
@@ -130,7 +132,20 @@ const App: React.FC = () => {
     setSelectedMinute(undefined);
     setSelectedEndHour(undefined);
     setSelectedEndMinute(undefined);
+    setTargetEmployeeId(undefined);
     setView("recent");
+    setShowNewEntryForm(true);
+  };
+
+  const handleAdminEditEntry = (entry: WeekEntry, employeeId: number) => {
+    setEditingEntry(entry);
+    setSelectedDate(undefined);
+    setSelectedHour(undefined);
+    setSelectedMinute(undefined);
+    setSelectedEndHour(undefined);
+    setSelectedEndMinute(undefined);
+    setTargetEmployeeId(employeeId);
+    setView("admin");
     setShowNewEntryForm(true);
   };
 
@@ -184,7 +199,7 @@ const App: React.FC = () => {
             {isOnboarded && !showDepartmentModal && (
               <>
                 {view === "admin" && isAdmin ? (
-                  <Admin />
+                  <Admin onEditEntryForUser={handleAdminEditEntry} />
                 ) : (
                   <Recent onCreateEntry={() => openCreate()} onSelectDate={handleDateSelect} onEditEntry={handleEditEntry} />
                 )}
@@ -216,6 +231,7 @@ const App: React.FC = () => {
                         initialMinute={selectedMinute}
                         initialHour={selectedHour}
                         editingEntry={editingEntry}
+                        targetEmployeeId={targetEmployeeId}
                         onSaved={closeEntryForm}
                         onCancel={closeEntryForm}
                       />

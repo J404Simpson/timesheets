@@ -1,12 +1,147 @@
-import React from "react";
+import { useEffect, useMemo, useState } from "react";
+import Recent from "./Recent";
+import { getAdminUsers, type AdminUser, type WeekEntry } from "../api/timesheet";
 
-export default function Admin(): JSX.Element {
+type Props = {
+  onEditEntryForUser?: (entry: WeekEntry, employeeId: number) => void;
+};
+
+export default function Admin({ onEditEntryForUser }: Props): JSX.Element {
+  const [activeSection, setActiveSection] = useState<"projects" | "sustaining" | "users">("users");
+  const [users, setUsers] = useState<AdminUser[]>([]);
+  const [selectedUserId, setSelectedUserId] = useState<number | null>(null);
+  const [loadingUsers, setLoadingUsers] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const loadUsers = async () => {
+    setLoadingUsers(true);
+    setError(null);
+
+    try {
+      const userData = await getAdminUsers();
+      setUsers(userData);
+
+      if (userData.length === 0) {
+        setSelectedUserId(null);
+      } else if (!selectedUserId || !userData.some((u) => u.id === selectedUserId)) {
+        setSelectedUserId(userData[0].id);
+      }
+    } catch {
+      setError("Failed to load users.");
+    } finally {
+      setLoadingUsers(false);
+    }
+  };
+
+  useEffect(() => {
+    loadUsers();
+  }, []);
+
+  const selectedUser = useMemo(
+    () => users.find((u) => u.id === selectedUserId) ?? null,
+    [users, selectedUserId]
+  );
+
+  const getUserDisplayName = (user: AdminUser) => {
+    const name = `${user.first_name ?? ""} ${user.last_name ?? ""}`.trim();
+    return name || user.email;
+  };
+
   return (
-    <section className="placeholder" aria-live="polite">
-      <h2 style={{ marginTop: 0 }}>Admin</h2>
-      <p className="muted" style={{ marginBottom: 0 }}>
-        Admin-only area.
-      </p>
+    <section className="admin-panel" aria-live="polite">
+      <header className="admin-header">
+        <div>
+          <h2 className="admin-title">Admin</h2>
+          <p className="muted admin-subtitle">Choose an admin area.</p>
+        </div>
+      </header>
+
+      <div className="admin-options" role="tablist" aria-label="Admin sections">
+        <button
+          type="button"
+          className={`btn admin-option ${activeSection === "projects" ? "is-active" : ""}`}
+          onClick={() => setActiveSection("projects")}
+        >
+          Projects
+        </button>
+        <button
+          type="button"
+          className={`btn admin-option ${activeSection === "sustaining" ? "is-active" : ""}`}
+          onClick={() => setActiveSection("sustaining")}
+        >
+          Sustaining
+        </button>
+        <button
+          type="button"
+          className={`btn admin-option ${activeSection === "users" ? "is-active" : ""}`}
+          onClick={() => setActiveSection("users")}
+        >
+          Users
+        </button>
+      </div>
+
+      {activeSection === "projects" && <p className="muted">Projects configuration coming next.</p>}
+
+      {activeSection === "sustaining" && <p className="muted">Sustaining configuration coming next.</p>}
+
+      {activeSection === "users" && (
+        <div className="admin-users-layout">
+          <aside className="admin-users-list-panel">
+            <div className="admin-users-list-header">
+              <h3>Users</h3>
+              <button
+                type="button"
+                className="btn secondary"
+                onClick={loadUsers}
+                disabled={loadingUsers}
+              >
+                {loadingUsers ? "Refreshing..." : "Refresh"}
+              </button>
+            </div>
+
+            {error && <p className="admin-error">{error}</p>}
+
+            {loadingUsers ? (
+              <p className="muted">Loading users...</p>
+            ) : users.length === 0 ? (
+              <p className="muted">No non-admin users found.</p>
+            ) : (
+              <ul className="admin-user-list">
+                {users.map((user) => {
+                  const selected = user.id === selectedUserId;
+                  return (
+                    <li key={user.id}>
+                      <button
+                        type="button"
+                        className={`admin-user-item ${selected ? "is-active" : ""}`}
+                        onClick={() => setSelectedUserId(user.id)}
+                      >
+                        <span className="admin-user-name">{getUserDisplayName(user)}</span>
+                        <span className="admin-user-email muted">{user.email}</span>
+                      </button>
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
+          </aside>
+
+          <section className="admin-users-recent-panel">
+            {selectedUser ? (
+              <>
+                <h3 className="admin-users-recent-title">Recent: {getUserDisplayName(selectedUser)}</h3>
+                <Recent
+                  employeeId={selectedUser.id}
+                  showCreateButton={false}
+                  onEditEntry={(entry) => onEditEntryForUser?.(entry, selectedUser.id)}
+                />
+              </>
+            ) : (
+              <p className="muted">Select a user to view recent entries.</p>
+            )}
+          </section>
+        </div>
+      )}
     </section>
   );
 }

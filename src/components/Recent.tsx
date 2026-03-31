@@ -11,6 +11,8 @@ type Props = {
     endMinute?: number
   ) => void;
   onEditEntry?: (entry: WeekEntry) => void;
+  employeeId?: number;
+  showCreateButton?: boolean;
 };
 
 type TimeRangeSelection = {
@@ -26,7 +28,13 @@ type DragState = {
   active: boolean;
 };
 
-export default function Recent({ onCreateEntry, onSelectDate, onEditEntry }: Props): JSX.Element {
+export default function Recent({
+  onCreateEntry,
+  onSelectDate,
+  onEditEntry,
+  employeeId,
+  showCreateButton = true,
+}: Props): JSX.Element {
   const [entries, setEntries] = useState<WeekEntry[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -52,11 +60,11 @@ export default function Recent({ onCreateEntry, onSelectDate, onEditEntry }: Pro
       ref.setDate(ref.getDate() + weekOffset * 7);
       weekOf = toDateKeyLocal(ref);
     }
-    getWeekEntries(weekOf)
+    getWeekEntries(weekOf, employeeId)
       .then(setEntries)
       .catch(() => setError("Failed to load entries"))
       .finally(() => setLoading(false));
-  }, [weekOffset]);
+  }, [weekOffset, employeeId]);
 
   // Calculate the reference week's Monday in local time
   const now = new Date();
@@ -205,6 +213,7 @@ export default function Recent({ onCreateEntry, onSelectDate, onEditEntry }: Pro
   };
 
   const handleSlotMouseDown = (date: Date, hour: number, minute: number) => {
+    if (!onSelectDate) return;
     if (!isSlotSelectable(date, hour, minute)) return;
     const dateKey = toDateKeyLocal(date);
     const slot = toSlotIndex(hour, minute);
@@ -269,6 +278,7 @@ export default function Recent({ onCreateEntry, onSelectDate, onEditEntry }: Pro
   }, [dragState]);
 
   const handleTimeSlotClick = (date: Date, hour: number, minute: number) => {
+    if (!onSelectDate) return;
     const slot = toSlotIndex(hour, minute);
     const dateKey = toDateKeyLocal(date);
     
@@ -329,6 +339,7 @@ export default function Recent({ onCreateEntry, onSelectDate, onEditEntry }: Pro
   ) => {
     if (isFuture) return "Cannot select future time";
     if (entry) return isLeaveEntry(entry) ? "Leave entries cannot be edited" : "Click to edit entry";
+    if (!onSelectDate) return "Only existing entries can be edited in this view";
     if (isOccupied) return "Time slot occupied";
     if (isSelected) return "Click highlighted range to create entry";
     return `Click and drag to select time range from ${timeLabel}`;
@@ -513,13 +524,15 @@ export default function Recent({ onCreateEntry, onSelectDate, onEditEntry }: Pro
         </div>
 
         <div className="week-nav-group week-nav-center">
-          <button
-            type="button"
-            className="btn primary week-nav-create"
-            onClick={onCreateEntry}
-          >
-            New Entry
-          </button>
+          {showCreateButton && (
+            <button
+              type="button"
+              className="btn primary week-nav-create"
+              onClick={onCreateEntry}
+            >
+              New Entry
+            </button>
+          )}
         </div>
 
         <div className="week-nav-group week-nav-end" aria-hidden="true" />
