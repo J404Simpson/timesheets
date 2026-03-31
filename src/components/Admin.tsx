@@ -103,6 +103,7 @@ export default function Admin({
       {activeSection === "sustaining" && <p className="muted">Sustaining configuration coming next.</p>}
 
       {activeSection === "users" && (
+        <>
         <div className="admin-users-layout">
           <aside className="admin-users-list-panel">
             <div className="admin-users-list-header">
@@ -178,6 +179,7 @@ export default function Admin({
             </button>
           </div>
         </div>
+        </>
       )}
     </section>
   );
