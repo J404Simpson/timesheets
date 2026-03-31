@@ -504,6 +504,14 @@ body{
   box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.12);
 }
 
+.admin-content {
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
 .admin-users-layout {
   display: grid;
   grid-template-columns: 320px minmax(0, 1fr);
@@ -517,6 +525,7 @@ body{
   grid-template-columns: 1fr auto 1fr;
   align-items: center;
   margin-top: 10px;
+  flex-shrink: 0;
 }
 
 .admin-users-footer-end {
