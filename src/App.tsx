@@ -152,22 +152,28 @@ const App: React.FC = () => {
   return (
     <div className="app">
       <header className="app-header">
-        <h1 className="app-title">Timesheets</h1>
+        <div className="app-left">
+          <h1 className="app-title">Timesheets</h1>
 
-        <nav className="app-nav" aria-label="Main navigation">
-          {isAdmin && (
-            <a
-              className={`nav-link ${!isAuthenticated || showDepartmentModal ? "disabled" : ""}`}
-              href={isAuthenticated && !showDepartmentModal ? "#admin" : undefined}
-              role="button"
-              aria-disabled={!isAuthenticated || showDepartmentModal}
-              tabIndex={isAuthenticated && !showDepartmentModal ? 0 : -1}
-              onClick={goAdmin}
-            >
-              Admin
-            </a>
-          )}
-        </nav>
+          <nav className="app-nav" aria-label="Main navigation">
+            {isAdmin && (
+              <a
+                className={`nav-link ${!isAuthenticated || showDepartmentModal ? "disabled" : ""}`}
+                href={isAuthenticated && !showDepartmentModal ? "#admin" : undefined}
+                role="button"
+                aria-disabled={!isAuthenticated || showDepartmentModal}
+                tabIndex={isAuthenticated && !showDepartmentModal ? 0 : -1}
+                onClick={goAdmin}
+              >
+                Admin
+              </a>
+            )}
+          </nav>
+        </div>
+
+        <div className="app-logo" aria-hidden="true">
+          <img src="/veryan-logo.png" alt="Veryan" />
+        </div>
 
         <div className="auth-area">{isAuthenticated ? <Profile /> : null}</div>
       </header>
