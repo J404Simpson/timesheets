@@ -204,12 +204,14 @@ export default function DepartmentModal({ open, onSubmit }: DepartmentModalProps
         ) : error ? (
           <div className="error">{error}</div>
         ) : (
-          <FormDropdown
-            value={selected !== null ? String(selected) : ""}
-            options={departmentOptions}
-            onChange={(value) => setSelected(Number(value))}
-            ariaLabel="Select your department"
-          />
+          <div className="department-modal-field">
+            <FormDropdown
+              value={selected !== null ? String(selected) : ""}
+              options={departmentOptions}
+              onChange={(value) => setSelected(Number(value))}
+              ariaLabel="Select your department"
+            />
+          </div>
         )}
         <div className="department-modal-actions">
           <button

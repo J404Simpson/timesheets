@@ -103,6 +103,33 @@ body{
   gap:20px;
 }
 
+.sign-in-modal-overlay {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+}
+
+.sign-in-modal {
+  width: min(420px, 100%);
+  background: #ffffff;
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  border-radius: 14px;
+  box-shadow: 0 22px 56px rgba(2, 6, 23, 0.26);
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+}
+
+.sign-in-modal-title {
+  margin: 0;
+  text-align: center;
+  font-size: 1.25rem;
+}
+
 .entry-modal-backdrop {
   position: fixed;
   inset: 0;
@@ -359,15 +386,38 @@ body{
   font-size: 1.25rem;
 }
 
+.department-modal-field {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+}
+
 .department-modal .department-form-dropdown {
   width: min(320px, 100%);
-  align-self: center;
-  margin-inline: auto;
+  margin: 0 auto;
 }
 
 .department-modal .form-dropdown-trigger {
+  width: 100%;
+  border: 1px solid rgba(15, 23, 42, 0.1);
+  background: #ffffff;
+  color: #0f172a;
+  padding: 8px 12px;
+  font-size: 14px;
+  font-family: inherit;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  cursor: pointer;
   min-height: 42px;
   border-radius: 8px;
+}
+
+.department-modal .form-dropdown-trigger:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
 }
 
 .department-modal-actions {
@@ -477,12 +527,19 @@ body{
 
 /* sign in */
 .sign-in-button {
-  color: #000;
-  background: transparent;
+  min-width: 140px;
+  min-height: 40px;
+  color: #fff;
+  background: var(--accent);
   border: none;
   cursor: pointer;
-  padding: 8px 12px;
+  padding: 8px 16px;
   border-radius: 8px;
+  font-weight: 600;
+}
+
+.sign-in-button:hover {
+  filter: brightness(.95);
 }
 
 .placeholder{

@@ -206,8 +206,11 @@ const App: React.FC = () => {
 
       <main className="app-main">
         {!isAuthenticated ? (
-          <div className="centered">
-            <SignInButton />
+          <div className="sign-in-modal-overlay" role="presentation">
+            <section className="sign-in-modal" aria-label="Sign in">
+              <h2 className="sign-in-modal-title">Sign in to continue</h2>
+              <SignInButton />
+            </section>
           </div>
         ) : (
           <>
