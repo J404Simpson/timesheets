@@ -61,6 +61,14 @@ function minutesFromEntryTime(value: string) {
   return (h || 0) * 60 + (m || 0);
 }
 
+function getLocalDateKey(date: Date): string {
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
+}
+
+function getLocalMinuteOfDay(date: Date): number {
+  return date.getHours() * 60 + date.getMinutes();
+}
+
 const HIDDEN_PROJECT_IDS = new Set([1, 2]);
 
 function shouldShowProject(project: ApiProject): boolean {
@@ -283,9 +291,19 @@ export default function TimesheetForm({
   }, [targetEmployeeId]);
 
 
-  const today = new Date().toISOString().slice(0, 10);
   const STEP_MINUTES = 15; // 0.25 hour increments
   const timeOptions = generateTimeOptions(STEP_MINUTES);
+  const [now, setNow] = useState(() => new Date());
+  const today = getLocalDateKey(now);
+  const currentLocalMinutes = getLocalMinuteOfDay(now);
+
+  useEffect(() => {
+    const timer = window.setInterval(() => {
+      setNow(new Date());
+    }, 60_000);
+
+    return () => window.clearInterval(timer);
+  }, []);
 
   // Calculate initial start time based on selected hour and minute (for new entries)
   const getInitialStartTime = (): string => {
@@ -363,6 +381,7 @@ export default function TimesheetForm({
   const [loadingTasks, setLoadingTasks] = useState(false);
   const [taskError, setTaskError] = useState<string | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
+  const isTodaySelected = entry.workDate === today;
 
   useEffect(() => {
     loadWeekEntries(entry.workDate);
@@ -372,11 +391,18 @@ export default function TimesheetForm({
     setEntry((prev) => ({ ...prev, [name]: value }));
   };
 
+  const isFutureTimeOnSelectedDate = useCallback((value: string, dateKey = entry.workDate) => {
+    return dateKey === today && minutesFrom(value) > currentLocalMinutes;
+  }, [currentLocalMinutes, entry.workDate, today]);
+
   const applyFieldChange = (name: string, value: string) => {
     if (name === "startTime") {
       const startMin = minutesFrom(value);
       const minEnd = startMin + STEP_MINUTES;
-      const candidate = timeOptions.find((opt) => minutesFrom(opt.value) >= minEnd);
+      const candidate = timeOptions.find((opt) => {
+        const endMinutes = minutesFrom(opt.value);
+        return endMinutes >= minEnd && !isFutureTimeOnSelectedDate(opt.value);
+      });
       setEntry((prev) => ({
         ...prev,
         startTime: value,
@@ -469,7 +495,10 @@ export default function TimesheetForm({
   const startMin = entry.startTime ? minutesFrom(entry.startTime) : 0;
   const endMin = entry.endTime ? minutesFrom(entry.endTime) : 0;
   const minEnd = startMin + STEP_MINUTES;
-  const endOptions = timeOptions.filter((opt) => minutesFrom(opt.value) >= minEnd);
+  const endOptions = timeOptions.filter((opt) => {
+    const optionMinutes = minutesFrom(opt.value);
+    return optionMinutes >= minEnd && !isFutureTimeOnSelectedDate(opt.value);
+  });
 
   const dayEntries = weekEntries.filter((e) => {
     const entryDate = e.date.split("T")[0];
@@ -483,6 +512,10 @@ export default function TimesheetForm({
 
   const isStartBlocked = (value: string) => {
     const startMinutes = minutesFrom(value);
+    if (isTodaySelected && startMinutes + STEP_MINUTES > currentLocalMinutes) {
+      return true;
+    }
+
     const blocked = blockingEntries.some((e) => {
       const entryStart = minutesFromEntryTime(e.start_time);
       const entryEnd = minutesFromEntryTime(e.end_time);
@@ -493,6 +526,8 @@ export default function TimesheetForm({
 
   const isEndBlocked = (value: string) => {
     if (!entry.startTime) return false;
+    if (isFutureTimeOnSelectedDate(value)) return true;
+
     const startMinutes = minutesFrom(entry.startTime);
     const endMinutes = minutesFrom(value);
     const blocked = blockingEntries.some((e) => {
@@ -519,7 +554,7 @@ export default function TimesheetForm({
     const startMinutes = minutesFrom(startValue);
     const minEndMinutes = startMinutes + STEP_MINUTES;
     return timeOptions
-      .filter((opt) => minutesFrom(opt.value) >= minEndMinutes)
+      .filter((opt) => minutesFrom(opt.value) >= minEndMinutes && !isFutureTimeOnSelectedDate(opt.value))
       .find((opt) => {
         const endMinutes = minutesFrom(opt.value);
         return !blockingEntries.some((e) => {
@@ -539,6 +574,7 @@ export default function TimesheetForm({
   const canSubmit = (() => {
     if (!showEntryFields || !entry.startTime || !entry.endTime) return false;
     if (endMin < startMin + STEP_MINUTES) return false;
+    if (isTodaySelected && endMin > currentLocalMinutes) return false;
 
     if (showProjectFields) {
       if (!entry.project) return false;
