@@ -1,5 +1,3 @@
-import React, { useState, useEffect } from "react";
-import axios from "axios";
 import { acquireTokenSilent, protectedResources } from "../auth/msalConfig";
 
 export type Department = {
@@ -12,12 +10,16 @@ export async function getDepartments(): Promise<Department[]> {
     protectedResources.timesheetApi.scope,
   ]);
   const apiBase = import.meta.env.VITE_API_URL;
-  const response = await axios.get(`${apiBase}/api/departments`, {
+  const response = await fetch(`${apiBase}/api/departments`, {
     headers: {
       Authorization: `Bearer ${accessToken}`,
     },
   });
-  return response.data.departments;
+  if (!response.ok) {
+    throw new Error(`Failed to fetch departments (${response.status})`);
+  }
+  const data = await response.json();
+  return data.departments;
 }
 
 export async function createEmployee(
@@ -31,14 +33,16 @@ export async function createEmployee(
     protectedResources.timesheetApi.scope,
   ]);
   const apiBase = import.meta.env.VITE_API_URL;
-  const response = await axios.post(
-    `${apiBase}/api/employees`,
-    { firstName, lastName, email, object_id, department_id },
-    {
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-      },
-    }
-  );
-  return response.data;
+  const response = await fetch(`${apiBase}/api/employees`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ firstName, lastName, email, object_id, department_id }),
+  });
+  if (!response.ok) {
+    throw new Error(`Failed to create employee (${response.status})`);
+  }
+  return response.json();
 }

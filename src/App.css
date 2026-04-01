@@ -520,16 +520,7 @@ body{
 }
 
 .admin-panel-footer {
-  display: flex;
-  justify-content: flex-end;
-  align-items: center;
-  margin-top: 14px;
   flex-shrink: 0;
-}
-
-.admin-panel-footer-end {
-  display: flex;
-  justify-content: flex-end;
 }
 
 .admin-users-layout {

@@ -4,7 +4,7 @@
 
 **App type:** React 18 + TypeScript SPA using Vite  
 **Auth:** Azure AD via MSAL (`@azure/msal-browser`, `@azure/msal-react`)  
-**Backend communication:** REST API calls to `timesheets-api` using Axios with Bearer tokens  
+**Backend communication:** REST API calls to `timesheets-api` via typed API helper functions using `fetch` + Bearer tokens  
 **Routing:** React Router DOM for client-side navigation  
 
 **Entry points:**
@@ -45,9 +45,11 @@ VITE_LOCAL_AAD_API_SCOPE=api://<dev-client-id>/Timesheet.ReadWrite
 All API calls use this pattern (see [src/api/timesheet.ts](src/api/timesheet.ts)):
 ```typescript
 const accessToken = await acquireTokenSilent([protectedResources.timesheetApi.scope]);
-const response = await axios.get(`${import.meta.env.VITE_API_URL}/api/endpoint`, {
-  headers: { Authorization: `Bearer ${accessToken}` }
+const response = await fetch(`${import.meta.env.VITE_API_URL}/api/endpoint`, {
+   headers: { Authorization: `Bearer ${accessToken}` },
 });
+if (!response.ok) throw new Error(`Request failed (${response.status})`);
+const data = await response.json();
 ```
 
 ## API Layer Structure
@@ -131,7 +133,7 @@ Uses React Router ([src/main.tsx](src/main.tsx) wraps app with `BrowserRouter`):
 ### New Component
 1. Place in `src/components/`
 2. Import MSAL hooks if auth needed: `useMsal()` for account access
-3. Use API layer functions (don't call axios directly)
+3. Use API layer functions (don't call `fetch` directly from components)
 4. Follow existing naming: PascalCase files matching component name
 
 ### New Protected Route
