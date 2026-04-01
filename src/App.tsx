@@ -34,6 +34,7 @@ const App: React.FC = () => {
   const [isOnboarded, setIsOnboarded] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
   const [calendarRefreshToken, setCalendarRefreshToken] = useState(0);
+  const isAdminViewActive = isAuthenticated && isOnboarded && view === "admin" && isAdmin;
 
   // Notify API when user logs in
   useEffect(() => {
@@ -204,7 +205,7 @@ const App: React.FC = () => {
         <div className="auth-area">{isAuthenticated ? <Profile /> : null}</div>
       </header>
 
-      <main className="app-main">
+      <main className={`app-main${isAdminViewActive ? " app-main-admin" : ""}`}>
         {!isAuthenticated ? (
           <div className="sign-in-modal-overlay" role="presentation">
             <section className="sign-in-modal" aria-label="Sign in">
