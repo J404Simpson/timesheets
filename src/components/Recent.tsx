@@ -17,6 +17,7 @@ type Props = {
   showAdminButton?: boolean;
   footerEndContent?: ReactNode;
   refreshToken?: number;
+  allowPreviousWeekEdits?: boolean;
 };
 
 type TimeRangeSelection = {
@@ -42,6 +43,7 @@ export default function Recent({
   showAdminButton = false,
   footerEndContent,
   refreshToken,
+  allowPreviousWeekEdits = false,
 }: Props): JSX.Element {
   const [entries, setEntries] = useState<WeekEntry[]>([]);
   const [loading, setLoading] = useState(false);
@@ -76,12 +78,18 @@ export default function Recent({
 
   // Calculate the reference week's Monday in local time
   const now = new Date();
+  const isMondayLocal = now.getDay() === 1;
   const referenceDate = new Date(now);
   referenceDate.setDate(now.getDate() + weekOffset * 7);
   const dayOfWeek = referenceDate.getDay();
   const diffToMonday = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
   const monday = new Date(referenceDate);
   monday.setDate(referenceDate.getDate() + diffToMonday);
+
+  const isPreviousWeekLocked =
+    weekOffset === -1 &&
+    !isMondayLocal &&
+    !allowPreviousWeekEdits;
 
   const weekDays = Array.from({ length: 7 }, (_, i) => {
     const day = new Date(monday);
@@ -222,6 +230,7 @@ export default function Recent({
 
   const handleSlotMouseDown = (date: Date, hour: number, minute: number) => {
     if (!onSelectDate) return;
+    if (isPreviousWeekLocked) return;
     if (!isSlotSelectable(date, hour, minute)) return;
     const dateKey = toDateKeyLocal(date);
     const slot = toSlotIndex(hour, minute);
@@ -287,6 +296,7 @@ export default function Recent({
 
   const handleTimeSlotClick = (date: Date, hour: number, minute: number) => {
     if (!onSelectDate) return;
+    if (isPreviousWeekLocked) return;
     const slot = toSlotIndex(hour, minute);
     const dateKey = toDateKeyLocal(date);
     
@@ -345,6 +355,9 @@ export default function Recent({
     timeLabel: string,
     entry?: WeekEntry
   ) => {
+    if (isPreviousWeekLocked) {
+      return "Previous week entries can only be changed on Monday unless you are an admin";
+    }
     if (isFuture) return "Cannot select future time";
     if (entry) return isLeaveEntry(entry) ? "Leave entries cannot be edited" : "Click to edit entry";
     if (!onSelectDate) return "Only existing entries can be edited in this view";
@@ -462,6 +475,9 @@ export default function Recent({
                             onMouseUp={handleSlotMouseUp}
                             onClick={() => {
                               if (entry) {
+                                if (isPreviousWeekLocked) {
+                                  return;
+                                }
                                 if (!isLeaveEntry(entry)) {
                                   onEditEntry?.(entry);
                                 }
@@ -469,7 +485,7 @@ export default function Recent({
                               }
                               handleTimeSlotClick(day, hour, minute);
                             }}
-                            disabled={isFuture || (isOccupied && !entry)}
+                            disabled={isFuture || (isOccupied && !entry) || isPreviousWeekLocked}
                             title={getCellTitle(isFuture, isOccupied, isSelected, timeLabel, entry)}
                             style={{ 
                               overflow: "hidden", 
@@ -537,6 +553,12 @@ export default function Recent({
               type="button"
               className="btn primary week-nav-create"
               onClick={onCreateEntry}
+              disabled={isPreviousWeekLocked}
+              title={
+                isPreviousWeekLocked
+                  ? "Previous week entries can only be created on Monday unless you are an admin"
+                  : undefined
+              }
             >
               New Entry
             </button>

@@ -4,6 +4,7 @@ async function getAuthHeaders(extra: Record<string, string> = {}): Promise<Recor
   const accessToken = await acquireTokenSilent([protectedResources.timesheetApi.scope]);
   return {
     Authorization: `Bearer ${accessToken}`,
+    "X-Timezone-Offset-Minutes": String(new Date().getTimezoneOffset()),
     ...extra,
   };
 }

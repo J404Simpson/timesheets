@@ -155,6 +155,7 @@ export default function Admin({
                       employeeId={selectedUser.id}
                       showCreateButton
                       refreshToken={refreshToken}
+                      allowPreviousWeekEdits
                       onCreateEntry={() => onCreateEntryForUser?.(selectedUser.id)}
                       onSelectDate={(date, hour, minute, endHour, endMinute) =>
                         onSelectDateForUser?.(selectedUser.id, date, hour, minute, endHour, endMinute)

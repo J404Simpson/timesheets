@@ -246,6 +246,7 @@ const App: React.FC = () => {
                     onGoAdmin={goAdminFromRecent}
                     showAdminButton={isAdmin && !showDepartmentModal}
                     refreshToken={calendarRefreshToken}
+                    allowPreviousWeekEdits={isAdmin}
                   />
                 )}
 
