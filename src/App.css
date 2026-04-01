@@ -25,7 +25,7 @@ body{
 /* layout */
 .app{
   min-height:100%;
-  width:100vw;
+  width:100%;
   display:flex;
   flex-direction:column;
 }
@@ -94,6 +94,7 @@ body{
 
 .app-main{
   flex:1;
+  min-height: 0;
   padding:28px;
   max-width:100%;
   margin:0;
@@ -551,8 +552,8 @@ body{
 
 .admin-view {
   flex: 1;
-  height: 100%;
   min-height: 0;
+  overflow: hidden;
   display: flex;
   flex-direction: column;
 }
@@ -652,6 +653,7 @@ body{
   gap: 12px;
   flex: 1;
   min-height: 0;
+  overflow: hidden;
 }
 
 .admin-users-list-panel,
@@ -669,6 +671,8 @@ body{
 }
 
 .admin-users-recent-panel {
+  display: flex;
+  flex-direction: column;
   overflow: hidden;
 }
 
@@ -697,19 +701,26 @@ body{
 }
 
 .admin-users-recent-panel .recent-activity {
+  flex: 1;
   height: 100%;
+  min-height: 0;
   display: flex;
   flex-direction: column;
+  overflow: hidden;
 }
 
 .admin-users-recent-panel .week-grid-container {
+  display: flex;
+  flex-direction: column;
   flex: 1;
   min-height: 0;
+  overflow: hidden;
 }
 
 .admin-users-recent-panel .week-grid {
+  flex: 1;
   min-height: 0;
-  max-height: 100%;
+  max-height: none;
 }
 
 .admin-user-item {
