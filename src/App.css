@@ -327,6 +327,67 @@ body{
   background: linear-gradient(180deg, rgba(255, 255, 255, 0) 0%, #ffffff 25%);
 }
 
+.department-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.36);
+  backdrop-filter: blur(2px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  z-index: 1100;
+}
+
+.department-modal {
+  width: min(420px, 100%);
+  background: #ffffff;
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  border-radius: 14px;
+  box-shadow: 0 22px 56px rgba(2, 6, 23, 0.26);
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.department-modal-title {
+  margin: 0;
+  text-align: center;
+  font-size: 1.25rem;
+}
+
+.department-modal .department-form-dropdown {
+  width: min(320px, 100%);
+  align-self: center;
+}
+
+.department-modal .form-dropdown-trigger {
+  min-height: 42px;
+  border-radius: 8px;
+}
+
+.department-modal-actions {
+  display: flex;
+  justify-content: center;
+}
+
+.department-modal-actions button {
+  min-width: 140px;
+  min-height: 40px;
+  border: none;
+  border-radius: 8px;
+  background: var(--accent);
+  color: #ffffff;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.department-modal-actions button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
 @keyframes backdropFadeIn {
   from {
     opacity: 0;
