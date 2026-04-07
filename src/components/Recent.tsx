@@ -103,11 +103,20 @@ export default function Recent({
     const projectName = entry.project?.name?.trim() ?? "";
     const projectNameLower = projectName.toLowerCase();
     const taskName = entry.task?.name?.trim() ?? "";
+    const notesName = (entry.notes ?? "").trim();
     const hoursText = `${Number(entry.hours)}h`;
 
-    if (projectNameLower === "leave") {
+    if (projectNameLower === "leave" || projectNameLower === "holiday") {
       return {
         title: projectName || "Leave",
+        subtitle: "",
+        hours: "",
+      };
+    }
+
+    if (projectNameLower === "holiday") {
+      return {
+        title: notesName || projectName || "Holiday",
         subtitle: "",
         hours: "",
       };
@@ -130,10 +139,10 @@ export default function Recent({
 
   const getVisibleEntryDisplay = (entry: WeekEntry, rowSpan: number) => {
     const display = getEntryDisplay(entry);
-    const isLeave = (entry.project?.name ?? "").trim().toLowerCase() === "leave";
+    const isLeaveLike = ["leave", "holiday"].includes((entry.project?.name ?? "").trim().toLowerCase());
 
     // Leave is always title-only per requirement.
-    if (isLeave) {
+    if (isLeaveLike) {
       return { title: display.title, subtitle: "", hours: "" };
     }
 
@@ -326,12 +335,13 @@ export default function Recent({
   };
 
   const isLeaveEntry = (entry: WeekEntry) => {
-    return (entry.project?.name ?? "").trim().toLowerCase() === "leave";
+    return ["leave", "holiday"].includes((entry.project?.name ?? "").trim().toLowerCase());
   };
 
   const getEntryTypeClass = (entry?: WeekEntry) => {
     if (!entry) return "";
     const projectNameLower = (entry.project?.name ?? "").trim().toLowerCase();
+    if (projectNameLower === "holiday") return "entry-holiday";
     if (projectNameLower === "leave") return "entry-leave";
     if (projectNameLower === "sustaining") return "entry-sustaining";
     return "entry-project";

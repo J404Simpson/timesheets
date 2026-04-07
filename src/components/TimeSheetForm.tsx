@@ -69,13 +69,13 @@ function getLocalMinuteOfDay(date: Date): number {
   return date.getHours() * 60 + date.getMinutes();
 }
 
-const HIDDEN_PROJECT_IDS = new Set([1, 2]);
+const HIDDEN_PROJECT_IDS = new Set([1, 2, 3]);
 
 function shouldShowProject(project: ApiProject): boolean {
   return !HIDDEN_PROJECT_IDS.has(project.id);
 }
 
-const SUSTAINING_PROJECT_ID = 2;
+const SUSTAINING_PROJECT_ID = 3;
 const SUSTAINING_PHASE_ID = 1;
 
 function FormDropdown({
@@ -370,7 +370,7 @@ export default function TimesheetForm({
   const getInitialSelectedType = (): "none" | "project" | "internal" => {
     if (!editingEntry) return "none";
     const projectId = editingEntry.project?.id;
-    if (projectId === 2) return "internal"; // Sustaining
+    if (projectId === SUSTAINING_PROJECT_ID) return "internal"; // Sustaining
     if (projectId) return "project";
     return "none";
   };
