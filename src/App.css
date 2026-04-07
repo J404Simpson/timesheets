@@ -1101,23 +1101,23 @@ label {
 }
 
 .grid-cell.occupied.entry-leave {
-  background: #dc2626;
-  border: 2px solid #b91c1c;
+  background: rgba(220, 38, 38, 0.22);
+  border: 2px solid rgba(185, 28, 28, 0.45);
 }
 
 .grid-cell.occupied.entry-holiday {
-  background: #facc15;
-  border: 2px solid #eab308;
+  background: rgba(254, 240, 138, 0.38);
+  border: 2px solid rgba(234, 179, 8, 0.4);
 }
 
 .grid-cell.occupied.entry-sustaining {
-  background: #3b82f6;
-  border: 2px solid #2563eb;
+  background: rgba(59, 130, 246, 0.22);
+  border: 2px solid rgba(37, 99, 235, 0.45);
 }
 
 .grid-cell.occupied.entry-project {
-  background: #1d4ed8;
-  border: 2px solid #1e40af;
+  background: rgba(29, 78, 216, 0.22);
+  border: 2px solid rgba(30, 64, 175, 0.45);
 }
 
 .grid-cell.occupied.entry-leave .entry-cell-content,
@@ -1136,7 +1136,7 @@ label {
 .grid-cell.occupied.entry-project .entry-cell-time,
 .grid-cell.occupied.entry-project .entry-cell-project,
 .grid-cell.occupied.entry-project .entry-cell-hours {
-  color: #f8fafc;
+  color: #0f172a;
 }
 
 .grid-cell.future {
