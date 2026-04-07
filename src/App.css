@@ -1106,13 +1106,13 @@ label {
 }
 
 .grid-cell.occupied.entry-holiday {
-  background: #16a34a;
-  border: 2px solid #15803d;
+  background: #facc15;
+  border: 2px solid #eab308;
 }
 
 .grid-cell.occupied.entry-sustaining {
-  background: #93c5fd;
-  border: 2px solid #60a5fa;
+  background: #3b82f6;
+  border: 2px solid #2563eb;
 }
 
 .grid-cell.occupied.entry-project {
@@ -1124,6 +1124,10 @@ label {
 .grid-cell.occupied.entry-leave .entry-cell-time,
 .grid-cell.occupied.entry-leave .entry-cell-project,
 .grid-cell.occupied.entry-leave .entry-cell-hours,
+.grid-cell.occupied.entry-sustaining .entry-cell-content,
+.grid-cell.occupied.entry-sustaining .entry-cell-time,
+.grid-cell.occupied.entry-sustaining .entry-cell-project,
+.grid-cell.occupied.entry-sustaining .entry-cell-hours,
 .grid-cell.occupied.entry-holiday .entry-cell-content,
 .grid-cell.occupied.entry-holiday .entry-cell-time,
 .grid-cell.occupied.entry-holiday .entry-cell-project,
@@ -1133,13 +1137,6 @@ label {
 .grid-cell.occupied.entry-project .entry-cell-project,
 .grid-cell.occupied.entry-project .entry-cell-hours {
   color: #f8fafc;
-}
-
-.grid-cell.occupied.entry-sustaining .entry-cell-content,
-.grid-cell.occupied.entry-sustaining .entry-cell-time,
-.grid-cell.occupied.entry-sustaining .entry-cell-project,
-.grid-cell.occupied.entry-sustaining .entry-cell-hours {
-  color: #0f172a;
 }
 
 .grid-cell.future {
