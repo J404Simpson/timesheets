@@ -106,7 +106,7 @@ export default function Recent({
     const notesName = (entry.notes ?? "").trim();
     const hoursText = `${Number(entry.hours)}h`;
 
-    if (projectNameLower === "leave" || projectNameLower === "holiday") {
+    if (projectNameLower === "leave") {
       return {
         title: projectName || "Leave",
         subtitle: "",
@@ -116,8 +116,8 @@ export default function Recent({
 
     if (projectNameLower === "holiday") {
       return {
-        title: notesName || projectName || "Holiday",
-        subtitle: "",
+        title: projectName || "Holiday",
+        subtitle: notesName,
         hours: "",
       };
     }
@@ -139,11 +139,21 @@ export default function Recent({
 
   const getVisibleEntryDisplay = (entry: WeekEntry, rowSpan: number) => {
     const display = getEntryDisplay(entry);
-    const isLeaveLike = ["leave", "holiday"].includes((entry.project?.name ?? "").trim().toLowerCase());
+    const projectNameLower = (entry.project?.name ?? "").trim().toLowerCase();
+    const isLeave = projectNameLower === "leave";
+    const isHoliday = projectNameLower === "holiday";
 
     // Leave is always title-only per requirement.
-    if (isLeaveLike) {
+    if (isLeave) {
       return { title: display.title, subtitle: "", hours: "" };
+    }
+
+    if (isHoliday) {
+      if (rowSpan <= 1) {
+        return { title: display.title, subtitle: "", hours: "" };
+      }
+
+      return { title: display.title, subtitle: display.subtitle, hours: "" };
     }
 
     // Adapt content to available height.
