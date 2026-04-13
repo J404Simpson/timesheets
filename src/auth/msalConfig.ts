@@ -1,5 +1,10 @@
 import type { Configuration } from "@azure/msal-browser";
-import { PublicClientApplication, LogLevel } from "@azure/msal-browser";
+import {
+  PublicClientApplication,
+  LogLevel,
+  InteractionRequiredAuthError,
+  BrowserAuthError,
+} from "@azure/msal-browser";
 
 function resolveEnvValue(
   ...values: Array<string | undefined>
@@ -66,7 +71,7 @@ export const msalConfig: Configuration = {
 };
 
 export const loginRequest = {
-  scopes: ["openid", "profile", "email"],
+  scopes: ["openid", "profile", "email", apiScope].filter(Boolean),
 };
 
 export const protectedResources = {
@@ -75,19 +80,50 @@ export const protectedResources = {
   },
 };
 
-const msalInstance = new PublicClientApplication(msalConfig);
+export const msalInstance = new PublicClientApplication(msalConfig);
 
 export async function acquireTokenSilent(scopes: string[]): Promise<string> {
-  const activeAccount = msalInstance.getActiveAccount();
+  const cleanScopes = scopes.filter((scope) => typeof scope === "string" && scope.trim().length > 0);
+  const tokenScopes = cleanScopes.length > 0 ? cleanScopes : loginRequest.scopes;
+
+  let activeAccount = msalInstance.getActiveAccount();
+  if (!activeAccount) {
+    const accounts = msalInstance.getAllAccounts();
+    if (accounts.length > 0) {
+      activeAccount = accounts[0];
+      msalInstance.setActiveAccount(activeAccount);
+    }
+  }
+
   if (!activeAccount) throw new Error("No active account! Ensure you are logged in.");
 
   try {
     const response = await msalInstance.acquireTokenSilent({
       account: activeAccount,
-      scopes,
+      scopes: tokenScopes,
     });
     return response.accessToken;
   } catch (error) {
+    if (error instanceof InteractionRequiredAuthError) {
+      try {
+        const interactive = await msalInstance.acquireTokenPopup({
+          account: activeAccount,
+          scopes: tokenScopes,
+        });
+        return interactive.accessToken;
+      } catch (popupError) {
+        if (
+          popupError instanceof BrowserAuthError &&
+          popupError.errorCode === "popup_window_error"
+        ) {
+          await msalInstance.acquireTokenRedirect({
+            account: activeAccount,
+            scopes: tokenScopes,
+          });
+        }
+        throw popupError;
+      }
+    }
     throw error;
   }
 }

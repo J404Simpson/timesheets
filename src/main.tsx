@@ -1,12 +1,9 @@
 import React from "react";
 import ReactDOM from "react-dom/client";
-import { PublicClientApplication } from "@azure/msal-browser";
 import { MsalProvider } from "@azure/msal-react";
 import App from "./App";
-import msalConfig from "./auth/msalConfig";
+import { msalInstance } from "./auth/msalConfig";
 import "./index.css";
-
-const msalInstance = new PublicClientApplication(msalConfig);
 
 // Initialize MSAL and handle redirect responses
 msalInstance.initialize().then(() => {
