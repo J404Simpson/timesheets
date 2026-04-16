@@ -1,4 +1,4 @@
-import { useEffect, useState, Fragment, type ReactNode } from "react";
+import { useEffect, useRef, useState, Fragment, type ReactNode } from "react";
 import { getWeekEntries, type WeekEntry } from "../api/timesheet";
 
 type Props = {
@@ -51,6 +51,7 @@ export default function Recent({
   const [dragState, setDragState] = useState<DragState | null>(null);
   const [selection, setSelection] = useState<TimeRangeSelection | null>(null);
   const [justFinishedSelectionAt, setJustFinishedSelectionAt] = useState<number>(0);
+  const weekGridRef = useRef<HTMLDivElement | null>(null);
   // 0 = this week, -1 = last week
   const [weekOffset, setWeekOffset] = useState(0);
 
@@ -325,6 +326,19 @@ export default function Recent({
     return () => window.removeEventListener("mouseup", onWindowMouseUp);
   }, [dragState]);
 
+  useEffect(() => {
+    if (loading) return;
+    const grid = weekGridRef.current;
+    if (!grid) return;
+
+    const target = grid.querySelector<HTMLElement>('.grid-time-cell[data-hour="7"]');
+    if (!target) return;
+
+    const stickyHeader = grid.querySelector<HTMLElement>(".grid-header");
+    const stickyHeaderHeight = stickyHeader?.offsetHeight ?? 0;
+    grid.scrollTop = Math.max(0, target.offsetTop - stickyHeaderHeight - 4);
+  }, [loading, weekOffset, employeeId]);
+
   const handleTimeSlotClick = (date: Date, hour: number, minute: number) => {
     if (!onSelectDate) return;
     if (isPreviousWeekLocked) return;
@@ -375,9 +389,10 @@ export default function Recent({
     isFuture: boolean,
     isToday: boolean,
     isSelected: boolean,
+    isWorkingHour: boolean,
     entry?: WeekEntry
   ) => {
-    return `grid-cell quarter ${isHourDivider ? "hour-divider" : ""} ${isOccupied ? "occupied" : ""} ${isFuture ? "future" : ""} ${!isFuture && !isOccupied ? "available" : ""} ${isToday ? "today-col" : ""} ${isSelected ? "selected-range" : ""} ${getEntryTypeClass(entry)}`;
+    return `grid-cell quarter ${isHourDivider ? "hour-divider" : ""} ${isOccupied ? "occupied" : ""} ${isFuture ? "future" : ""} ${!isFuture && !isOccupied ? "available" : ""} ${isToday ? "today-col" : ""} ${isSelected ? "selected-range" : ""} ${isWorkingHour ? "working-hours" : ""} ${getEntryTypeClass(entry)}`;
   };
 
   const getCellTitle = (
@@ -424,7 +439,7 @@ export default function Recent({
   return (
     <section className="recent-activity">
       <div className="week-grid-container">
-        <div className="week-grid">
+        <div className="week-grid" ref={weekGridRef}>
           {/* Header row with days */}
           <div className="grid-header grid-time-label">Time</div>
           {weekDays.map((day) => {
@@ -456,11 +471,12 @@ export default function Recent({
           {/* Time slots rows */}
           {Array.from({ length: 24 }, (_, hour) => {
             const hourLabel = `${hour.toString().padStart(2, "0")}:00`;
+            const isWorkingHour = hour >= 7 && hour < 19;
 
             return (
               <Fragment key={`hour-${hour}`}>
                 {/* Time label spans the full hour */}
-                <div className="grid-time-cell span-4">
+                <div className={`grid-time-cell span-4 ${isWorkingHour ? "working-hours-label" : ""}`} data-hour={hour}>
                   <span className="time-label">{hourLabel}</span>
                 </div>
 
@@ -513,7 +529,7 @@ export default function Recent({
                         return (
                           <button
                             key={`${dateStr}-${hour}-${minute}`}
-                            className={getCellClassName(isHourDivider, isOccupied, isFuture, isToday, isSelected, entry)}
+                            className={getCellClassName(isHourDivider, isOccupied, isFuture, isToday, isSelected, isWorkingHour, entry)}
                             onMouseDown={() => handleSlotMouseDown(day, hour, minute)}
                             onMouseEnter={() => handleSlotMouseEnter(day, hour, minute)}
                             onMouseUp={handleSlotMouseUp}
