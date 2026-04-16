@@ -417,14 +417,26 @@ export default function Recent({
           <div className="grid-header grid-time-label">Time</div>
           {weekDays.map((day) => {
             const isToday = toDateKeyLocal(day) === toDateKeyLocal(now);
+            const dayKey = toDateKeyLocal(day);
+            const dayTotal = entries
+              .filter((e) => getEntryDateKey(e.date) === dayKey)
+              .reduce((sum, e) => sum + Number(e.hours), 0);
+            const dayTotalDisplay = dayTotal > 0
+              ? `${parseFloat(dayTotal.toFixed(2))}hrs`
+              : null;
             return (
               <div key={day.toISOString()} className={`grid-header grid-day-header ${isToday ? "today" : ""}`}>
-                <div className="grid-day-name">
-                  {day.toLocaleDateString("en-US", { weekday: "short" })}
+                <div className="grid-day-title">
+                  <span className="grid-day-name">
+                    {day.toLocaleDateString("en-US", { weekday: "short" })}
+                  </span>
+                  <span className="grid-day-date">
+                    {day.getDate()}
+                  </span>
                 </div>
-                <div className="grid-day-date">
-                  {day.getDate()}
-                </div>
+                {dayTotalDisplay && (
+                  <div className="grid-day-hours">{dayTotalDisplay}</div>
+                )}
               </div>
             );
           })}
