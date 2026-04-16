@@ -93,6 +93,26 @@ body{
   gap:12px;
 }
 
+.profile {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  line-height: 1.2;
+}
+
+.profile-name {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.profile-week-hours {
+  margin-top: 2px;
+  font-size: 12px;
+  font-weight: 500;
+  color: #94a3b8;
+}
+
 .app-main{
   flex:1;
   min-height: 0;
@@ -984,7 +1004,6 @@ label {
 
 .grid-day-header.today {
   background: linear-gradient(180deg, #dbeafe 0%, #bfdbfe 100%);
-  color: var(--accent);
 }
 
 .grid-day-title {
@@ -1007,7 +1026,7 @@ label {
 }
 
 .grid-day-hours {
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 600;
   color: #475569;
   margin-top: 2px;

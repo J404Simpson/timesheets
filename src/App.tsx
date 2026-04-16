@@ -202,7 +202,7 @@ const App: React.FC = () => {
           <img src="/veryan-logo.png" alt="Veryan" />
         </div>
 
-        <div className="auth-area">{isAuthenticated ? <Profile /> : null}</div>
+        <div className="auth-area">{isAuthenticated ? <Profile refreshToken={calendarRefreshToken} /> : null}</div>
       </header>
 
       <main className={`app-main${isAdminViewActive ? " app-main-admin" : ""}`}>
