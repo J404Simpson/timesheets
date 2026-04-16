@@ -987,11 +987,14 @@ label {
   top: 0;
   background: linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%);
   font-weight: 600;
-  padding: 9px 8px;
+  padding: 8px 8px;
   border-bottom: 2px solid rgba(15, 23, 42, 0.1);
   border-right: 1px solid rgba(15, 23, 42, 0.06);
   z-index: 10;
   text-align: center;
+  box-sizing: border-box;
+  overflow: visible;
+  height: auto;
 }
 
 .grid-time-label {
