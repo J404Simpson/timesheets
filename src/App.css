@@ -975,6 +975,7 @@ label {
 .week-grid {
   display: grid;
   grid-template-columns: 60px repeat(7, 1fr);
+  grid-template-rows: auto;
   grid-auto-rows: 9px;
   max-height: calc(100vh - 300px);
   min-height: 500px;
