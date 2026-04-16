@@ -208,10 +208,22 @@ export default function Recent({
   };
 
   const canSelectTimeSlot = (date: Date, hour: number, minute: number): boolean => {
-    // Cannot select future date/time (compare in UTC)
+    // Cannot select future date/time, but allow the full current hour.
+    // Example: at 16:00, allow selecting 16:00-16:45 (entry can end at 17:00).
     const targetDateTime = new Date(date);
     targetDateTime.setHours(hour, minute, 0, 0);
-    return targetDateTime <= now;
+
+    const targetDateKey = toDateKeyLocal(targetDateTime);
+    const todayKey = toDateKeyLocal(now);
+
+    if (targetDateKey < todayKey) return true;
+    if (targetDateKey > todayKey) return false;
+
+    const nextHourStart = new Date(now);
+    nextHourStart.setMinutes(0, 0, 0);
+    nextHourStart.setHours(nextHourStart.getHours() + 1);
+
+    return targetDateTime < nextHourStart;
   };
 
   const toSlotIndex = (hour: number, minute: number) => hour * 4 + Math.floor(minute / 15);
