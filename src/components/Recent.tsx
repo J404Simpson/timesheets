@@ -327,16 +327,27 @@ export default function Recent({
   }, [dragState]);
 
   useEffect(() => {
-    if (loading) return;
     const grid = weekGridRef.current;
     if (!grid) return;
 
-    const target = grid.querySelector<HTMLElement>('.grid-time-cell[data-hour="7"]');
-    if (!target) return;
+    // Each hour occupies 4 quarter slots × 8px min-height = 32px.
+    // Scroll so 7am is at the top (below the sticky header).
+    const scrollToHour = () => {
+      const target = grid.querySelector<HTMLElement>('[data-hour="7"]');
+      if (!target) return;
+      const headerEl = grid.querySelector<HTMLElement>(".grid-header");
+      const headerHeight = headerEl?.getBoundingClientRect().height ?? 56;
+      const containerRect = grid.getBoundingClientRect();
+      const targetRect = target.getBoundingClientRect();
+      const offset = targetRect.top - containerRect.top - headerHeight + grid.scrollTop;
+      grid.scrollTop = Math.max(0, offset);
+    };
 
-    const stickyHeader = grid.querySelector<HTMLElement>(".grid-header");
-    const stickyHeaderHeight = stickyHeader?.offsetHeight ?? 0;
-    grid.scrollTop = Math.max(0, target.offsetTop - stickyHeaderHeight - 4);
+    // Run after paint so layout is settled
+    const raf = requestAnimationFrame(() => {
+      scrollToHour();
+    });
+    return () => cancelAnimationFrame(raf);
   }, [loading, weekOffset, employeeId]);
 
   const handleTimeSlotClick = (date: Date, hour: number, minute: number) => {
