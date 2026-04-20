@@ -491,9 +491,9 @@ export default function Recent({
                     {day.getDate()}
                   </span>
                 </div>
-                {dayTotalDisplay && (
-                  <div className="grid-day-hours">{dayTotalDisplay}</div>
-                )}
+                <div className={`grid-day-hours ${dayTotalDisplay ? "has-value" : "is-empty"}`}>
+                  {dayTotalDisplay ?? "\u00A0"}
+                </div>
               </div>
             );
           })}
