@@ -419,10 +419,11 @@ export default function Recent({
     isFuture: boolean,
     isToday: boolean,
     isSelected: boolean,
+    isWeekend: boolean,
     isWorkingHour: boolean,
     entry?: WeekEntry
   ) => {
-    return `grid-cell quarter ${isHourDivider ? "hour-divider" : ""} ${isOccupied ? "occupied" : ""} ${isFuture ? "future" : ""} ${!isFuture && !isOccupied ? "available" : ""} ${isToday ? "today-col" : ""} ${isSelected ? "selected-range" : ""} ${isWorkingHour ? "working-hours" : ""} ${getEntryTypeClass(entry)}`;
+    return `grid-cell quarter ${isHourDivider ? "hour-divider" : ""} ${isOccupied ? "occupied" : ""} ${isFuture ? "future" : ""} ${!isFuture && !isOccupied ? "available" : ""} ${isToday ? "today-col" : ""} ${isSelected ? "selected-range" : ""} ${isWeekend ? "weekend" : ""} ${isWorkingHour ? "working-hours" : ""} ${getEntryTypeClass(entry)}`;
   };
 
   const getCellTitle = (
@@ -474,6 +475,7 @@ export default function Recent({
           <div className="grid-header grid-time-label">Time</div>
           {weekDays.map((day) => {
             const isToday = toDateKeyLocal(day) === toDateKeyLocal(now);
+            const isWeekend = day.getDay() === 0 || day.getDay() === 6;
             const dayKey = toDateKeyLocal(day);
             const dayTotal = entries
               .filter((e) => getEntryDateKey(e.date) === dayKey)
@@ -482,7 +484,7 @@ export default function Recent({
               ? `${parseFloat(dayTotal.toFixed(2))}hrs`
               : null;
             return (
-              <div key={day.toISOString()} className={`grid-header grid-day-header ${isToday ? "today" : ""}`}>
+              <div key={day.toISOString()} className={`grid-header grid-day-header ${isToday ? "today" : ""} ${isWeekend ? "weekend" : ""}`}>
                 <div className="grid-day-title">
                   <span className="grid-day-name">
                     {day.toLocaleDateString("en-US", { weekday: "short" })}
@@ -520,6 +522,7 @@ export default function Recent({
                     <Fragment key={`hour-${hour}-q-${quarter}`}>
                       {weekDays.map((day) => {
                         const dateStr = toDateKeyLocal(day);
+                        const isWeekend = day.getDay() === 0 || day.getDay() === 6;
                         const slot = toSlotIndex(hour, minute);
                         const slotMinutes = hour * 60 + minute;
                         
@@ -559,7 +562,7 @@ export default function Recent({
                         return (
                           <button
                             key={`${dateStr}-${hour}-${minute}`}
-                            className={getCellClassName(isHourDivider, isOccupied, isFuture, isToday, isSelected, isWorkingHour, entry)}
+                            className={getCellClassName(isHourDivider, isOccupied, isFuture, isToday, isSelected, isWeekend, isWorkingHour, entry)}
                             onMouseDown={() => handleSlotMouseDown(day, hour, minute)}
                             onMouseEnter={() => handleSlotMouseEnter(day, hour, minute)}
                             onMouseUp={handleSlotMouseUp}
