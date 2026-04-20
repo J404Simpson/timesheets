@@ -296,6 +296,7 @@ export default function TimesheetForm({
   const [now, setNow] = useState(() => new Date());
   const today = getLocalDateKey(now);
   const currentLocalMinutes = getLocalMinuteOfDay(now);
+  const currentHourBoundaryMinutes = Math.min(24 * 60, (Math.floor(currentLocalMinutes / 60) + 1) * 60);
 
   useEffect(() => {
     const timer = window.setInterval(() => {
@@ -391,9 +392,21 @@ export default function TimesheetForm({
     setEntry((prev) => ({ ...prev, [name]: value }));
   };
 
-  const isFutureTimeOnSelectedDate = useCallback((value: string, dateKey = entry.workDate) => {
-    return dateKey === today && minutesFrom(value) > currentLocalMinutes;
-  }, [currentLocalMinutes, entry.workDate, today]);
+  const isBeyondAllowedEndTime = useCallback((value: string, dateKey = entry.workDate) => {
+    return dateKey === today && minutesFrom(value) > currentHourBoundaryMinutes;
+  }, [currentHourBoundaryMinutes, entry.workDate, today]);
+
+  const getLatestAllowedStartTime = useCallback((dateKey = entry.workDate) => {
+    if (dateKey !== today) return undefined;
+
+    const latestStartMinutes = currentHourBoundaryMinutes - STEP_MINUTES;
+    if (latestStartMinutes < 0) return undefined;
+
+    return timeOptions
+      .slice()
+      .reverse()
+      .find((opt) => minutesFrom(opt.value) <= latestStartMinutes)?.value;
+  }, [currentHourBoundaryMinutes, entry.workDate, timeOptions, today]);
 
   const applyFieldChange = (name: string, value: string) => {
     if (name === "startTime") {
@@ -401,7 +414,7 @@ export default function TimesheetForm({
       const minEnd = startMin + STEP_MINUTES;
       const candidate = timeOptions.find((opt) => {
         const endMinutes = minutesFrom(opt.value);
-        return endMinutes >= minEnd && !isFutureTimeOnSelectedDate(opt.value);
+        return endMinutes >= minEnd && !isBeyondAllowedEndTime(opt.value);
       });
       setEntry((prev) => ({
         ...prev,
@@ -497,7 +510,7 @@ export default function TimesheetForm({
   const minEnd = startMin + STEP_MINUTES;
   const endOptions = timeOptions.filter((opt) => {
     const optionMinutes = minutesFrom(opt.value);
-    return optionMinutes >= minEnd && !isFutureTimeOnSelectedDate(opt.value);
+    return optionMinutes >= minEnd && !isBeyondAllowedEndTime(opt.value);
   });
 
   const dayEntries = weekEntries.filter((e) => {
@@ -512,7 +525,7 @@ export default function TimesheetForm({
 
   const isStartBlocked = (value: string) => {
     const startMinutes = minutesFrom(value);
-    if (isTodaySelected && startMinutes + STEP_MINUTES > currentLocalMinutes) {
+    if (isTodaySelected && startMinutes + STEP_MINUTES > currentHourBoundaryMinutes) {
       return true;
     }
 
@@ -526,7 +539,7 @@ export default function TimesheetForm({
 
   const isEndBlocked = (value: string) => {
     if (!entry.startTime) return false;
-    if (isFutureTimeOnSelectedDate(value)) return true;
+    if (isBeyondAllowedEndTime(value)) return true;
 
     const startMinutes = minutesFrom(entry.startTime);
     const endMinutes = minutesFrom(value);
@@ -539,22 +552,30 @@ export default function TimesheetForm({
   };
 
   const findValidStartTime = (preferred?: string) => {
-    const preferredIndex = preferred
-      ? timeOptions.findIndex((opt) => opt.value === preferred)
-      : -1;
+    if (preferred && !isStartBlocked(preferred)) {
+      return preferred;
+    }
 
-    const ordered = preferredIndex >= 0
-      ? [...timeOptions.slice(preferredIndex), ...timeOptions.slice(0, preferredIndex)]
-      : timeOptions;
+    if (preferred) {
+      const preferredMinutes = minutesFrom(preferred);
+      const earlierValid = timeOptions
+        .filter((opt) => minutesFrom(opt.value) <= preferredMinutes)
+        .reverse()
+        .find((opt) => !isStartBlocked(opt.value))?.value;
 
-    return ordered.find((opt) => !isStartBlocked(opt.value))?.value;
+      if (earlierValid) {
+        return earlierValid;
+      }
+    }
+
+    return timeOptions.find((opt) => !isStartBlocked(opt.value))?.value;
   };
 
   const findValidEndTime = (startValue: string) => {
     const startMinutes = minutesFrom(startValue);
     const minEndMinutes = startMinutes + STEP_MINUTES;
     return timeOptions
-      .filter((opt) => minutesFrom(opt.value) >= minEndMinutes && !isFutureTimeOnSelectedDate(opt.value))
+      .filter((opt) => minutesFrom(opt.value) >= minEndMinutes && !isBeyondAllowedEndTime(opt.value))
       .find((opt) => {
         const endMinutes = minutesFrom(opt.value);
         return !blockingEntries.some((e) => {
@@ -574,7 +595,7 @@ export default function TimesheetForm({
   const canSubmit = (() => {
     if (!showEntryFields || !entry.startTime || !entry.endTime) return false;
     if (endMin < startMin + STEP_MINUTES) return false;
-    if (isTodaySelected && endMin > currentLocalMinutes) return false;
+    if (isTodaySelected && endMin > currentHourBoundaryMinutes) return false;
 
     if (showProjectFields) {
       if (!entry.project) return false;
@@ -623,7 +644,24 @@ export default function TimesheetForm({
         : findValidStartTime(preferredStart);
 
       if (!validStart) {
-        return prev;
+        const fallbackStart = getLatestAllowedStartTime();
+        if (!fallbackStart) {
+          return prev;
+        }
+
+        const fallbackEnd = findValidEndTime(fallbackStart);
+        if (!fallbackEnd) {
+          return {
+            ...prev,
+            startTime: fallbackStart,
+          };
+        }
+
+        return {
+          ...prev,
+          startTime: fallbackStart,
+          endTime: fallbackEnd,
+        };
       }
 
       const validEnd = prev.endTime && !isEndBlocked(prev.endTime)
@@ -631,10 +669,7 @@ export default function TimesheetForm({
         : findValidEndTime(validStart);
 
       if (!validEnd) {
-        return {
-          ...prev,
-          startTime: validStart,
-        };
+        return prev;
       }
 
       if (prev.startTime === validStart && prev.endTime === validEnd) {

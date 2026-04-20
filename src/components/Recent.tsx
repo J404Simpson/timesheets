@@ -241,6 +241,21 @@ export default function Recent({
     return canSelectTimeSlot(date, hour, minute) && !isTimeSlotOccupied(date, hour, minute);
   };
 
+  const getLastSelectableSlotInRange = (date: Date, startSlot: number, targetSlot: number) => {
+    const direction = targetSlot >= startSlot ? 1 : -1;
+    let lastSelectableSlot = startSlot;
+
+    for (let slot = startSlot; direction > 0 ? slot <= targetSlot : slot >= targetSlot; slot += direction) {
+      const [hour, minute] = slotToHourMinute(slot);
+      if (!isSlotSelectable(date, hour, minute)) {
+        break;
+      }
+      lastSelectableSlot = slot;
+    }
+
+    return lastSelectableSlot;
+  };
+
   const isRangeSelectable = (date: Date, startSlot: number, endSlot: number) => {
     const min = Math.min(startSlot, endSlot);
     const max = Math.max(startSlot, endSlot);
@@ -292,7 +307,11 @@ export default function Recent({
     if (!isRangeSelectable(dragDate, dragState.startSlot, slot)) {
       if (!isSlotSelectable(dragDate, startHour, startMinute)) {
         setDragState(null);
+        return;
       }
+
+      const clampedSlot = getLastSelectableSlotInRange(dragDate, dragState.startSlot, slot);
+      setDragState((prev) => (prev ? { ...prev, currentSlot: clampedSlot } : prev));
       return;
     }
     setDragState((prev) => (prev ? { ...prev, currentSlot: slot } : prev));
