@@ -584,7 +584,8 @@ export default function Recent({
                               overflow: "hidden", 
                               whiteSpace: "normal", 
                               wordBreak: "break-word", 
-                              padding: "2px",
+                              padding: rowSpan <= 1 ? "0 1px" : "2px",
+                              lineHeight: rowSpan <= 1 ? 1 : undefined,
                               gridRow: rowSpan > 1 ? `span ${rowSpan}` : undefined,
                               cursor: getEntryCursor(entry)
                             }}
