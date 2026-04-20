@@ -988,7 +988,7 @@ label {
   top: 0;
   background: linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%);
   font-weight: 600;
-  padding: 8px 8px;
+  padding: 5px 6px;
   border-bottom: 2px solid rgba(15, 23, 42, 0.1);
   border-right: 1px solid rgba(15, 23, 42, 0.06);
   z-index: 10;
@@ -1014,8 +1014,8 @@ label {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 1px;
-  min-height: 52px;
+  gap: 0;
+  min-height: 44px;
 }
 
 .grid-day-header.today {
@@ -1026,8 +1026,8 @@ label {
   display: flex;
   align-items: baseline;
   justify-content: center;
-  gap: 3px;
-  min-height: 16px;
+  gap: 2px;
+  min-height: 14px;
 }
 
 .grid-day-name {
@@ -1046,9 +1046,9 @@ label {
   font-size: 12px;
   font-weight: 600;
   color: #475569;
-  margin-top: 1px;
-  min-height: 15px;
-  line-height: 1.2;
+  margin-top: 0;
+  min-height: 13px;
+  line-height: 1.1;
 }
 
 .grid-day-hours.is-empty {
