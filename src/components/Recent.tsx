@@ -603,7 +603,18 @@ export default function Recent({
                         return (
                           <button
                             key={`${dateStr}-${hour}-${minute}`}
-                            className={getCellClassName(isHourDivider, isTrueHourDivider, isOccupied, isFuture, isToday, isSelected || isDragPreview, isSlotHover, isWeekend, isWorkingHour, entry)}
+                            className={getCellClassName(
+                              isHourDivider,
+                              isTrueHourDivider,
+                              isOccupied,
+                              isFuture,
+                              isToday,
+                              (isSelected || isDragPreview) && !isOccupied && !entry,
+                              isSlotHover,
+                              isWeekend,
+                              isWorkingHour,
+                              entry
+                            )}
                             onMouseDown={() => handleSlotMouseDown(day, hour, minute)}
                             onMouseEnter={() => {
                               setHoverState({ dateKey: dateStr, slot });
