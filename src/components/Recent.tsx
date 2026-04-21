@@ -211,12 +211,11 @@ export default function Recent({
       const [endH, endM] = getTimeParts(entry.end_time);
       const startMinutes = startH * 60 + startM;
       const endMinutes = endH * 60 + endM;
-      // Only consider a slot occupied if the entry starts within it, or fully spans it.
-      // An entry that merely ends partway through a slot (e.g. 9:00–9:45 ending in
-      // the 9:30–10:00 slot) should NOT block the remainder of that slot.
-      const startsInSlot = startMinutes >= slotMinutes && startMinutes < slotEndMinutes;
+      // Only consider a half-hour occupied when it is fully covered.
+      // Partial coverage (e.g. a 15-minute entry inside the half-hour) should
+      // not block selection of the neighbouring 15-minute visual cell.
       const fullyCovered = startMinutes <= slotMinutes && endMinutes >= slotEndMinutes;
-      return startsInSlot || fullyCovered;
+      return fullyCovered;
     });
   };
 
@@ -576,7 +575,7 @@ export default function Recent({
                           return null;
                         }
 
-                        const isOccupied = isHalfHourSlotOccupied(day, hour, snappedMinute);
+                        const isOccupied = isTimeSlotOccupied(day, hour, minute);
                         const isFuture = !canSelectTimeSlot(day, hour, snappedMinute);
                         const isToday = toDateKeyLocal(day) === toDateKeyLocal(now);
                         const entry = getEntryForTimeSlot(day, hour, minute);
