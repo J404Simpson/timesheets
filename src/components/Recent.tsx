@@ -260,6 +260,11 @@ export default function Recent({
     return [Math.floor(normalized / 2), (normalized % 2) * 30];
   };
 
+  const minuteOfDayToHourMinute = (totalMinutes: number): [number, number] => {
+    const normalized = Math.max(0, Math.min((24 * 60) - 1, totalMinutes));
+    return [Math.floor(normalized / 60), normalized % 60];
+  };
+
   const isSlotSelectable = (date: Date, hour: number, minute: number) => {
     // Avoid selecting the last half-hour of the day because end-time options
     // in New Entry cannot represent 24:00.
@@ -409,10 +414,32 @@ export default function Recent({
       const nowTs = Date.now();
       // Allow immediate click on selection, but prevent accidental double-trigger
       if (nowTs - justFinishedSelectionAt < 100) return;
-      
-      const [startHour, startMinute] = slotToHourMinute(selection.startSlot);
-      const endSlotExclusive = Math.min(48, selection.endSlot + 1);
-      const [endHour, endMinute] = endSlotExclusive === 48 ? [23, 30] : slotToHourMinute(endSlotExclusive);
+
+      const isSelectableQuarterInSelection = (totalMinutes: number) => {
+        if (totalMinutes < 0 || totalMinutes >= 24 * 60) return false;
+        const [qHour, qMinute] = minuteOfDayToHourMinute(totalMinutes);
+        const qSlot = toSlotIndex(qHour, normalizeToHalfHour(qMinute));
+        return (
+          isCellInSelection(date, qSlot) &&
+          canSelectTimeSlot(date, qHour, normalizeToHalfHour(qMinute)) &&
+          !isTimeSlotOccupied(date, qHour, qMinute)
+        );
+      };
+
+      const clickedMinutes = hour * 60 + minute;
+      let rangeStart = clickedMinutes;
+      let rangeEndExclusive = clickedMinutes + 15;
+
+      // Expand backward/forward in 15-minute steps within selectable highlighted cells.
+      while (isSelectableQuarterInSelection(rangeStart - 15)) {
+        rangeStart -= 15;
+      }
+      while (isSelectableQuarterInSelection(rangeEndExclusive)) {
+        rangeEndExclusive += 15;
+      }
+
+      const [startHour, startMinute] = minuteOfDayToHourMinute(rangeStart);
+      const [endHour, endMinute] = minuteOfDayToHourMinute(rangeEndExclusive);
       onSelectDate?.(selection.dateKey, startHour, startMinute, endHour, endMinute);
       setSelection(null);
       return;
@@ -631,7 +658,7 @@ export default function Recent({
                                 }
                                 return;
                               }
-                              handleTimeSlotClick(day, hour, snappedMinute);
+                              handleTimeSlotClick(day, hour, minute);
                             }}
                             disabled={isFuture || (isOccupied && !entry) || isPreviousWeekLocked}
                             title={getCellTitle(isFuture, isOccupied, isSelected, timeLabel, entry)}
