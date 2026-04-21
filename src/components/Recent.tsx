@@ -193,6 +193,22 @@ export default function Recent({
     });
   };
 
+  const isHalfHourSlotOccupied = (date: Date, hour: number, minute: number): boolean => {
+    const dateStr = toDateKeyLocal(date);
+    const slotMinutes = hour * 60 + minute;
+    const slotEndMinutes = slotMinutes + 30;
+
+    return entries.some((entry) => {
+      const entryDateStr = getEntryDateKey(entry.date);
+      if (entryDateStr !== dateStr) return false;
+      const [startH, startM] = getTimeParts(entry.start_time);
+      const [endH, endM] = getTimeParts(entry.end_time);
+      const startMinutes = startH * 60 + startM;
+      const endMinutes = endH * 60 + endM;
+      return startMinutes < slotEndMinutes && endMinutes > slotMinutes;
+    });
+  };
+
   const getEntryForTimeSlot = (date: Date, hour: number, minute: number): WeekEntry | undefined => {
     const dateStr = toDateKeyLocal(date);
     const slotMinutes = hour * 60 + minute;
@@ -201,9 +217,7 @@ export default function Recent({
       const entryDateStr = getEntryDateKey(entry.date);
       if (entryDateStr !== dateStr) return false;
       const [startH, startM] = getTimeParts(entry.start_time);
-      const [endH, endM] = getTimeParts(entry.end_time);
       const startMinutes = startH * 60 + startM;
-      const endMinutes = endH * 60 + endM;
       return slotMinutes === startMinutes;
     });
   };
@@ -227,18 +241,20 @@ export default function Recent({
     return targetDateTime < nextHourStart;
   };
 
-  const toSlotIndex = (hour: number, minute: number) => hour * 4 + Math.floor(minute / 15);
+  const toSlotIndex = (hour: number, minute: number) => hour * 2 + Math.floor(minute / 30);
+
+  const normalizeToHalfHour = (minute: number) => (minute >= 30 ? 30 : 0);
 
   const slotToHourMinute = (slot: number): [number, number] => {
-    const normalized = Math.max(0, Math.min(95, slot));
-    return [Math.floor(normalized / 4), (normalized % 4) * 15];
+    const normalized = Math.max(0, Math.min(47, slot));
+    return [Math.floor(normalized / 2), (normalized % 2) * 30];
   };
 
   const isSlotSelectable = (date: Date, hour: number, minute: number) => {
-    // Avoid selecting the last quarter-hour of the day because end-time options
+    // Avoid selecting the last half-hour of the day because end-time options
     // in New Entry cannot represent 24:00.
-    if (hour === 23 && minute === 45) return false;
-    return canSelectTimeSlot(date, hour, minute) && !isTimeSlotOccupied(date, hour, minute);
+    if (hour === 23 && minute === 30) return false;
+    return canSelectTimeSlot(date, hour, minute) && !isHalfHourSlotOccupied(date, hour, minute);
   };
 
   const getLastSelectableSlotInRange = (date: Date, startSlot: number, targetSlot: number) => {
@@ -278,9 +294,10 @@ export default function Recent({
   const handleSlotMouseDown = (date: Date, hour: number, minute: number) => {
     if (!onSelectDate) return;
     if (isPreviousWeekLocked) return;
-    if (!isSlotSelectable(date, hour, minute)) return;
+    const snappedMinute = normalizeToHalfHour(minute);
+    if (!isSlotSelectable(date, hour, snappedMinute)) return;
     const dateKey = toDateKeyLocal(date);
-    const slot = toSlotIndex(hour, minute);
+    const slot = toSlotIndex(hour, snappedMinute);
 
     // If a range is already selected and user clicks within it,
     // keep the existing selection so click can create the full-range entry.
@@ -301,7 +318,8 @@ export default function Recent({
     if (!dragState?.active) return;
     const dateKey = toDateKeyLocal(date);
     if (dateKey !== dragState.dateKey) return;
-    const slot = toSlotIndex(hour, minute);
+    const snappedMinute = normalizeToHalfHour(minute);
+    const slot = toSlotIndex(hour, snappedMinute);
     const [startHour, startMinute] = slotToHourMinute(dragState.startSlot);
     const dragDate = new Date(date);
     if (!isRangeSelectable(dragDate, dragState.startSlot, slot)) {
@@ -372,7 +390,8 @@ export default function Recent({
   const handleTimeSlotClick = (date: Date, hour: number, minute: number) => {
     if (!onSelectDate) return;
     if (isPreviousWeekLocked) return;
-    const slot = toSlotIndex(hour, minute);
+    const snappedMinute = normalizeToHalfHour(minute);
+    const slot = toSlotIndex(hour, snappedMinute);
     const dateKey = toDateKeyLocal(date);
     
     // If clicking on a selected range, create entry with that range
@@ -382,8 +401,8 @@ export default function Recent({
       if (nowTs - justFinishedSelectionAt < 100) return;
       
       const [startHour, startMinute] = slotToHourMinute(selection.startSlot);
-      const endSlotExclusive = Math.min(96, selection.endSlot + 1);
-      const [endHour, endMinute] = endSlotExclusive === 96 ? [23, 45] : slotToHourMinute(endSlotExclusive);
+      const endSlotExclusive = Math.min(48, selection.endSlot + 1);
+      const [endHour, endMinute] = endSlotExclusive === 48 ? [23, 30] : slotToHourMinute(endSlotExclusive);
       onSelectDate?.(selection.dateKey, startHour, startMinute, endHour, endMinute);
       setSelection(null);
       return;
@@ -394,8 +413,8 @@ export default function Recent({
     if (nowTs - justFinishedSelectionAt < 250) return;
     
     // Otherwise, create entry starting at this time slot
-    if (isSlotSelectable(date, hour, minute)) {
-      onSelectDate?.(dateKey, hour, minute);
+    if (isSlotSelectable(date, hour, snappedMinute)) {
+      onSelectDate?.(dateKey, hour, snappedMinute);
       setSelection(null);
     }
   };
@@ -512,18 +531,19 @@ export default function Recent({
                   <span className="time-label">{hourLabel}</span>
                 </div>
 
-                {/* Four quarter-hour rows per hour */}
+                {/* Four quarter-hour rows per hour; selection snaps to half-hours */}
                 {Array.from({ length: 4 }, (_, quarter) => {
                   const minute = quarter * 15;
+                  const snappedMinute = normalizeToHalfHour(minute);
                   const timeLabel = `${hour.toString().padStart(2, "0")}:${minute.toString().padStart(2, "0")}`;
-                  const isHourDivider = minute === 45;
+                  const isHourDivider = minute === 15 || minute === 45;
 
                   return (
                     <Fragment key={`hour-${hour}-q-${quarter}`}>
                       {weekDays.map((day) => {
                         const dateStr = toDateKeyLocal(day);
                         const isWeekend = day.getDay() === 0 || day.getDay() === 6;
-                        const slot = toSlotIndex(hour, minute);
+                        const slot = toSlotIndex(hour, snappedMinute);
                         const slotMinutes = hour * 60 + minute;
                         
                         // Check if this slot is covered by a spanning entry that started earlier
@@ -542,8 +562,8 @@ export default function Recent({
                           return null;
                         }
 
-                        const isOccupied = isTimeSlotOccupied(day, hour, minute);
-                        const isFuture = !canSelectTimeSlot(day, hour, minute);
+                        const isOccupied = isHalfHourSlotOccupied(day, hour, snappedMinute);
+                        const isFuture = !canSelectTimeSlot(day, hour, snappedMinute);
                         const isToday = toDateKeyLocal(day) === toDateKeyLocal(now);
                         const entry = getEntryForTimeSlot(day, hour, minute);
                         const isSelected = isCellInSelection(day, slot);
@@ -576,7 +596,7 @@ export default function Recent({
                                 }
                                 return;
                               }
-                              handleTimeSlotClick(day, hour, minute);
+                              handleTimeSlotClick(day, hour, snappedMinute);
                             }}
                             disabled={isFuture || (isOccupied && !entry) || isPreviousWeekLocked}
                             title={getCellTitle(isFuture, isOccupied, isSelected, timeLabel, entry)}
