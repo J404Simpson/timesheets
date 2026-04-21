@@ -211,7 +211,12 @@ export default function Recent({
       const [endH, endM] = getTimeParts(entry.end_time);
       const startMinutes = startH * 60 + startM;
       const endMinutes = endH * 60 + endM;
-      return startMinutes < slotEndMinutes && endMinutes > slotMinutes;
+      // Only consider a slot occupied if the entry starts within it, or fully spans it.
+      // An entry that merely ends partway through a slot (e.g. 9:00–9:45 ending in
+      // the 9:30–10:00 slot) should NOT block the remainder of that slot.
+      const startsInSlot = startMinutes >= slotMinutes && startMinutes < slotEndMinutes;
+      const fullyCovered = startMinutes <= slotMinutes && endMinutes >= slotEndMinutes;
+      return startsInSlot || fullyCovered;
     });
   };
 
