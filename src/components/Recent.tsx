@@ -33,6 +33,11 @@ type DragState = {
   active: boolean;
 };
 
+type HoverState = {
+  dateKey: string;
+  slot: number;
+};
+
 export default function Recent({
   onCreateEntry,
   onSelectDate,
@@ -51,6 +56,7 @@ export default function Recent({
   const [dragState, setDragState] = useState<DragState | null>(null);
   const [selection, setSelection] = useState<TimeRangeSelection | null>(null);
   const [justFinishedSelectionAt, setJustFinishedSelectionAt] = useState<number>(0);
+  const [hoverState, setHoverState] = useState<HoverState | null>(null);
   const weekGridRef = useRef<HTMLDivElement | null>(null);
   // 0 = this week, -1 = last week
   const [weekOffset, setWeekOffset] = useState(0);
@@ -438,11 +444,12 @@ export default function Recent({
     isFuture: boolean,
     isToday: boolean,
     isSelected: boolean,
+    isSlotHover: boolean,
     isWeekend: boolean,
     isWorkingHour: boolean,
     entry?: WeekEntry
   ) => {
-    return `grid-cell quarter ${isHourDivider ? "hour-divider" : ""} ${isOccupied ? "occupied" : ""} ${isFuture ? "future" : ""} ${!isFuture && !isOccupied ? "available" : ""} ${isToday ? "today-col" : ""} ${isSelected ? "selected-range" : ""} ${isWeekend ? "weekend" : ""} ${isWorkingHour ? "working-hours" : ""} ${getEntryTypeClass(entry)}`;
+    return `grid-cell quarter ${isHourDivider ? "hour-divider" : ""} ${isOccupied ? "occupied" : ""} ${isFuture ? "future" : ""} ${!isFuture && !isOccupied ? "available" : ""} ${isToday ? "today-col" : ""} ${isSelected ? "selected-range" : ""} ${isSlotHover ? "slot-hover" : ""} ${isWeekend ? "weekend" : ""} ${isWorkingHour ? "working-hours" : ""} ${getEntryTypeClass(entry)}`;
   };
 
   const getCellTitle = (
@@ -489,7 +496,7 @@ export default function Recent({
   return (
     <section className="recent-activity">
       <div className="week-grid-container">
-        <div className="week-grid" ref={weekGridRef}>
+        <div className="week-grid" ref={weekGridRef} onMouseLeave={() => setHoverState(null)}>
           {/* Header row with days */}
           <div className="grid-header grid-time-label">Time</div>
           {weekDays.map((day) => {
@@ -567,6 +574,14 @@ export default function Recent({
                         const isToday = toDateKeyLocal(day) === toDateKeyLocal(now);
                         const entry = getEntryForTimeSlot(day, hour, minute);
                         const isSelected = isCellInSelection(day, slot);
+                        const isDragPreview = !!dragState?.active && dragState.dateKey === dateStr && (
+                          slot >= Math.min(dragState.startSlot, dragState.currentSlot) &&
+                          slot <= Math.max(dragState.startSlot, dragState.currentSlot)
+                        );
+                        const isSlotHover =
+                          !dragState?.active &&
+                          hoverState?.dateKey === dateStr &&
+                          hoverState?.slot === slot;
 
                         // Calculate span if this is the start of an entry
                         let rowSpan = 1;
@@ -582,9 +597,12 @@ export default function Recent({
                         return (
                           <button
                             key={`${dateStr}-${hour}-${minute}`}
-                            className={getCellClassName(isHourDivider, isOccupied, isFuture, isToday, isSelected, isWeekend, isWorkingHour, entry)}
+                            className={getCellClassName(isHourDivider, isOccupied, isFuture, isToday, isSelected || isDragPreview, isSlotHover, isWeekend, isWorkingHour, entry)}
                             onMouseDown={() => handleSlotMouseDown(day, hour, minute)}
-                            onMouseEnter={() => handleSlotMouseEnter(day, hour, minute)}
+                            onMouseEnter={() => {
+                              setHoverState({ dateKey: dateStr, slot });
+                              handleSlotMouseEnter(day, hour, minute);
+                            }}
                             onMouseUp={handleSlotMouseUp}
                             onClick={() => {
                               if (entry) {

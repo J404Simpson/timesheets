@@ -1150,12 +1150,12 @@ label {
 }
 
 .grid-cell.working-hours.available:hover {
-  background: rgba(37, 99, 235, 0.12);
+  background: #ffffff;
 }
 
 .grid-cell.weekend.available:hover,
 .grid-cell.weekend.working-hours.available:hover {
-  background: rgba(15, 23, 42, 0.09);
+  background: rgba(15, 23, 42, 0.05);
 }
 
 .grid-cell.hour-divider {
@@ -1175,28 +1175,30 @@ label {
 }
 
 .grid-cell.slot-hover:not(:disabled):not(.occupied):not(.future):not(.selected-range) {
-  background: rgba(15, 23, 42, 0.09);
+  background: rgba(59, 130, 246, 0.22);
+  border-bottom-color: transparent !important;
+  border-right-color: transparent !important;
 }
 
 .grid-cell.selected-range {
   background: #3b82f6;
   box-shadow: none;
-  border-bottom-color: #3b82f6 !important;
-  border-right-color: #3b82f6 !important;
+  border-bottom-color: transparent !important;
+  border-right-color: transparent !important;
 }
 
 .grid-cell.selected-range.hour-divider {
-  border-bottom-color: #3b82f6 !important;
+  border-bottom-color: transparent !important;
 }
 
 .grid-cell.selected-range:hover:not(:disabled) {
   background: #3b82f6;
-  border-bottom-color: #3b82f6 !important;
-  border-right-color: #3b82f6 !important;
+  border-bottom-color: transparent !important;
+  border-right-color: transparent !important;
 }
 
 .grid-cell.selected-range:hover.hour-divider:not(:disabled) {
-  border-bottom-color: #3b82f6 !important;
+  border-bottom-color: transparent !important;
 }
 
 .grid-cell.occupied {
