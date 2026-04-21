@@ -30,6 +30,7 @@ type DragState = {
   dateKey: string;
   startSlot: number;
   currentSlot: number;
+  startQuarterMinutes: number;
   active: boolean;
 };
 
@@ -272,31 +273,28 @@ export default function Recent({
     return canSelectTimeSlot(date, hour, minute) && !isHalfHourSlotOccupied(date, hour, minute);
   };
 
-  const getLastSelectableSlotInRange = (date: Date, startSlot: number, targetSlot: number) => {
-    const direction = targetSlot >= startSlot ? 1 : -1;
-    let lastSelectableSlot = startSlot;
-
-    for (let slot = startSlot; direction > 0 ? slot <= targetSlot : slot >= targetSlot; slot += direction) {
-      const [hour, minute] = slotToHourMinute(slot);
-      if (!isSlotSelectable(date, hour, minute)) {
-        break;
-      }
-      lastSelectableSlot = slot;
-    }
-
-    return lastSelectableSlot;
+  const isQuarterSelectableForDrag = (date: Date, quarterMinutes: number) => {
+    if (quarterMinutes < 0 || quarterMinutes >= 24 * 60) return false;
+    const [hour, minute] = minuteOfDayToHourMinute(quarterMinutes);
+    return canSelectTimeSlot(date, hour, normalizeToHalfHour(minute)) && !isTimeSlotOccupied(date, hour, minute);
   };
 
-  const isRangeSelectable = (date: Date, startSlot: number, endSlot: number) => {
-    const min = Math.min(startSlot, endSlot);
-    const max = Math.max(startSlot, endSlot);
-    for (let slot = min; slot <= max; slot++) {
-      const [hour, minute] = slotToHourMinute(slot);
-      if (!isSlotSelectable(date, hour, minute)) {
-        return false;
+  const getLastSelectableQuarterInPath = (date: Date, startQuarter: number, targetQuarter: number) => {
+    const direction = targetQuarter >= startQuarter ? 15 : -15;
+    let lastSelectableQuarter = startQuarter;
+
+    for (
+      let quarter = startQuarter;
+      direction > 0 ? quarter <= targetQuarter : quarter >= targetQuarter;
+      quarter += direction
+    ) {
+      if (!isQuarterSelectableForDrag(date, quarter)) {
+        break;
       }
+      lastSelectableQuarter = quarter;
     }
-    return true;
+
+    return lastSelectableQuarter;
   };
 
   const isCellInSelection = (date: Date, slot: number) => {
@@ -309,10 +307,12 @@ export default function Recent({
   const handleSlotMouseDown = (date: Date, hour: number, minute: number) => {
     if (!onSelectDate) return;
     if (isPreviousWeekLocked) return;
+    if (isTimeSlotOccupied(date, hour, minute)) return;
     const snappedMinute = normalizeToHalfHour(minute);
     if (!isSlotSelectable(date, hour, snappedMinute)) return;
     const dateKey = toDateKeyLocal(date);
     const slot = toSlotIndex(hour, snappedMinute);
+    const startQuarterMinutes = hour * 60 + minute;
 
     // If a range is already selected and user clicks within it,
     // keep the existing selection so click can create the full-range entry.
@@ -325,7 +325,7 @@ export default function Recent({
       return;
     }
 
-    setDragState({ dateKey, startSlot: slot, currentSlot: slot, active: true });
+    setDragState({ dateKey, startSlot: slot, currentSlot: slot, startQuarterMinutes, active: true });
     setSelection(null);
   };
 
@@ -333,21 +333,16 @@ export default function Recent({
     if (!dragState?.active) return;
     const dateKey = toDateKeyLocal(date);
     if (dateKey !== dragState.dateKey) return;
-    const snappedMinute = normalizeToHalfHour(minute);
-    const slot = toSlotIndex(hour, snappedMinute);
-    const [startHour, startMinute] = slotToHourMinute(dragState.startSlot);
+    const targetQuarterMinutes = hour * 60 + minute;
     const dragDate = new Date(date);
-    if (!isRangeSelectable(dragDate, dragState.startSlot, slot)) {
-      if (!isSlotSelectable(dragDate, startHour, startMinute)) {
-        setDragState(null);
-        return;
-      }
-
-      const clampedSlot = getLastSelectableSlotInRange(dragDate, dragState.startSlot, slot);
-      setDragState((prev) => (prev ? { ...prev, currentSlot: clampedSlot } : prev));
-      return;
-    }
-    setDragState((prev) => (prev ? { ...prev, currentSlot: slot } : prev));
+    const clampedQuarterMinutes = getLastSelectableQuarterInPath(
+      dragDate,
+      dragState.startQuarterMinutes,
+      targetQuarterMinutes
+    );
+    const [clampedHour, clampedMinute] = minuteOfDayToHourMinute(clampedQuarterMinutes);
+    const clampedSlot = toSlotIndex(clampedHour, normalizeToHalfHour(clampedMinute));
+    setDragState((prev) => (prev ? { ...prev, currentSlot: clampedSlot } : prev));
   };
 
   const handleSlotMouseUp = () => {
