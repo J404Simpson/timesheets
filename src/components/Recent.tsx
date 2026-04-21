@@ -543,7 +543,7 @@ export default function Recent({
                   const minute = quarter * 15;
                   const snappedMinute = normalizeToHalfHour(minute);
                   const timeLabel = `${hour.toString().padStart(2, "0")}:${minute.toString().padStart(2, "0")}`;
-                  const isHourDivider = minute === 15 || minute === 45;
+                  const isHourDivider = minute === 30;
 
                   return (
                     <Fragment key={`hour-${hour}-q-${quarter}`}>

@@ -1175,16 +1175,14 @@ label {
 }
 
 .grid-cell.slot-hover:not(:disabled):not(.occupied):not(.future):not(.selected-range) {
-  background: rgba(59, 130, 246, 0.22);
-  border-bottom-color: transparent !important;
-  border-right-color: transparent !important;
+  background: rgba(59, 130, 246, 0.22) !important;
+  border-color: transparent !important;
 }
 
 .grid-cell.selected-range {
-  background: #3b82f6;
-  box-shadow: none;
-  border-bottom-color: transparent !important;
-  border-right-color: transparent !important;
+  background: #3b82f6 !important;
+  box-shadow: none !important;
+  border-color: transparent !important;
 }
 
 .grid-cell.selected-range.hour-divider {
