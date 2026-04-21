@@ -1177,15 +1177,23 @@ label {
 
 .grid-cell.selected-range {
   background: #93c5fd;
-  box-shadow: inset 0 0 0 1px #3b82f6;
+  box-shadow: none;
   border-bottom-color: #93c5fd;
   border-right-color: #93c5fd;
+}
+
+.grid-cell.selected-range.hour-divider {
+  border-bottom-color: #93c5fd;
 }
 
 .grid-cell.selected-range:hover:not(:disabled) {
   background: #60a5fa;
   border-bottom-color: #60a5fa;
   border-right-color: #60a5fa;
+}
+
+.grid-cell.selected-range:hover.hour-divider:not(:disabled) {
+  border-bottom-color: #60a5fa;
 }
 
 .grid-cell.occupied {
