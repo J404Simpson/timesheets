@@ -1159,7 +1159,16 @@ label {
 }
 
 .grid-cell.hour-divider {
-  border-bottom: 1px solid rgba(15, 23, 42, 0.12);
+  border-bottom: 1px solid rgba(15, 23, 42, 0.1);
+}
+
+.grid-cell.true-hour-divider {
+  border-bottom: 1px solid rgba(15, 23, 42, 0.22);
+}
+
+.grid-cell.selected-range.hour-divider,
+.grid-cell.selected-range.true-hour-divider {
+  border-color: transparent !important;
 }
 
 .grid-cell:hover:not(:disabled) {

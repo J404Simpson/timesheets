@@ -440,6 +440,7 @@ export default function Recent({
 
   const getCellClassName = (
     isHourDivider: boolean,
+    isTrueHourDivider: boolean,
     isOccupied: boolean,
     isFuture: boolean,
     isToday: boolean,
@@ -449,7 +450,7 @@ export default function Recent({
     isWorkingHour: boolean,
     entry?: WeekEntry
   ) => {
-    return `grid-cell quarter ${isHourDivider ? "hour-divider" : ""} ${isOccupied ? "occupied" : ""} ${isFuture ? "future" : ""} ${!isFuture && !isOccupied ? "available" : ""} ${isToday ? "today-col" : ""} ${isSelected ? "selected-range" : ""} ${isSlotHover ? "slot-hover" : ""} ${isWeekend ? "weekend" : ""} ${isWorkingHour ? "working-hours" : ""} ${getEntryTypeClass(entry)}`;
+    return `grid-cell quarter ${isHourDivider ? "hour-divider" : ""} ${isTrueHourDivider ? "true-hour-divider" : ""} ${isOccupied ? "occupied" : ""} ${isFuture ? "future" : ""} ${!isFuture && !isOccupied ? "available" : ""} ${isToday ? "today-col" : ""} ${isSelected ? "selected-range" : ""} ${isSlotHover ? "slot-hover" : ""} ${isWeekend ? "weekend" : ""} ${isWorkingHour ? "working-hours" : ""} ${getEntryTypeClass(entry)}`;
   };
 
   const getCellTitle = (
@@ -543,7 +544,8 @@ export default function Recent({
                   const minute = quarter * 15;
                   const snappedMinute = normalizeToHalfHour(minute);
                   const timeLabel = `${hour.toString().padStart(2, "0")}:${minute.toString().padStart(2, "0")}`;
-                  const isHourDivider = minute === 30;
+                  const isHourDivider = minute === 15 || minute === 45;
+                  const isTrueHourDivider = minute === 45;
 
                   return (
                     <Fragment key={`hour-${hour}-q-${quarter}`}>
@@ -597,7 +599,7 @@ export default function Recent({
                         return (
                           <button
                             key={`${dateStr}-${hour}-${minute}`}
-                            className={getCellClassName(isHourDivider, isOccupied, isFuture, isToday, isSelected || isDragPreview, isSlotHover, isWeekend, isWorkingHour, entry)}
+                            className={getCellClassName(isHourDivider, isTrueHourDivider, isOccupied, isFuture, isToday, isSelected || isDragPreview, isSlotHover, isWeekend, isWorkingHour, entry)}
                             onMouseDown={() => handleSlotMouseDown(day, hour, minute)}
                             onMouseEnter={() => {
                               setHoverState({ dateKey: dateStr, slot });
