@@ -1163,8 +1163,7 @@ label {
 }
 
 .grid-cell:hover:not(:disabled) {
-  background: rgba(37, 99, 235, 0.08);
-  transform: scale(1.02);
+  transform: none;
 }
 
 .grid-cell.available {
@@ -1172,28 +1171,32 @@ label {
 }
 
 .grid-cell.available:hover {
+  background: rgba(15, 23, 42, 0.05);
+}
+
+.grid-cell.slot-hover:not(:disabled):not(.occupied):not(.future):not(.selected-range) {
   background: rgba(15, 23, 42, 0.09);
 }
 
 .grid-cell.selected-range {
-  background: #93c5fd;
+  background: #3b82f6;
   box-shadow: none;
-  border-bottom-color: #93c5fd;
-  border-right-color: #93c5fd;
+  border-bottom-color: #3b82f6 !important;
+  border-right-color: #3b82f6 !important;
 }
 
 .grid-cell.selected-range.hour-divider {
-  border-bottom-color: #93c5fd;
+  border-bottom-color: #3b82f6 !important;
 }
 
 .grid-cell.selected-range:hover:not(:disabled) {
-  background: #60a5fa;
-  border-bottom-color: #60a5fa;
-  border-right-color: #60a5fa;
+  background: #3b82f6;
+  border-bottom-color: #3b82f6 !important;
+  border-right-color: #3b82f6 !important;
 }
 
 .grid-cell.selected-range:hover.hour-divider:not(:disabled) {
-  border-bottom-color: #60a5fa;
+  border-bottom-color: #3b82f6 !important;
 }
 
 .grid-cell.occupied {
