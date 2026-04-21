@@ -54,6 +54,7 @@ export async function getPhasesForProject(projectId: number): Promise<Phase[]> {
 export type Project = {
   id: number;
   name: string;
+  active?: boolean;
   description?: string;
   created_at?: string;
 };
@@ -69,6 +70,20 @@ export async function getActiveProjects(): Promise<Project[]> {
     return data.projects;
   } catch {
     throw new Error("Failed to fetch active projects");
+  }
+}
+
+export async function getProjects(includeInactive = false): Promise<Project[]> {
+  try {
+    const headers = await getAuthHeaders();
+    const data = await requestJson<{ projects: Project[] }>(
+      buildUrl("/api/projects", includeInactive ? { includeInactive: "true" } : undefined),
+      { headers },
+      "Failed to fetch projects"
+    );
+    return data.projects;
+  } catch {
+    throw new Error("Failed to fetch projects");
   }
 }
 

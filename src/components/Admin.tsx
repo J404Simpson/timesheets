@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import Recent from "./Recent";
-import { getAdminUsers, type AdminUser, type WeekEntry } from "../api/timesheet";
+import { getAdminUsers, getProjects, type AdminUser, type Project, type WeekEntry } from "../api/timesheet";
 
 type Props = {
   onEditEntryForUser?: (entry: WeekEntry, employeeId: number) => void;
@@ -25,10 +25,29 @@ export default function Admin({
   refreshToken,
 }: Props): JSX.Element {
   const [activeSection, setActiveSection] = useState<"projects" | "sustaining" | "users">("users");
+  const [projectView, setProjectView] = useState<"active" | "all">("active");
+  const [projects, setProjects] = useState<Project[]>([]);
+  const [loadingProjects, setLoadingProjects] = useState(false);
+  const [projectError, setProjectError] = useState<string | null>(null);
   const [users, setUsers] = useState<AdminUser[]>([]);
   const [selectedUserId, setSelectedUserId] = useState<number | null>(null);
   const [loadingUsers, setLoadingUsers] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  const loadProjects = async (view: "active" | "all") => {
+    setLoadingProjects(true);
+    setProjectError(null);
+
+    try {
+      const includeInactive = view === "all";
+      const projectData = await getProjects(includeInactive);
+      setProjects(projectData);
+    } catch {
+      setProjectError("Failed to load projects.");
+    } finally {
+      setLoadingProjects(false);
+    }
+  };
 
   const loadUsers = async () => {
     setLoadingUsers(true);
@@ -53,6 +72,11 @@ export default function Admin({
   useEffect(() => {
     loadUsers();
   }, []);
+
+  useEffect(() => {
+    if (activeSection !== "projects") return;
+    loadProjects(projectView);
+  }, [activeSection, projectView]);
 
   const selectedUser = useMemo(
     () => users.find((u) => u.id === selectedUserId) ?? null,
@@ -102,7 +126,46 @@ export default function Admin({
         </div>
 
         <div className="admin-content">
-          {activeSection === "projects" && <p className="muted">Projects configuration coming next.</p>}
+          {activeSection === "projects" && (
+            <div className="admin-users-layout">
+              <aside className="admin-users-list-panel">
+                <div className="admin-users-list-header">
+                  <h3>{projectView === "active" ? "Active" : "All"}</h3>
+                  <button
+                    type="button"
+                    className="btn secondary"
+                    onClick={() => setProjectView((prev) => (prev === "active" ? "all" : "active"))}
+                    disabled={loadingProjects}
+                  >
+                    {projectView === "active" ? "All" : "Active"}
+                  </button>
+                </div>
+
+                {projectError && <p className="admin-error">{projectError}</p>}
+
+                {loadingProjects ? (
+                  <p className="muted">Loading projects...</p>
+                ) : projects.length === 0 ? (
+                  <p className="muted">No projects found.</p>
+                ) : (
+                  <ul className="admin-user-list">
+                    {projects.map((project) => (
+                      <li key={project.id}>
+                        <div className="admin-user-item">
+                          <span className="admin-user-name">{project.name}</span>
+                          <span className="admin-user-email muted">{project.active ? "Active" : "Inactive"}</span>
+                        </div>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </aside>
+
+              <section className="admin-users-recent-panel">
+                <p className="muted">Select Users to manage timesheet entries. Projects list view is read-only for now.</p>
+              </section>
+            </div>
+          )}
 
           {activeSection === "sustaining" && <p className="muted">Sustaining configuration coming next.</p>}
 
