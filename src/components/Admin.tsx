@@ -235,8 +235,7 @@ export default function Admin({
         </div>
       </div>
 
-      {activeSection === "users" && (
-        <div className="week-nav admin-panel-footer">
+      <div className="week-nav admin-panel-footer">
           <div className="week-nav-group week-nav-start" />
           <div className="week-nav-group week-nav-center" />
           <div className="week-nav-group week-nav-end">
@@ -250,7 +249,6 @@ export default function Admin({
             </button>
           </div>
         </div>
-      )}
     </section>
   );
 }
