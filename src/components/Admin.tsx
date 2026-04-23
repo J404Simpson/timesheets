@@ -95,6 +95,13 @@ export default function Admin({
           <div className="admin-options" role="tablist" aria-label="Admin sections">
             <button
               type="button"
+              className={`btn admin-option ${activeSection === "users" ? "is-active" : ""}`}
+              onClick={() => setActiveSection("users")}
+            >
+              Users
+            </button>
+            <button
+              type="button"
               className={`btn admin-option ${activeSection === "projects" ? "is-active" : ""}`}
               onClick={() => setActiveSection("projects")}
             >
@@ -106,13 +113,6 @@ export default function Admin({
               onClick={() => setActiveSection("sustaining")}
             >
               Sustaining
-            </button>
-            <button
-              type="button"
-              className={`btn admin-option ${activeSection === "users" ? "is-active" : ""}`}
-              onClick={() => setActiveSection("users")}
-            >
-              Users
             </button>
           </div>
 
