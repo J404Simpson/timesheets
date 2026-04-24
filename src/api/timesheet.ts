@@ -88,6 +88,34 @@ export async function getProjects(includeInactive = false): Promise<Project[]> {
   }
 }
 
+export async function deactivateProject(projectId: number): Promise<Project> {
+  const headers = await getAuthHeaders({ "Content-Type": "application/json" });
+  const data = await requestJson<{ project: Project }>(
+    buildUrl(`/api/projects/${projectId}/deactivate`),
+    {
+      method: "PATCH",
+      headers,
+      body: JSON.stringify({ active: false }),
+    },
+    "Failed to deactivate project"
+  );
+  return data.project;
+}
+
+export async function deactivateProjectPhase(projectId: number, phaseId: number): Promise<Phase> {
+  const headers = await getAuthHeaders({ "Content-Type": "application/json" });
+  const data = await requestJson<{ phase: Phase }>(
+    buildUrl(`/api/projects/${projectId}/phases/${phaseId}/deactivate`),
+    {
+      method: "PATCH",
+      headers,
+      body: JSON.stringify({ active: false }),
+    },
+    "Failed to deactivate phase"
+  );
+  return data.phase;
+}
+
 const LOGIN_URL = `${import.meta.env.VITE_API_URL}/login`;
 const BASE_URL = `${import.meta.env.VITE_API_URL}/timesheet`;
 

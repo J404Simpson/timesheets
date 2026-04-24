@@ -4,6 +4,8 @@ import ViewFooter from "./ViewFooter";
 import { getTasksForProjectPhase, type Task } from "../api/task";
 import { getDepartments, type Department } from "../api/department";
 import {
+  deactivateProject,
+  deactivateProjectPhase,
   getAdminUsers,
   getPhasesForProject,
   getProjects,
@@ -49,6 +51,8 @@ export default function Admin({
   const [loadingProjects, setLoadingProjects] = useState(false);
   const [loadingPhases, setLoadingPhases] = useState(false);
   const [loadingTasks, setLoadingTasks] = useState(false);
+  const [deactivatingProjectId, setDeactivatingProjectId] = useState<number | null>(null);
+  const [deactivatingPhaseId, setDeactivatingPhaseId] = useState<number | null>(null);
   const [projectError, setProjectError] = useState<string | null>(null);
   const [phaseError, setPhaseError] = useState<string | null>(null);
   const [taskError, setTaskError] = useState<string | null>(null);
@@ -99,6 +103,63 @@ export default function Admin({
     }
   };
 
+  const loadPhasesForProject = async (projectId: number) => {
+    setLoadingPhases(true);
+    setPhaseError(null);
+
+    try {
+      const phaseData = await getPhasesForProject(projectId);
+      setPhases(phaseData);
+      setSelectedPhaseId((prev) => {
+        if (phaseData.length === 0) return null;
+        if (prev && phaseData.some((phase) => phase.id === prev)) return prev;
+        return phaseData[0].id;
+      });
+    } catch {
+      setPhases([]);
+      setSelectedPhaseId(null);
+      setPhaseError("Failed to load phases.");
+    } finally {
+      setLoadingPhases(false);
+    }
+  };
+
+  const handleDeactivateProject = async (project: Project) => {
+    if (project.active === false) return;
+    const confirmed = window.confirm(`Set project \"${project.name}\" to inactive?`);
+    if (!confirmed) return;
+
+    setDeactivatingProjectId(project.id);
+    setProjectError(null);
+
+    try {
+      await deactivateProject(project.id);
+      await loadProjects(projectView);
+    } catch {
+      setProjectError("Failed to deactivate project.");
+    } finally {
+      setDeactivatingProjectId(null);
+    }
+  };
+
+  const handleDeactivatePhase = async (phase: Phase) => {
+    if (!selectedProjectId || phase.active === false) return;
+    const confirmed = window.confirm(`Set phase \"${phase.name}\" to inactive?`);
+    if (!confirmed) return;
+
+    setDeactivatingPhaseId(phase.id);
+    setPhaseError(null);
+
+    try {
+      await deactivateProjectPhase(selectedProjectId, phase.id);
+      await loadPhasesForProject(selectedProjectId);
+    } catch {
+      setPhaseError("Failed to deactivate phase.");
+    } finally {
+      setDeactivatingPhaseId(null);
+    }
+  };
+
   useEffect(() => {
     loadUsers();
   }, []);
@@ -119,26 +180,7 @@ export default function Admin({
       return;
     }
 
-    setLoadingPhases(true);
-    setPhaseError(null);
-
-    getPhasesForProject(selectedProjectId)
-      .then((phaseData) => {
-        setPhases(phaseData);
-        if (phaseData.length === 0) {
-          setSelectedPhaseId(null);
-        } else if (!selectedPhaseId || !phaseData.some((phase) => phase.id === selectedPhaseId)) {
-          setSelectedPhaseId(phaseData[0].id);
-        }
-      })
-      .catch(() => {
-        setPhases([]);
-        setSelectedPhaseId(null);
-        setPhaseError("Failed to load phases.");
-      })
-      .finally(() => {
-        setLoadingPhases(false);
-      });
+    loadPhasesForProject(selectedProjectId);
   }, [activeSection, selectedProjectId]);
 
   useEffect(() => {
@@ -283,14 +325,29 @@ export default function Admin({
                       .filter((p) => ![1, 2, 3].includes(p.id))
                       .map((project) => (
                       <li key={project.id}>
-                        <button
-                          type="button"
-                          className={`admin-user-item ${selectedProjectId === project.id ? "is-active" : ""}`}
-                          onClick={() => setSelectedProjectId(project.id)}
-                        >
-                          <span className="admin-user-name">{project.name}</span>
-                          <span className="admin-user-email muted">{project.active ? "Active" : "Inactive"}</span>
-                        </button>
+                        <div className={`admin-user-item admin-record-item ${selectedProjectId === project.id ? "is-active" : ""}`}>
+                          <button
+                            type="button"
+                            className="admin-record-select"
+                            onClick={() => setSelectedProjectId(project.id)}
+                          >
+                            <span className="admin-user-name">{project.name}</span>
+                          </button>
+
+                          {project.active !== false ? (
+                            <button
+                              type="button"
+                              className="btn secondary admin-record-status-btn"
+                              onClick={() => handleDeactivateProject(project)}
+                              disabled={deactivatingProjectId === project.id}
+                              title="Set inactive"
+                            >
+                              {deactivatingProjectId === project.id ? "Saving..." : "Active"}
+                            </button>
+                          ) : (
+                            <span className="admin-user-email muted">Inactive</span>
+                          )}
+                        </div>
                       </li>
                     ))}
                   </ul>
@@ -326,16 +383,29 @@ export default function Admin({
                       .filter((phase) => phaseView === "all" || phase.active !== false)
                       .map((phase) => (
                         <li key={phase.id}>
-                          <button
-                            type="button"
-                            className={`admin-user-item ${selectedPhaseId === phase.id ? "is-active" : ""}`}
-                            onClick={() => setSelectedPhaseId(phase.id)}
-                          >
-                            <span className="admin-user-name">{phase.name}</span>
-                            <span className="admin-user-email muted">
-                              {phase.active === false ? "Inactive" : "Active"}
-                            </span>
-                          </button>
+                          <div className={`admin-user-item admin-record-item ${selectedPhaseId === phase.id ? "is-active" : ""}`}>
+                            <button
+                              type="button"
+                              className="admin-record-select"
+                              onClick={() => setSelectedPhaseId(phase.id)}
+                            >
+                              <span className="admin-user-name">{phase.name}</span>
+                            </button>
+
+                            {phase.active !== false ? (
+                              <button
+                                type="button"
+                                className="btn secondary admin-record-status-btn"
+                                onClick={() => handleDeactivatePhase(phase)}
+                                disabled={deactivatingPhaseId === phase.id}
+                                title="Set inactive"
+                              >
+                                {deactivatingPhaseId === phase.id ? "Saving..." : "Active"}
+                              </button>
+                            ) : (
+                              <span className="admin-user-email muted">Inactive</span>
+                            )}
+                          </div>
                         </li>
                       ))}
                   </ul>

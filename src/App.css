@@ -821,6 +821,31 @@ body{
   gap: 2px;
 }
 
+.admin-record-item {
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.admin-record-select {
+  border: 0;
+  background: transparent;
+  padding: 0;
+  margin: 0;
+  text-align: left;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+  flex: 1;
+  min-width: 0;
+}
+
+.admin-record-status-btn {
+  min-width: 78px;
+  text-align: center;
+}
+
 .admin-user-item:hover {
   background: #f8fafc;
 }
