@@ -730,6 +730,18 @@ body{
   overflow: auto;
 }
 
+.recent-activity {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.recent-activity > .week-grid-container {
+  flex: 1;
+  min-height: 0;
+}
+
 .admin-users-recent-panel .recent-activity {
   flex: 1;
   height: 100%;
