@@ -712,7 +712,6 @@ export default function Admin({
         loading={confirmLoading}
         confirmLabel="Set Inactive"
       />
-      )}
     </section>
   );
 }
