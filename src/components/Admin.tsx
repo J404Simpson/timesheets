@@ -33,6 +33,7 @@ export default function Admin({
   const [selectedUserId, setSelectedUserId] = useState<number | null>(null);
   const [loadingUsers, setLoadingUsers] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [usersWeekOffset, setUsersWeekOffset] = useState(0);
 
   const loadProjects = async (view: "active" | "all") => {
     setLoadingProjects(true);
@@ -217,6 +218,9 @@ export default function Admin({
                     <Recent
                       employeeId={selectedUser.id}
                       showCreateButton
+                      hideFooter
+                      weekOffset={usersWeekOffset}
+                      onWeekOffsetChange={setUsersWeekOffset}
                       refreshToken={refreshToken}
                       allowPreviousWeekEdits
                       onCreateEntry={() => onCreateEntryForUser?.(selectedUser.id)}
@@ -236,8 +240,32 @@ export default function Admin({
       </div>
 
       <div className="week-nav admin-panel-footer">
-          <div className="week-nav-group week-nav-start" />
-          <div className="week-nav-group week-nav-center" />
+          <div className="week-nav-group week-nav-start">
+            {activeSection === "users" && (
+              <button
+                type="button"
+                className="btn week-nav-toggle"
+                onClick={() => setUsersWeekOffset(usersWeekOffset === 0 ? -1 : 0)}
+                title={usersWeekOffset === 0 ? "View last week" : "Back to this week"}
+                aria-label={usersWeekOffset === 0 ? "View last week" : "Back to this week"}
+              >
+                <span>{usersWeekOffset === 0 ? "Last Week" : "This Week"}</span>
+                <span aria-hidden="true">{usersWeekOffset === 0 ? "←" : "→"}</span>
+              </button>
+            )}
+          </div>
+          <div className="week-nav-group week-nav-center">
+            {activeSection === "users" && (
+              <button
+                type="button"
+                className="btn primary week-nav-create"
+                onClick={() => selectedUser && onCreateEntryForUser?.(selectedUser.id)}
+                disabled={!selectedUser}
+              >
+                New Entry
+              </button>
+            )}
+          </div>
           <div className="week-nav-group week-nav-end">
             <button
               type="button"

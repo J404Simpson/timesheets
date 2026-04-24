@@ -16,6 +16,9 @@ type Props = {
   showCreateButton?: boolean;
   showAdminButton?: boolean;
   footerEndContent?: ReactNode;
+  hideFooter?: boolean;
+  weekOffset?: number;
+  onWeekOffsetChange?: (weekOffset: number) => void;
   refreshToken?: number;
   allowPreviousWeekEdits?: boolean;
 };
@@ -48,6 +51,9 @@ export default function Recent({
   showCreateButton = true,
   showAdminButton = false,
   footerEndContent,
+  hideFooter = false,
+  weekOffset: controlledWeekOffset,
+  onWeekOffsetChange,
   refreshToken,
   allowPreviousWeekEdits = false,
 }: Props): JSX.Element {
@@ -60,7 +66,19 @@ export default function Recent({
   const [hoverState, setHoverState] = useState<HoverState | null>(null);
   const weekGridRef = useRef<HTMLDivElement | null>(null);
   // 0 = this week, -1 = last week
-  const [weekOffset, setWeekOffset] = useState(0);
+  const [internalWeekOffset, setInternalWeekOffset] = useState(0);
+  const weekOffset = controlledWeekOffset ?? internalWeekOffset;
+
+  const setWeekOffset = (next: number | ((prev: number) => number)) => {
+    const resolved = typeof next === "function" ? next(weekOffset) : next;
+
+    if (controlledWeekOffset !== undefined && onWeekOffsetChange) {
+      onWeekOffsetChange(resolved);
+      return;
+    }
+
+    setInternalWeekOffset(resolved);
+  };
 
   const toDateKeyLocal = (value: Date) => {
     const y = value.getFullYear();
@@ -704,6 +722,7 @@ export default function Recent({
 
       </div>
 
+      {!hideFooter && (
       <div className="week-nav">
         <div className="week-nav-group week-nav-start">
           <button
@@ -750,6 +769,7 @@ export default function Recent({
             ))}
         </div>
       </div>
+      )}
     </section>
   );
 }
