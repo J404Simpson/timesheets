@@ -637,18 +637,38 @@ body{
 }
 
 .admin-options-center {
+  position: relative;
   text-align: center;
   font-weight: 600;
   font-size: 1rem;
   color: var(--text);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  overflow: visible;
+}
+
+.admin-selected-user-meta {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  max-width: 100%;
 }
 
 .admin-selected-user-label {
   font-weight: 600;
   font-size: 1rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.admin-selected-user-hours {
+  position: absolute;
+  left: 50%;
+  top: calc(100% + 2px);
+  transform: translateX(-50%);
+  white-space: nowrap;
+  font-size: 0.86rem;
+  font-weight: 500;
+  color: #334155;
 }
 
 .admin-options-end {

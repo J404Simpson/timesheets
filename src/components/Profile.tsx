@@ -4,12 +4,21 @@ import { getWeekEntries } from "../api/timesheet";
 
 type Props = {
   refreshToken?: number;
+  weekOffset?: number;
+  showWeekHours?: boolean;
 };
 
-export default function Profile({ refreshToken }: Props) {
+export default function Profile({ refreshToken, weekOffset = 0, showWeekHours = true }: Props) {
   const { accounts } = useMsal();
   const account = accounts && accounts[0];
   const [weekHours, setWeekHours] = useState<number | null>(null);
+
+  const toDateKeyLocal = (value: Date) => {
+    const y = value.getFullYear();
+    const m = String(value.getMonth() + 1).padStart(2, "0");
+    const d = String(value.getDate()).padStart(2, "0");
+    return `${y}-${m}-${d}`;
+  };
 
   useEffect(() => {
     if (!account) {
@@ -17,7 +26,19 @@ export default function Profile({ refreshToken }: Props) {
       return;
     }
 
-    getWeekEntries()
+    if (!showWeekHours) {
+      setWeekHours(null);
+      return;
+    }
+
+    let weekOf: string | undefined;
+    if (weekOffset !== 0) {
+      const ref = new Date();
+      ref.setDate(ref.getDate() + weekOffset * 7);
+      weekOf = toDateKeyLocal(ref);
+    }
+
+    getWeekEntries(weekOf)
       .then((entries) => {
         const total = entries.reduce((sum, entry) => sum + Number(entry.hours), 0);
         setWeekHours(total);
@@ -25,7 +46,7 @@ export default function Profile({ refreshToken }: Props) {
       .catch(() => {
         setWeekHours(null);
       });
-  }, [account, refreshToken]);
+  }, [account, refreshToken, weekOffset, showWeekHours]);
 
   const weekHoursLabel = useMemo(() => {
     if (weekHours === null) return "";
@@ -40,7 +61,7 @@ export default function Profile({ refreshToken }: Props) {
   return (
     <span className="profile">
       <strong className="profile-name">{account.name ?? account.username}</strong>
-      {weekHoursLabel && <span className="profile-week-hours">{weekHoursLabel}</span>}
+      {showWeekHours && weekHoursLabel && <span className="profile-week-hours">{weekHoursLabel}</span>}
     </span>
   );
 }

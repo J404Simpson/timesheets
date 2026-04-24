@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import Recent from "./Recent";
 import ViewFooter from "./ViewFooter";
-import { getAdminUsers, getProjects, type AdminUser, type Project, type WeekEntry } from "../api/timesheet";
+import { getAdminUsers, getProjects, getWeekEntries, type AdminUser, type Project, type WeekEntry } from "../api/timesheet";
 
 type Props = {
   onEditEntryForUser?: (entry: WeekEntry, employeeId: number) => void;
@@ -35,6 +35,7 @@ export default function Admin({
   const [loadingUsers, setLoadingUsers] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [usersWeekOffset, setUsersWeekOffset] = useState(0);
+  const [selectedUserWeekHours, setSelectedUserWeekHours] = useState<number | null>(null);
 
   const loadProjects = async (view: "active" | "all") => {
     setLoadingProjects(true);
@@ -90,6 +91,39 @@ export default function Admin({
     return name || user.email;
   };
 
+  const toDateKeyLocal = (value: Date) => {
+    const y = value.getFullYear();
+    const m = String(value.getMonth() + 1).padStart(2, "0");
+    const d = String(value.getDate()).padStart(2, "0");
+    return `${y}-${m}-${d}`;
+  };
+
+  useEffect(() => {
+    if (activeSection !== "users" || !selectedUser) {
+      setSelectedUserWeekHours(null);
+      return;
+    }
+
+    let weekOf: string | undefined;
+    if (usersWeekOffset !== 0) {
+      const ref = new Date();
+      ref.setDate(ref.getDate() + usersWeekOffset * 7);
+      weekOf = toDateKeyLocal(ref);
+    }
+
+    getWeekEntries(weekOf, selectedUser.id)
+      .then((entries) => {
+        const total = entries.reduce((sum, entry) => sum + Number(entry.hours), 0);
+        setSelectedUserWeekHours(total);
+      })
+      .catch(() => {
+        setSelectedUserWeekHours(null);
+      });
+  }, [activeSection, selectedUser, usersWeekOffset, refreshToken]);
+
+  const selectedUserHoursLabel =
+    selectedUserWeekHours === null ? "" : `Total ${parseFloat(selectedUserWeekHours.toFixed(2))}hrs`;
+
   return (
     <section className="admin-view" aria-live="polite">
       <div className="admin-panel">
@@ -120,7 +154,12 @@ export default function Admin({
 
           <div className="admin-options-center">
             {activeSection === "users" && selectedUser && (
-              <span className="admin-selected-user-label">{getUserDisplayName(selectedUser)}</span>
+              <span className="admin-selected-user-meta">
+                <span className="admin-selected-user-label">{getUserDisplayName(selectedUser)}</span>
+                {selectedUserHoursLabel && (
+                  <span className="admin-selected-user-hours">{selectedUserHoursLabel}</span>
+                )}
+              </span>
             )}
           </div>
 

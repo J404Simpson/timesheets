@@ -34,6 +34,7 @@ const App: React.FC = () => {
   const [isOnboarded, setIsOnboarded] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
   const [calendarRefreshToken, setCalendarRefreshToken] = useState(0);
+  const [recentWeekOffset, setRecentWeekOffset] = useState(0);
   const isAdminViewActive = isAuthenticated && isOnboarded && view === "admin" && isAdmin;
 
   // Notify API when user logs in
@@ -202,7 +203,15 @@ const App: React.FC = () => {
           <img src="/veryan-logo.png" alt="Veryan" />
         </div>
 
-        <div className="auth-area">{isAuthenticated ? <Profile refreshToken={calendarRefreshToken} /> : null}</div>
+        <div className="auth-area">
+          {isAuthenticated ? (
+            <Profile
+              refreshToken={calendarRefreshToken}
+              weekOffset={recentWeekOffset}
+              showWeekHours={!isAdminViewActive}
+            />
+          ) : null}
+        </div>
       </header>
 
       <main className={`app-main${isAdminViewActive ? " app-main-admin" : ""}`}>
@@ -249,6 +258,8 @@ const App: React.FC = () => {
                     onEditEntry={handleEditEntry}
                     onGoAdmin={goAdminFromRecent}
                     showAdminButton={isAdmin && !showDepartmentModal}
+                    weekOffset={recentWeekOffset}
+                    onWeekOffsetChange={setRecentWeekOffset}
                     refreshToken={calendarRefreshToken}
                     allowPreviousWeekEdits={isAdmin}
                   />
