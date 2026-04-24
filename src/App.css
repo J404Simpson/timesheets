@@ -707,7 +707,7 @@ body{
 
 .admin-projects-layout {
   display: grid;
-  grid-template-columns: 320px minmax(0, 1fr) minmax(0, 1fr);
+  grid-template-columns: 320px 320px minmax(0, 1fr);
   gap: 12px;
   flex: 1;
   min-height: 0;

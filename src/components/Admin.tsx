@@ -251,7 +251,7 @@ export default function Admin({
             <div className="admin-projects-layout">
               <aside className="admin-users-list-panel">
                 <div className="admin-users-list-header">
-                  <h3>{projectView === "active" ? "Active Projects" : "All Projects"}</h3>
+                  <h3>{projectView === "active" ? "Active" : "All"}</h3>
                   <button
                     type="button"
                     className="btn secondary"
