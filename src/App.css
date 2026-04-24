@@ -653,11 +653,10 @@ body{
 }
 
 .admin-selected-user-label {
+  display: block;
+  font-size: 18px;
   font-weight: 600;
-  font-size: 1rem;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  color: var(--text);
 }
 
 .admin-selected-user-hours {
@@ -666,7 +665,7 @@ body{
   top: calc(100% + 2px);
   transform: translateX(-50%);
   white-space: nowrap;
-  font-size: 0.86rem;
+  font-size: 15px;
   font-weight: 500;
   color: #334155;
 }
