@@ -41,6 +41,7 @@ export default function Admin({
   const [projects, setProjects] = useState<Project[]>([]);
   const [selectedProjectId, setSelectedProjectId] = useState<number | null>(null);
   const [phases, setPhases] = useState<Phase[]>([]);
+  const [phaseView, setPhaseView] = useState<"active" | "all">("active");
   const [selectedPhaseId, setSelectedPhaseId] = useState<number | null>(null);
   const [tasks, setTasks] = useState<Task[]>([]);
   const [departments, setDepartments] = useState<Department[]>([]);
@@ -257,15 +258,17 @@ export default function Admin({
             <div className="admin-projects-layout">
               <aside className="admin-users-list-panel">
                 <div className="admin-users-list-header">
-                  <h3>{projectView === "active" ? "Active" : "All"}</h3>
-                  <button
-                    type="button"
-                    className="btn secondary"
-                    onClick={() => setProjectView((prev) => (prev === "active" ? "all" : "active"))}
-                    disabled={loadingProjects}
-                  >
-                    {projectView === "active" ? "All" : "Active"}
-                  </button>
+                  <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                    <h3 style={{ margin: 0 }}>Projects</h3>
+                    <button
+                      type="button"
+                      className="btn secondary"
+                      onClick={() => setProjectView((prev) => (prev === "active" ? "all" : "active"))}
+                      disabled={loadingProjects}
+                    >
+                      {projectView === "active" ? "Active" : "All"}
+                    </button>
+                  </div>
                 </div>
 
                 {projectError && <p className="admin-error">{projectError}</p>}
@@ -296,7 +299,17 @@ export default function Admin({
 
               <section className="admin-users-recent-panel admin-phase-panel">
                 <div className="admin-users-list-header">
-                  <h3>Phases</h3>
+                  <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                    <h3 style={{ margin: 0 }}>Phases</h3>
+                    <button
+                      type="button"
+                      className="btn secondary"
+                      onClick={() => setPhaseView((prev) => (prev === "active" ? "all" : "active"))}
+                      disabled={loadingPhases}
+                    >
+                      {phaseView === "active" ? "Active" : "All"}
+                    </button>
+                  </div>
                 </div>
 
                 {phaseError && <p className="admin-error">{phaseError}</p>}
@@ -309,20 +322,22 @@ export default function Admin({
                   <p className="muted">No phases found for {selectedProject.name}.</p>
                 ) : (
                   <ul className="admin-user-list">
-                    {phases.map((phase) => (
-                      <li key={phase.id}>
-                        <button
-                          type="button"
-                          className={`admin-user-item ${selectedPhaseId === phase.id ? "is-active" : ""}`}
-                          onClick={() => setSelectedPhaseId(phase.id)}
-                        >
-                          <span className="admin-user-name">{phase.name}</span>
-                          <span className="admin-user-email muted">
-                            {phase.active === false ? "Inactive" : phase.enabled === false ? "Disabled" : "Active"}
-                          </span>
-                        </button>
-                      </li>
-                    ))}
+                    {phases
+                      .filter((phase) => phaseView === "all" || phase.active !== false)
+                      .map((phase) => (
+                        <li key={phase.id}>
+                          <button
+                            type="button"
+                            className={`admin-user-item ${selectedPhaseId === phase.id ? "is-active" : ""}`}
+                            onClick={() => setSelectedPhaseId(phase.id)}
+                          >
+                            <span className="admin-user-name">{phase.name}</span>
+                            <span className="admin-user-email muted">
+                              {phase.active === false ? "Inactive" : "Active"}
+                            </span>
+                          </button>
+                        </li>
+                      ))}
                   </ul>
                 )}
               </section>
