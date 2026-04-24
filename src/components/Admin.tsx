@@ -1,4 +1,29 @@
 import { useEffect, useMemo, useState } from "react";
+// Reusable confirmation modal
+function ConfirmModal({ open, title, message, onConfirm, onCancel, confirmLabel = "Confirm", cancelLabel = "Cancel", loading }: {
+  open: boolean;
+  title: string;
+  message: string;
+  onConfirm: () => void;
+  onCancel: () => void;
+  confirmLabel?: string;
+  cancelLabel?: string;
+  loading?: boolean;
+}) {
+  if (!open) return null;
+  return (
+    <div className="modal-overlay" onClick={onCancel}>
+      <div className="modal-box" onClick={e => e.stopPropagation()}>
+        <h3 className="modal-title">{title}</h3>
+        <p style={{ marginBottom: 24 }}>{message}</p>
+        <div className="modal-actions">
+          <button type="button" className="btn secondary" onClick={onCancel} disabled={loading}>{cancelLabel}</button>
+          <button type="button" className="btn primary" onClick={onConfirm} disabled={loading}>{loading ? "Saving..." : confirmLabel}</button>
+        </div>
+      </div>
+    </div>
+  );
+}
 import Recent from "./Recent";
 import ViewFooter from "./ViewFooter";
 import { getTasksForProjectPhase, type Task } from "../api/task";
@@ -55,6 +80,11 @@ export default function Admin({
   const [deactivatingProjectId, setDeactivatingProjectId] = useState<number | null>(null);
   const [deactivatingPhaseId, setDeactivatingPhaseId] = useState<number | null>(null);
   const [showNewProjectModal, setShowNewProjectModal] = useState(false);
+  const [confirmModal, setConfirmModal] = useState<{
+    type: "project" | "phase" | null;
+    id: number | null;
+    name: string;
+  }>({ type: null, id: null, name: "" });
   const [newProjectName, setNewProjectName] = useState("");
   const [savingProject, setSavingProject] = useState(false);
   const [newProjectError, setNewProjectError] = useState<string | null>(null);
@@ -129,41 +159,64 @@ export default function Admin({
     }
   };
 
-  const handleDeactivateProject = async (project: Project) => {
+  const handleDeactivateProject = (project: Project) => {
     if (project.active === false) return;
-    const confirmed = window.confirm(`Set project \"${project.name}\" to inactive?`);
-    if (!confirmed) return;
+    setConfirmModal({ type: "project", id: project.id, name: project.name });
+  };
 
-    setDeactivatingProjectId(project.id);
+  const confirmDeactivateProject = async () => {
+    if (!confirmModal.id) return;
+    setDeactivatingProjectId(confirmModal.id);
     setProjectError(null);
-
     try {
-      await deactivateProject(project.id);
+      await deactivateProject(confirmModal.id);
       await loadProjects(projectView);
     } catch {
       setProjectError("Failed to deactivate project.");
     } finally {
       setDeactivatingProjectId(null);
+      setConfirmModal({ type: null, id: null, name: "" });
     }
   };
 
-  const handleDeactivatePhase = async (phase: Phase) => {
+  const handleDeactivatePhase = (phase: Phase) => {
     if (!selectedProjectId || phase.active === false) return;
-    const confirmed = window.confirm(`Set phase \"${phase.name}\" to inactive?`);
-    if (!confirmed) return;
+    setConfirmModal({ type: "phase", id: phase.id, name: phase.name });
+  };
 
-    setDeactivatingPhaseId(phase.id);
+  const confirmDeactivatePhase = async () => {
+    if (!selectedProjectId || !confirmModal.id) return;
+    setDeactivatingPhaseId(confirmModal.id);
     setPhaseError(null);
-
     try {
-      await deactivateProjectPhase(selectedProjectId, phase.id);
+      await deactivateProjectPhase(selectedProjectId, confirmModal.id);
       await loadPhasesForProject(selectedProjectId);
     } catch {
       setPhaseError("Failed to deactivate phase.");
     } finally {
       setDeactivatingPhaseId(null);
+      setConfirmModal({ type: null, id: null, name: "" });
     }
   };
+    // ...existing code...
+
+    // Confirmation modal for deactivation
+    const showConfirm = confirmModal.type !== null;
+    let confirmTitle = "";
+    let confirmMessage = "";
+    let confirmLoading = false;
+    let confirmAction = () => {};
+    if (confirmModal.type === "project") {
+      confirmTitle = "Set Project Inactive";
+      confirmMessage = `Are you sure you want to set project "${confirmModal.name}" to inactive?`;
+      confirmLoading = deactivatingProjectId === confirmModal.id;
+      confirmAction = confirmDeactivateProject;
+    } else if (confirmModal.type === "phase") {
+      confirmTitle = "Set Phase Inactive";
+      confirmMessage = `Are you sure you want to set phase "${confirmModal.name}" to inactive?`;
+      confirmLoading = deactivatingPhaseId === confirmModal.id;
+      confirmAction = confirmDeactivatePhase;
+    }
   const handleSaveNewProject = async () => {
     const trimmed = newProjectName.trim();
     if (!trimmed) {
@@ -613,6 +666,52 @@ export default function Admin({
       />
 
       {showNewProjectModal && (
+        <div className="modal-overlay" onClick={() => setShowNewProjectModal(false)}>
+          <div className="modal-box" onClick={(e) => e.stopPropagation()}>
+            <h3 className="modal-title" style={{ textAlign: 'center' }}>New Project</h3>
+            <input
+              id="new-project-name"
+              className="modal-input"
+              type="text"
+              placeholder="Enter project name"
+              value={newProjectName}
+              onChange={(e) => setNewProjectName(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && handleSaveNewProject()}
+              autoFocus
+              disabled={savingProject}
+            />
+            {newProjectError && <p className="modal-error">{newProjectError}</p>}
+            <div className="modal-actions">
+              <button
+                type="button"
+                className="btn secondary"
+                onClick={() => setShowNewProjectModal(false)}
+                disabled={savingProject}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                className="btn primary"
+                onClick={handleSaveNewProject}
+                disabled={savingProject || !newProjectName.trim()}
+              >
+                {savingProject ? "Saving..." : "Save"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      <ConfirmModal
+        open={showConfirm}
+        title={confirmTitle}
+        message={confirmMessage}
+        onCancel={() => setConfirmModal({ type: null, id: null, name: "" })}
+        onConfirm={confirmAction}
+        loading={confirmLoading}
+        confirmLabel="Set Inactive"
+      />
         <div className="modal-overlay" onClick={() => setShowNewProjectModal(false)}>
           <div className="modal-box" onClick={(e) => e.stopPropagation()}>
             <h3 className="modal-title">New Project</h3>
