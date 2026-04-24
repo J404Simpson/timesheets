@@ -414,18 +414,20 @@ export default function Admin({
 
               <section className="admin-users-recent-panel admin-task-panel">
                 <div className="admin-users-list-header">
-                  <h3>Tasks</h3>
+                  <h3 style={{ margin: 0 }}>Tasks</h3>
                   {departments.length > 0 && (
-                    <select
-                      className="admin-dept-filter"
-                      value={taskDeptFilter ?? ""}
-                      onChange={(e) => setTaskDeptFilter(e.target.value === "" ? null : Number(e.target.value))}
-                    >
-                      <option value="">All Departments</option>
-                      {departments.map((d) => (
-                        <option key={d.id} value={d.id}>{d.name}</option>
-                      ))}
-                    </select>
+                    <div className="admin-task-filter-wrap">
+                      <select
+                        className="admin-dept-filter"
+                        value={taskDeptFilter ?? ""}
+                        onChange={(e) => setTaskDeptFilter(e.target.value === "" ? null : Number(e.target.value))}
+                      >
+                        <option value="">All Departments</option>
+                        {departments.map((d) => (
+                          <option key={d.id} value={d.id}>{d.name}</option>
+                        ))}
+                      </select>
+                    </div>
                   )}
                 </div>
 
@@ -445,7 +447,7 @@ export default function Admin({
                       .filter((task) => taskDeptFilter === null || task.department_id === taskDeptFilter)
                       .map((task) => (
                         <li key={task.id}>
-                          <div className="admin-user-item">
+                          <div className="admin-user-item admin-task-item">
                             <span className="admin-user-name">{task.name}</span>
                           </div>
                         </li>

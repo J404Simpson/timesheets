@@ -826,6 +826,7 @@ body{
   align-items: center;
   justify-content: space-between;
   gap: 10px;
+  min-height: 44px;
 }
 
 .admin-record-select {
@@ -844,6 +845,17 @@ body{
 .admin-record-status-btn {
   min-width: 78px;
   text-align: center;
+}
+
+.admin-task-item {
+  min-height: 44px;
+  justify-content: center;
+}
+
+.admin-task-filter-wrap {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
 }
 
 .admin-user-item:hover {
