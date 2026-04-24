@@ -712,42 +712,6 @@ export default function Admin({
         loading={confirmLoading}
         confirmLabel="Set Inactive"
       />
-        <div className="modal-overlay" onClick={() => setShowNewProjectModal(false)}>
-          <div className="modal-box" onClick={(e) => e.stopPropagation()}>
-            <h3 className="modal-title">New Project</h3>
-            <label className="modal-label" htmlFor="new-project-name">Project Name</label>
-            <input
-              id="new-project-name"
-              className="modal-input"
-              type="text"
-              placeholder="Enter project name"
-              value={newProjectName}
-              onChange={(e) => setNewProjectName(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && handleSaveNewProject()}
-              autoFocus
-              disabled={savingProject}
-            />
-            {newProjectError && <p className="modal-error">{newProjectError}</p>}
-            <div className="modal-actions">
-              <button
-                type="button"
-                className="btn secondary"
-                onClick={() => setShowNewProjectModal(false)}
-                disabled={savingProject}
-              >
-                Cancel
-              </button>
-              <button
-                type="button"
-                className="btn primary"
-                onClick={handleSaveNewProject}
-                disabled={savingProject || !newProjectName.trim()}
-              >
-                {savingProject ? "Saving..." : "Save"}
-              </button>
-            </div>
-          </div>
-        </div>
       )}
     </section>
   );
