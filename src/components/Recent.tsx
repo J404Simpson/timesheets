@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, Fragment, type ReactNode } from "react";
 import { getWeekEntries, type WeekEntry } from "../api/timesheet";
+import ViewFooter from "./ViewFooter";
 
 type Props = {
   onCreateEntry?: () => void;
@@ -723,52 +724,50 @@ export default function Recent({
       </div>
 
       {!hideFooter && (
-      <div className="week-nav">
-        <div className="week-nav-group week-nav-start">
-          <button
-            type="button"
-            className="btn week-nav-toggle"
-            onClick={() => setWeekOffset(weekOffset === 0 ? -1 : 0)}
-            title={weekOffset === 0 ? "View last week" : "Back to this week"}
-            aria-label={weekOffset === 0 ? "View last week" : "Back to this week"}
-          >
-            <span>{weekOffset === 0 ? "Last Week" : "This Week"}</span>
-            <span aria-hidden="true">{weekOffset === 0 ? "←" : "→"}</span>
-          </button>
-        </div>
-
-        <div className="week-nav-group week-nav-center">
-          {showCreateButton && (
+        <ViewFooter
+          startContent={
             <button
               type="button"
-              className="btn primary week-nav-create"
-              onClick={onCreateEntry}
-              disabled={isPreviousWeekLocked}
-              title={
-                isPreviousWeekLocked
-                  ? "Previous week entries can only be created on Monday unless you are an admin"
-                  : undefined
-              }
+              className="btn week-nav-toggle"
+              onClick={() => setWeekOffset(weekOffset === 0 ? -1 : 0)}
+              title={weekOffset === 0 ? "View last week" : "Back to this week"}
+              aria-label={weekOffset === 0 ? "View last week" : "Back to this week"}
             >
-              New Entry
+              <span>{weekOffset === 0 ? "Last Week" : "This Week"}</span>
+              <span aria-hidden="true">{weekOffset === 0 ? "←" : "→"}</span>
             </button>
-          )}
-        </div>
-
-        <div className="week-nav-group week-nav-end">
-          {footerEndContent ??
-            (showAdminButton && onGoAdmin && (
-            <button
-              type="button"
-              className="btn week-nav-toggle week-nav-admin"
-              onClick={onGoAdmin}
-              aria-label="Open admin"
-            >
-              Admin
-            </button>
-            ))}
-        </div>
-      </div>
+          }
+          centerContent={
+            showCreateButton ? (
+              <button
+                type="button"
+                className="btn primary week-nav-create"
+                onClick={onCreateEntry}
+                disabled={isPreviousWeekLocked}
+                title={
+                  isPreviousWeekLocked
+                    ? "Previous week entries can only be created on Monday unless you are an admin"
+                    : undefined
+                }
+              >
+                New Entry
+              </button>
+            ) : undefined
+          }
+          endContent={
+            footerEndContent ??
+            (showAdminButton && onGoAdmin ? (
+              <button
+                type="button"
+                className="btn week-nav-toggle week-nav-admin"
+                onClick={onGoAdmin}
+                aria-label="Open admin"
+              >
+                Admin
+              </button>
+            ) : undefined)
+          }
+        />
       )}
     </section>
   );
