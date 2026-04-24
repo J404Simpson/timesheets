@@ -33,6 +33,7 @@ export type Phase = {
   id: number;
   name: string;
   description?: string;
+  active?: boolean;
   enabled?: boolean;
 };
 

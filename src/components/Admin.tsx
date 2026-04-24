@@ -309,7 +309,9 @@ export default function Admin({
                           onClick={() => setSelectedPhaseId(phase.id)}
                         >
                           <span className="admin-user-name">{phase.name}</span>
-                          <span className="admin-user-email muted">{phase.enabled === false ? "Disabled" : "Enabled"}</span>
+                          <span className="admin-user-email muted">
+                            {phase.active === false ? "Inactive" : phase.enabled === false ? "Disabled" : "Active"}
+                          </span>
                         </button>
                       </li>
                     ))}
