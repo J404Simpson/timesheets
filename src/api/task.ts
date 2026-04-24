@@ -4,6 +4,7 @@ export type Task = {
   id: number;
   name: string;
   enabled: boolean;
+  department_id?: number | null;
 };
 
 export async function getTasksForPhaseAndEmployee(phaseId: number): Promise<Task[]> {

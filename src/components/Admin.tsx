@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import Recent from "./Recent";
 import ViewFooter from "./ViewFooter";
 import { getTasksForProjectPhase, type Task } from "../api/task";
+import { getDepartments, type Department } from "../api/department";
 import {
   getAdminUsers,
   getPhasesForProject,
@@ -42,6 +43,8 @@ export default function Admin({
   const [phases, setPhases] = useState<Phase[]>([]);
   const [selectedPhaseId, setSelectedPhaseId] = useState<number | null>(null);
   const [tasks, setTasks] = useState<Task[]>([]);
+  const [departments, setDepartments] = useState<Department[]>([]);
+  const [taskDeptFilter, setTaskDeptFilter] = useState<number | null>(null);
   const [loadingProjects, setLoadingProjects] = useState(false);
   const [loadingPhases, setLoadingPhases] = useState(false);
   const [loadingTasks, setLoadingTasks] = useState(false);
@@ -102,6 +105,9 @@ export default function Admin({
   useEffect(() => {
     if (activeSection !== "projects") return;
     loadProjects(projectView);
+    if (departments.length === 0) {
+      getDepartments().then(setDepartments).catch(() => {});
+    }
   }, [activeSection, projectView]);
 
   useEffect(() => {
@@ -270,7 +276,9 @@ export default function Admin({
                   <p className="muted">No projects found.</p>
                 ) : (
                   <ul className="admin-user-list">
-                    {projects.map((project) => (
+                    {projects
+                      .filter((p) => ![1, 2, 3].includes(p.id))
+                      .map((project) => (
                       <li key={project.id}>
                         <button
                           type="button"
@@ -322,6 +330,18 @@ export default function Admin({
               <section className="admin-users-recent-panel admin-task-panel">
                 <div className="admin-users-list-header">
                   <h3>Tasks</h3>
+                  {departments.length > 0 && (
+                    <select
+                      className="admin-dept-filter"
+                      value={taskDeptFilter ?? ""}
+                      onChange={(e) => setTaskDeptFilter(e.target.value === "" ? null : Number(e.target.value))}
+                    >
+                      <option value="">All Departments</option>
+                      {departments.map((d) => (
+                        <option key={d.id} value={d.id}>{d.name}</option>
+                      ))}
+                    </select>
+                  )}
                 </div>
 
                 {taskError && <p className="admin-error">{taskError}</p>}
@@ -336,14 +356,15 @@ export default function Admin({
                   <p className="muted">No tasks found for this phase.</p>
                 ) : (
                   <ul className="admin-user-list">
-                    {tasks.map((task) => (
-                      <li key={task.id}>
-                        <div className="admin-user-item">
-                          <span className="admin-user-name">{task.name}</span>
-                          <span className="admin-user-email muted">{task.enabled ? "Enabled" : "Disabled"}</span>
-                        </div>
-                      </li>
-                    ))}
+                    {tasks
+                      .filter((task) => taskDeptFilter === null || task.department_id === taskDeptFilter)
+                      .map((task) => (
+                        <li key={task.id}>
+                          <div className="admin-user-item">
+                            <span className="admin-user-name">{task.name}</span>
+                          </div>
+                        </li>
+                      ))}
                   </ul>
                 )}
               </section>

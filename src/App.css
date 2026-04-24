@@ -739,6 +739,16 @@ body{
   min-width: 0;
 }
 
+.admin-dept-filter {
+  font-size: 13px;
+  padding: 4px 8px;
+  border-radius: 6px;
+  border: 1px solid rgba(15, 23, 42, 0.15);
+  background: #ffffff;
+  color: var(--text);
+  cursor: pointer;
+}
+
 .admin-users-list-header {
   display: flex;
   align-items: center;
