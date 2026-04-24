@@ -848,14 +848,9 @@ body{
 }
 
 .admin-task-item {
-  min-height: 44px;
-  justify-content: center;
-}
-
-.admin-task-filter-wrap {
-  display: flex;
+  flex-direction: row;
   align-items: center;
-  justify-content: flex-end;
+  min-height: 44px;
 }
 
 .admin-user-item:hover {

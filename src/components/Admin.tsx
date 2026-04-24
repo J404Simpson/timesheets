@@ -414,9 +414,9 @@ export default function Admin({
 
               <section className="admin-users-recent-panel admin-task-panel">
                 <div className="admin-users-list-header">
-                  <h3 style={{ margin: 0 }}>Tasks</h3>
-                  {departments.length > 0 && (
-                    <div className="admin-task-filter-wrap">
+                  <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                    <h3 style={{ margin: 0 }}>Tasks</h3>
+                    {departments.length > 0 && (
                       <select
                         className="admin-dept-filter"
                         value={taskDeptFilter ?? ""}
@@ -427,8 +427,8 @@ export default function Admin({
                           <option key={d.id} value={d.id}>{d.name}</option>
                         ))}
                       </select>
-                    </div>
-                  )}
+                    )}
+                  </div>
                 </div>
 
                 {taskError && <p className="admin-error">{taskError}</p>}
