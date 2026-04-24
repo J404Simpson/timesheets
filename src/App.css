@@ -662,7 +662,7 @@ body{
 .admin-selected-user-hours {
   position: absolute;
   left: 50%;
-  top: calc(100% - 2px);
+  top: calc(100% - 6px);
   transform: translateX(-50%);
   white-space: nowrap;
   font-size: 14px;
