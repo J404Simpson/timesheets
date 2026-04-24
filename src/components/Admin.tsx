@@ -1,7 +1,17 @@
 import { useEffect, useMemo, useState } from "react";
 import Recent from "./Recent";
 import ViewFooter from "./ViewFooter";
-import { getAdminUsers, getProjects, getWeekEntries, type AdminUser, type Project, type WeekEntry } from "../api/timesheet";
+import { getTasksForProjectPhase, type Task } from "../api/task";
+import {
+  getAdminUsers,
+  getPhasesForProject,
+  getProjects,
+  getWeekEntries,
+  type AdminUser,
+  type Phase,
+  type Project,
+  type WeekEntry,
+} from "../api/timesheet";
 
 type Props = {
   onEditEntryForUser?: (entry: WeekEntry, employeeId: number) => void;
@@ -28,8 +38,16 @@ export default function Admin({
   const [activeSection, setActiveSection] = useState<"projects" | "sustaining" | "users">("users");
   const [projectView, setProjectView] = useState<"active" | "all">("active");
   const [projects, setProjects] = useState<Project[]>([]);
+  const [selectedProjectId, setSelectedProjectId] = useState<number | null>(null);
+  const [phases, setPhases] = useState<Phase[]>([]);
+  const [selectedPhaseId, setSelectedPhaseId] = useState<number | null>(null);
+  const [tasks, setTasks] = useState<Task[]>([]);
   const [loadingProjects, setLoadingProjects] = useState(false);
+  const [loadingPhases, setLoadingPhases] = useState(false);
+  const [loadingTasks, setLoadingTasks] = useState(false);
   const [projectError, setProjectError] = useState<string | null>(null);
+  const [phaseError, setPhaseError] = useState<string | null>(null);
+  const [taskError, setTaskError] = useState<string | null>(null);
   const [users, setUsers] = useState<AdminUser[]>([]);
   const [selectedUserId, setSelectedUserId] = useState<number | null>(null);
   const [loadingUsers, setLoadingUsers] = useState(true);
@@ -45,6 +63,11 @@ export default function Admin({
       const includeInactive = view === "all";
       const projectData = await getProjects(includeInactive);
       setProjects(projectData);
+      if (projectData.length === 0) {
+        setSelectedProjectId(null);
+      } else if (!selectedProjectId || !projectData.some((p) => p.id === selectedProjectId)) {
+        setSelectedProjectId(projectData[0].id);
+      }
     } catch {
       setProjectError("Failed to load projects.");
     } finally {
@@ -81,9 +104,66 @@ export default function Admin({
     loadProjects(projectView);
   }, [activeSection, projectView]);
 
+  useEffect(() => {
+    if (activeSection !== "projects" || !selectedProjectId) {
+      setPhases([]);
+      setSelectedPhaseId(null);
+      setPhaseError(null);
+      return;
+    }
+
+    setLoadingPhases(true);
+    setPhaseError(null);
+
+    getPhasesForProject(selectedProjectId)
+      .then((phaseData) => {
+        setPhases(phaseData);
+        if (phaseData.length === 0) {
+          setSelectedPhaseId(null);
+        } else if (!selectedPhaseId || !phaseData.some((phase) => phase.id === selectedPhaseId)) {
+          setSelectedPhaseId(phaseData[0].id);
+        }
+      })
+      .catch(() => {
+        setPhases([]);
+        setSelectedPhaseId(null);
+        setPhaseError("Failed to load phases.");
+      })
+      .finally(() => {
+        setLoadingPhases(false);
+      });
+  }, [activeSection, selectedProjectId]);
+
+  useEffect(() => {
+    if (activeSection !== "projects" || !selectedProjectId || !selectedPhaseId) {
+      setTasks([]);
+      setTaskError(null);
+      return;
+    }
+
+    setLoadingTasks(true);
+    setTaskError(null);
+
+    getTasksForProjectPhase(selectedProjectId, selectedPhaseId)
+      .then((taskData) => {
+        setTasks(taskData);
+      })
+      .catch(() => {
+        setTasks([]);
+        setTaskError("Failed to load tasks.");
+      })
+      .finally(() => {
+        setLoadingTasks(false);
+      });
+  }, [activeSection, selectedProjectId, selectedPhaseId]);
+
   const selectedUser = useMemo(
     () => users.find((u) => u.id === selectedUserId) ?? null,
     [users, selectedUserId]
+  );
+  const selectedProject = useMemo(
+    () => projects.find((project) => project.id === selectedProjectId) ?? null,
+    [projects, selectedProjectId]
   );
 
   const getUserDisplayName = (user: AdminUser) => {
@@ -168,10 +248,10 @@ export default function Admin({
 
         <div className="admin-content">
           {activeSection === "projects" && (
-            <div className="admin-users-layout">
+            <div className="admin-projects-layout">
               <aside className="admin-users-list-panel">
                 <div className="admin-users-list-header">
-                  <h3>{projectView === "active" ? "Active" : "All"}</h3>
+                  <h3>{projectView === "active" ? "Active Projects" : "All Projects"}</h3>
                   <button
                     type="button"
                     className="btn secondary"
@@ -192,18 +272,78 @@ export default function Admin({
                   <ul className="admin-user-list">
                     {projects.map((project) => (
                       <li key={project.id}>
-                        <div className="admin-user-item">
+                        <button
+                          type="button"
+                          className={`admin-user-item ${selectedProjectId === project.id ? "is-active" : ""}`}
+                          onClick={() => setSelectedProjectId(project.id)}
+                        >
                           <span className="admin-user-name">{project.name}</span>
                           <span className="admin-user-email muted">{project.active ? "Active" : "Inactive"}</span>
-                        </div>
+                        </button>
                       </li>
                     ))}
                   </ul>
                 )}
               </aside>
 
-              <section className="admin-users-recent-panel">
-                <p className="muted">Select Users to manage timesheet entries. Projects list view is read-only for now.</p>
+              <section className="admin-users-recent-panel admin-phase-panel">
+                <div className="admin-users-list-header">
+                  <h3>Phases</h3>
+                </div>
+
+                {phaseError && <p className="admin-error">{phaseError}</p>}
+
+                {!selectedProject ? (
+                  <p className="muted">Select a project to view phases.</p>
+                ) : loadingPhases ? (
+                  <p className="muted">Loading phases...</p>
+                ) : phases.length === 0 ? (
+                  <p className="muted">No phases found for {selectedProject.name}.</p>
+                ) : (
+                  <ul className="admin-user-list">
+                    {phases.map((phase) => (
+                      <li key={phase.id}>
+                        <button
+                          type="button"
+                          className={`admin-user-item ${selectedPhaseId === phase.id ? "is-active" : ""}`}
+                          onClick={() => setSelectedPhaseId(phase.id)}
+                        >
+                          <span className="admin-user-name">{phase.name}</span>
+                          <span className="admin-user-email muted">{phase.enabled === false ? "Disabled" : "Enabled"}</span>
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </section>
+
+              <section className="admin-users-recent-panel admin-task-panel">
+                <div className="admin-users-list-header">
+                  <h3>Tasks</h3>
+                </div>
+
+                {taskError && <p className="admin-error">{taskError}</p>}
+
+                {!selectedProject ? (
+                  <p className="muted">Select a project to view tasks.</p>
+                ) : !selectedPhaseId ? (
+                  <p className="muted">Select a phase to view tasks.</p>
+                ) : loadingTasks ? (
+                  <p className="muted">Loading tasks...</p>
+                ) : tasks.length === 0 ? (
+                  <p className="muted">No tasks found for this phase.</p>
+                ) : (
+                  <ul className="admin-user-list">
+                    {tasks.map((task) => (
+                      <li key={task.id}>
+                        <div className="admin-user-item">
+                          <span className="admin-user-name">{task.name}</span>
+                          <span className="admin-user-email muted">{task.enabled ? "Enabled" : "Disabled"}</span>
+                        </div>
+                      </li>
+                    ))}
+                  </ul>
+                )}
               </section>
             </div>
           )}

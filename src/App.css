@@ -705,6 +705,15 @@ body{
   overflow: hidden;
 }
 
+.admin-projects-layout {
+  display: grid;
+  grid-template-columns: 320px minmax(0, 1fr) minmax(0, 1fr);
+  gap: 12px;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+
 .admin-users-list-panel,
 .admin-users-recent-panel {
   border: 1px solid rgba(15, 23, 42, 0.08);
@@ -723,6 +732,11 @@ body{
   display: flex;
   flex-direction: column;
   overflow: hidden;
+}
+
+.admin-phase-panel,
+.admin-task-panel {
+  min-width: 0;
 }
 
 .admin-users-list-header {
@@ -1444,6 +1458,11 @@ label {
   }
 
   .admin-users-layout {
+    grid-template-columns: 1fr;
+    overflow: auto;
+  }
+
+  .admin-projects-layout {
     grid-template-columns: 1fr;
     overflow: auto;
   }
