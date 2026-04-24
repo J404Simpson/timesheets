@@ -88,6 +88,20 @@ export async function getProjects(includeInactive = false): Promise<Project[]> {
   }
 }
 
+export async function createProject(name: string, description?: string): Promise<Project> {
+  const headers = await getAuthHeaders({ "Content-Type": "application/json" });
+  const data = await requestJson<{ project: Project }>(
+    buildUrl("/api/projects"),
+    {
+      method: "POST",
+      headers,
+      body: JSON.stringify({ name, description }),
+    },
+    "Failed to create project"
+  );
+  return data.project;
+}
+
 export async function deactivateProject(projectId: number): Promise<Project> {
   const headers = await getAuthHeaders({ "Content-Type": "application/json" });
   const data = await requestJson<{ project: Project }>(

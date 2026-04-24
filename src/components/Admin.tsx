@@ -4,6 +4,7 @@ import ViewFooter from "./ViewFooter";
 import { getTasksForProjectPhase, type Task } from "../api/task";
 import { getDepartments, type Department } from "../api/department";
 import {
+  createProject,
   deactivateProject,
   deactivateProjectPhase,
   getAdminUsers,
@@ -53,6 +54,10 @@ export default function Admin({
   const [loadingTasks, setLoadingTasks] = useState(false);
   const [deactivatingProjectId, setDeactivatingProjectId] = useState<number | null>(null);
   const [deactivatingPhaseId, setDeactivatingPhaseId] = useState<number | null>(null);
+  const [showNewProjectModal, setShowNewProjectModal] = useState(false);
+  const [newProjectName, setNewProjectName] = useState("");
+  const [savingProject, setSavingProject] = useState(false);
+  const [newProjectError, setNewProjectError] = useState<string | null>(null);
   const [projectError, setProjectError] = useState<string | null>(null);
   const [phaseError, setPhaseError] = useState<string | null>(null);
   const [taskError, setTaskError] = useState<string | null>(null);
@@ -159,7 +164,26 @@ export default function Admin({
       setDeactivatingPhaseId(null);
     }
   };
-
+  const handleSaveNewProject = async () => {
+    const trimmed = newProjectName.trim();
+    if (!trimmed) {
+      setNewProjectError("Project name is required.");
+      return;
+    }
+    setSavingProject(true);
+    setNewProjectError(null);
+    try {
+      const project = await createProject(trimmed);
+      setShowNewProjectModal(false);
+      setNewProjectName("");
+      await loadProjects(projectView);
+      setSelectedProjectId(project.id);
+    } catch {
+      setNewProjectError("Failed to create project. Please try again.");
+    } finally {
+      setSavingProject(false);
+    }
+  };
   useEffect(() => {
     loadUsers();
   }, []);
@@ -542,6 +566,14 @@ export default function Admin({
               <span>{usersWeekOffset === 0 ? "Last Week" : "This Week"}</span>
               <span aria-hidden="true">{usersWeekOffset === 0 ? "←" : "→"}</span>
             </button>
+          ) : activeSection === "projects" ? (
+            <button
+              type="button"
+              className="btn week-nav-toggle"
+              onClick={() => {}}
+            >
+              Edit Tasks
+            </button>
           ) : undefined
         }
         centerContent={
@@ -553,6 +585,18 @@ export default function Admin({
               disabled={!selectedUser}
             >
               New Entry
+            </button>
+          ) : activeSection === "projects" ? (
+            <button
+              type="button"
+              className="btn primary week-nav-create"
+              onClick={() => {
+                setNewProjectName("");
+                setNewProjectError(null);
+                setShowNewProjectModal(true);
+              }}
+            >
+              New Project
             </button>
           ) : undefined
         }
@@ -567,6 +611,45 @@ export default function Admin({
           </button>
         }
       />
+
+      {showNewProjectModal && (
+        <div className="modal-overlay" onClick={() => setShowNewProjectModal(false)}>
+          <div className="modal-box" onClick={(e) => e.stopPropagation()}>
+            <h3 className="modal-title">New Project</h3>
+            <label className="modal-label" htmlFor="new-project-name">Project Name</label>
+            <input
+              id="new-project-name"
+              className="modal-input"
+              type="text"
+              placeholder="Enter project name"
+              value={newProjectName}
+              onChange={(e) => setNewProjectName(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && handleSaveNewProject()}
+              autoFocus
+              disabled={savingProject}
+            />
+            {newProjectError && <p className="modal-error">{newProjectError}</p>}
+            <div className="modal-actions">
+              <button
+                type="button"
+                className="btn secondary"
+                onClick={() => setShowNewProjectModal(false)}
+                disabled={savingProject}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                className="btn primary"
+                onClick={handleSaveNewProject}
+                disabled={savingProject || !newProjectName.trim()}
+              >
+                {savingProject ? "Saving..." : "Save"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </section>
   );
 }
