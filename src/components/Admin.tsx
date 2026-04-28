@@ -530,13 +530,14 @@ export default function Admin({
                             <span
                               style={{
                                 display: 'inline-block',
-                                minWidth: 78,
-                                minHeight: 32,
-                                height: 32,
-                                borderRadius: 8,
-                                background: task.enabled ? '#2563eb' : 'transparent',
-                                border: '1px solid ' + (task.enabled ? 'rgba(15,23,42,0.15)' : 'rgba(15,23,42,0.06)'),
-                                transition: 'background 0.2s',
+                                width: 20,
+                                height: 20,
+                                minWidth: 20,
+                                minHeight: 20,
+                                borderRadius: '50%',
+                                background: task.enabled ? 'rgba(123, 228, 149, 0.5)' : 'transparent',
+                                border: '2px solid ' + (task.enabled ? '#000' : 'rgba(15,23,42,0.06)'),
+                                transition: 'background 0.2s, border-color 0.2s',
                                 verticalAlign: 'middle',
                               }}
                               title={task.enabled ? 'Enabled' : 'Disabled'}
