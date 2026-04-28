@@ -525,8 +525,20 @@ export default function Admin({
                       .filter((task) => taskDeptFilter === null || task.department_id === taskDeptFilter)
                       .map((task) => (
                         <li key={task.id}>
-                          <div className={`admin-user-item admin-record-item`} style={{ minHeight: 42 }}>
+                          <div className={`admin-user-item admin-record-item`} style={{ minHeight: 42, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                             <span className="admin-user-name">{task.name}</span>
+                            <span
+                              style={{
+                                display: 'inline-block',
+                                minWidth: 70,
+                                minHeight: 32,
+                                borderRadius: 8,
+                                background: task.enabled ? '#22c55e' : 'transparent',
+                                border: '1px solid ' + (task.enabled ? '#22c55e' : 'rgba(15,23,42,0.06)'),
+                                transition: 'background 0.2s',
+                              }}
+                              title={task.enabled ? 'Enabled' : 'Disabled'}
+                            />
                           </div>
                         </li>
                       ))}
