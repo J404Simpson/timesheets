@@ -884,7 +884,12 @@ body{
   display: flex;
   flex-direction: column;
   gap: 2px;
+  min-height: 44px;
+  height: 44px;
+  max-height: 44px;
+  box-sizing: border-box;
 }
+
 
 .admin-record-item {
   flex-direction: row;
@@ -892,6 +897,9 @@ body{
   justify-content: space-between;
   gap: 10px;
   min-height: 44px;
+  height: 44px;
+  max-height: 44px;
+  box-sizing: border-box;
 }
 
 .admin-record-select {
