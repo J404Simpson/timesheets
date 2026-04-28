@@ -83,6 +83,7 @@ export default function Admin({
   const [loadingTasks, setLoadingTasks] = useState(false);
   const [deactivatingProjectId, setDeactivatingProjectId] = useState<number | null>(null);
   const [deactivatingPhaseId, setDeactivatingPhaseId] = useState<number | null>(null);
+  const [deactivatingTaskId, setDeactivatingTaskId] = useState<number | null>(null);
   const [showNewProjectModal, setShowNewProjectModal] = useState(false);
   const [confirmModal, setConfirmModal] = useState<{
     type: "project" | "phase" | null;
@@ -631,17 +632,21 @@ export default function Admin({
                                 type="button"
                                 className="btn secondary admin-record-status-btn"
                                 onClick={async () => {
+                                  console.log("deactivate clicked", taskItem.id);
+                                  setDeactivatingTaskId(taskItem.id);
                                   try {
                                     await deactivateTask(taskItem.id);
                                     await loadSustainingTasks(sustainingView);
                                   } catch (err: any) {
-                                    // Intentionally do not surface errors to the UI
                                     console.error("Failed to deactivate task", err);
+                                  } finally {
+                                    setDeactivatingTaskId(null);
                                   }
                                 }}
                                 title="Set inactive"
+                                disabled={deactivatingTaskId === taskItem.id}
                               >
-                                Active
+                                {deactivatingTaskId === taskItem.id ? "Saving..." : "Active"}
                               </button>
                             ) : (
                               <span className="admin-user-email muted">Inactive</span>
