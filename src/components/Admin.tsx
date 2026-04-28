@@ -530,12 +530,14 @@ export default function Admin({
                             <span
                               style={{
                                 display: 'inline-block',
-                                minWidth: 70,
+                                minWidth: 78,
                                 minHeight: 32,
+                                height: 32,
                                 borderRadius: 8,
-                                background: task.enabled ? '#22c55e' : 'transparent',
-                                border: '1px solid ' + (task.enabled ? '#22c55e' : 'rgba(15,23,42,0.06)'),
+                                background: task.enabled ? '#2563eb' : 'transparent',
+                                border: '1px solid ' + (task.enabled ? 'rgba(15,23,42,0.15)' : 'rgba(15,23,42,0.06)'),
                                 transition: 'background 0.2s',
+                                verticalAlign: 'middle',
                               }}
                               title={task.enabled ? 'Enabled' : 'Disabled'}
                             />
