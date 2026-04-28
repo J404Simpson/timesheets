@@ -293,7 +293,6 @@ export default function Admin({
 
   const loadSustainingTasks = async (view: "active" | "inactive") => {
     setLoadingSustainingTasks(true);
-    setSustainingError(null);
     try {
       const includeInactive = view === "inactive";
       const fetched = await getTasksForProjectPhaseWithInactive(SUSTAINING_PROJECT_ID, SUSTAINING_PHASE_ID, includeInactive);
