@@ -491,11 +491,12 @@ export default function Admin({
 
               <section className="admin-users-recent-panel admin-task-panel">
                 <div className="admin-users-list-header">
-                  <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                     <h3 style={{ margin: 0 }}>Tasks</h3>
                     {departments.length > 0 && (
                       <select
-                        className="admin-dept-filter"
+                        className="admin-dept-filter admin-record-status-btn"
+                        style={{ minHeight: 32, borderRadius: 8, padding: '0 12px', fontSize: 14 }}
                         value={taskDeptFilter ?? ""}
                         onChange={(e) => setTaskDeptFilter(e.target.value === "" ? null : Number(e.target.value))}
                       >
@@ -524,7 +525,7 @@ export default function Admin({
                       .filter((task) => taskDeptFilter === null || task.department_id === taskDeptFilter)
                       .map((task) => (
                         <li key={task.id}>
-                          <div className="admin-user-item admin-task-item">
+                          <div className={`admin-user-item admin-record-item`} style={{ minHeight: 42 }}>
                             <span className="admin-user-name">{task.name}</span>
                           </div>
                         </li>
