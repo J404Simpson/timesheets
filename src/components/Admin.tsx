@@ -26,7 +26,7 @@ function ConfirmModal({ open, title, message, onConfirm, onCancel, confirmLabel 
 }
 import Recent from "./Recent";
 import ViewFooter from "./ViewFooter";
-import { getTasksForProjectPhase, type Task } from "../api/task";
+import { getTasksForProjectPhase, getTasksForProjectPhaseWithInactive, deactivateTask, type Task } from "../api/task";
 import { getDepartments, type Department } from "../api/department";
 import {
   createProject,
@@ -73,7 +73,7 @@ export default function Admin({
   const [selectedPhaseId, setSelectedPhaseId] = useState<number | null>(null);
   const [tasks, setTasks] = useState<Task[]>([]);
   const [sustainingTasks, setSustainingTasks] = useState<Task[]>([]);
-  const [sustainingView, setSustainingView] = useState<"active" | "all">("active");
+  const [sustainingView, setSustainingView] = useState<"active" | "inactive">("active");
   const [loadingSustainingTasks, setLoadingSustainingTasks] = useState(false);
   const [sustainingError, setSustainingError] = useState<string | null>(null);
   const [selectedSustainingTaskId, setSelectedSustainingTaskId] = useState<number | null>(null);
@@ -292,15 +292,18 @@ export default function Admin({
   const SUSTAINING_PROJECT_ID = 3;
   const SUSTAINING_PHASE_ID = 1;
 
-  const loadSustainingTasks = async (view: "active" | "all") => {
+  const loadSustainingTasks = async (view: "active" | "inactive") => {
     setLoadingSustainingTasks(true);
     setSustainingError(null);
     try {
-      const fetched = await getTasksForProjectPhase(SUSTAINING_PROJECT_ID, SUSTAINING_PHASE_ID);
+      const includeInactive = view === "inactive";
+      const fetched = await getTasksForProjectPhaseWithInactive(SUSTAINING_PROJECT_ID, SUSTAINING_PHASE_ID, includeInactive);
       setSustainingTasks(fetched);
-      if (fetched.length === 0) setSelectedSustainingTaskId(null);
-      else if (!selectedSustainingTaskId || !fetched.some((t) => t.id === selectedSustainingTaskId)) {
-        setSelectedSustainingTaskId(fetched[0].id);
+      if (fetched.length === 0) {
+        setSelectedSustainingTaskId(null);
+      } else if (!selectedSustainingTaskId || !fetched.some((t) => t.id === selectedSustainingTaskId)) {
+        const pick = fetched.find((t) => (view === "active" ? t.active : !t.active)) ?? fetched[0];
+        setSelectedSustainingTaskId(pick.id);
       }
     } catch {
       setSustainingTasks([]);
@@ -596,10 +599,10 @@ export default function Admin({
                     <button
                       type="button"
                       className="btn secondary"
-                      onClick={() => setSustainingView((prev) => (prev === "active" ? "all" : "active"))}
+                      onClick={() => setSustainingView((prev) => (prev === "active" ? "inactive" : "active"))}
                       disabled={loadingSustainingTasks}
                     >
-                      {sustainingView === "active" ? "Active" : "All"}
+                      {sustainingView === "active" ? "Active" : "Inactive"}
                     </button>
                   </div>
                 </div>
@@ -613,7 +616,7 @@ export default function Admin({
                 ) : (
                   <ul className="admin-user-list">
                     {sustainingTasks
-                      .filter((t) => sustainingView === "all" || t.enabled)
+                      .filter((t) => (sustainingView === "active" ? t.active : !t.active))
                       .filter((t) => taskDeptFilter === null || t.department_id === taskDeptFilter)
                       .map((taskItem) => (
                         <li key={taskItem.id}>
@@ -626,21 +629,25 @@ export default function Admin({
                               <span className="admin-user-name">{taskItem.name}</span>
                             </button>
 
-                            <span
-                              style={{
-                                display: 'inline-block',
-                                width: 20,
-                                height: 20,
-                                minWidth: 20,
-                                minHeight: 20,
-                                borderRadius: '50%',
-                                background: taskItem.enabled ? '#34c759' : 'transparent',
-                                border: '2px solid ' + (taskItem.enabled ? '#000' : 'rgba(15,23,42,0.06)'),
-                                transition: 'background 0.2s, border-color 0.2s',
-                                verticalAlign: 'middle',
-                              }}
-                              title={taskItem.enabled ? 'Enabled' : 'Disabled'}
-                            />
+                            {taskItem.active !== false ? (
+                              <button
+                                type="button"
+                                className="btn secondary admin-record-status-btn"
+                                onClick={async () => {
+                                  try {
+                                    await deactivateTask(taskItem.id);
+                                    await loadSustainingTasks(sustainingView);
+                                  } catch {
+                                    setSustainingError("Failed to deactivate task.");
+                                  }
+                                }}
+                                title="Set inactive"
+                              >
+                                Active
+                              </button>
+                            ) : (
+                              <span className="admin-user-email muted">Inactive</span>
+                            )}
                           </div>
                         </li>
                       ))}
