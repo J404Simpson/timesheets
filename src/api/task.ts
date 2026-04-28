@@ -77,8 +77,14 @@ export async function deactivateTask(taskId: number): Promise<void> {
       Authorization: `Bearer ${accessToken}`,
       "Content-Type": "application/json",
     },
+    // Fastify rejects requests that declare JSON content-type with an empty body.
+    // Send an explicit empty JSON object so the server's JSON parser accepts the request.
+    body: JSON.stringify({}),
   });
   if (!response.ok) {
-    throw new Error(`Failed to deactivate task (${response.status})`);
+    const status = response.status;
+    // Do not read or log response body here to avoid exposing any sensitive data in browser console.
+    console.error(`deactivateTask failed: status ${status}`);
+    throw new Error(`Failed to deactivate task (${status})`);
   }
 }
