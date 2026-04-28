@@ -72,6 +72,11 @@ export default function Admin({
   const [phaseView, setPhaseView] = useState<"active" | "all">("active");
   const [selectedPhaseId, setSelectedPhaseId] = useState<number | null>(null);
   const [tasks, setTasks] = useState<Task[]>([]);
+  const [sustainingTasks, setSustainingTasks] = useState<Task[]>([]);
+  const [sustainingView, setSustainingView] = useState<"active" | "all">("active");
+  const [loadingSustainingTasks, setLoadingSustainingTasks] = useState(false);
+  const [sustainingError, setSustainingError] = useState<string | null>(null);
+  const [selectedSustainingTaskId, setSelectedSustainingTaskId] = useState<number | null>(null);
   const [departments, setDepartments] = useState<Department[]>([]);
   const [taskDeptFilter, setTaskDeptFilter] = useState<number | null>(null);
   const [loadingProjects, setLoadingProjects] = useState(false);
@@ -282,6 +287,37 @@ export default function Admin({
         setLoadingTasks(false);
       });
   }, [activeSection, selectedProjectId, selectedPhaseId]);
+
+  // Sustaining constants (matches TimeSheetForm: project 3, phase 1)
+  const SUSTAINING_PROJECT_ID = 3;
+  const SUSTAINING_PHASE_ID = 1;
+
+  const loadSustainingTasks = async (view: "active" | "all") => {
+    setLoadingSustainingTasks(true);
+    setSustainingError(null);
+    try {
+      const fetched = await getTasksForProjectPhase(SUSTAINING_PROJECT_ID, SUSTAINING_PHASE_ID);
+      setSustainingTasks(fetched);
+      if (fetched.length === 0) setSelectedSustainingTaskId(null);
+      else if (!selectedSustainingTaskId || !fetched.some((t) => t.id === selectedSustainingTaskId)) {
+        setSelectedSustainingTaskId(fetched[0].id);
+      }
+    } catch {
+      setSustainingTasks([]);
+      setSelectedSustainingTaskId(null);
+      setSustainingError("Failed to load sustaining tasks.");
+    } finally {
+      setLoadingSustainingTasks(false);
+    }
+  };
+
+  useEffect(() => {
+    if (activeSection !== "sustaining") return;
+    loadSustainingTasks(sustainingView);
+    if (departments.length === 0) {
+      getDepartments().then(setDepartments).catch(() => {});
+    }
+  }, [activeSection, sustainingView]);
 
   const selectedUser = useMemo(
     () => users.find((u) => u.id === selectedUserId) ?? null,
@@ -551,7 +587,82 @@ export default function Admin({
             </div>
           )}
 
-          {activeSection === "sustaining" && <p className="muted">Sustaining configuration coming next.</p>}
+          {activeSection === "sustaining" && (
+            <div className="admin-projects-layout">
+              <aside className="admin-users-list-panel">
+                <div className="admin-users-list-header">
+                  <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                    <h3 style={{ margin: 0 }}>Sustaining Tasks</h3>
+                    <button
+                      type="button"
+                      className="btn secondary"
+                      onClick={() => setSustainingView((prev) => (prev === "active" ? "all" : "active"))}
+                      disabled={loadingSustainingTasks}
+                    >
+                      {sustainingView === "active" ? "Active" : "All"}
+                    </button>
+                  </div>
+                </div>
+
+                {sustainingError && <p className="admin-error">{sustainingError}</p>}
+
+                {loadingSustainingTasks ? (
+                  <p className="muted">Loading sustaining tasks...</p>
+                ) : sustainingTasks.length === 0 ? (
+                  <p className="muted">No sustaining tasks found.</p>
+                ) : (
+                  <ul className="admin-user-list">
+                    {sustainingTasks
+                      .filter((t) => sustainingView === "all" || t.enabled)
+                      .filter((t) => taskDeptFilter === null || t.department_id === taskDeptFilter)
+                      .map((taskItem) => (
+                        <li key={taskItem.id}>
+                          <div className={`admin-user-item admin-record-item ${selectedSustainingTaskId === taskItem.id ? "is-active" : ""}`}>
+                            <button
+                              type="button"
+                              className="admin-record-select"
+                              onClick={() => setSelectedSustainingTaskId(taskItem.id)}
+                            >
+                              <span className="admin-user-name">{taskItem.name}</span>
+                            </button>
+
+                            <span
+                              style={{
+                                display: 'inline-block',
+                                width: 20,
+                                height: 20,
+                                minWidth: 20,
+                                minHeight: 20,
+                                borderRadius: '50%',
+                                background: taskItem.enabled ? '#34c759' : 'transparent',
+                                border: '2px solid ' + (taskItem.enabled ? '#000' : 'rgba(15,23,42,0.06)'),
+                                transition: 'background 0.2s, border-color 0.2s',
+                                verticalAlign: 'middle',
+                              }}
+                              title={taskItem.enabled ? 'Enabled' : 'Disabled'}
+                            />
+                          </div>
+                        </li>
+                      ))}
+                  </ul>
+                )}
+              </aside>
+
+              <section className="admin-users-recent-panel">
+                <div className="admin-users-list-header">
+                  <h3>Details</h3>
+                </div>
+                {selectedSustainingTaskId ? (
+                  <div style={{ padding: 12 }}>
+                    <p><strong>Task:</strong> {sustainingTasks.find((t) => t.id === selectedSustainingTaskId)?.name}</p>
+                    <p className="muted">Toggle enabled state from the Tasks panel.</p>
+                  </div>
+                ) : (
+                  <p className="muted">Select a sustaining task to view details.</p>
+                )}
+              </section>
+            </div>
+          )}
 
           {activeSection === "users" && (
             <div className="admin-users-layout">
