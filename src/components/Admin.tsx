@@ -75,7 +75,6 @@ export default function Admin({
   const [sustainingTasks, setSustainingTasks] = useState<Task[]>([]);
   const [sustainingView, setSustainingView] = useState<"active" | "inactive">("active");
   const [loadingSustainingTasks, setLoadingSustainingTasks] = useState(false);
-  const [sustainingError, setSustainingError] = useState<string | null>(null);
   const [selectedSustainingTaskId, setSelectedSustainingTaskId] = useState<number | null>(null);
   const [departments, setDepartments] = useState<Department[]>([]);
   const [taskDeptFilter, setTaskDeptFilter] = useState<number | null>(null);
@@ -308,7 +307,6 @@ export default function Admin({
     } catch {
       setSustainingTasks([]);
       setSelectedSustainingTaskId(null);
-      setSustainingError("Failed to load sustaining tasks.");
     } finally {
       setLoadingSustainingTasks(false);
     }
@@ -607,7 +605,7 @@ export default function Admin({
                   </div>
                 </div>
 
-                {sustainingError && <p className="admin-error">{sustainingError}</p>}
+                {/* Errors intentionally not shown in UI */}
 
                 {loadingSustainingTasks ? (
                   <p className="muted">Loading sustaining tasks...</p>
@@ -637,8 +635,9 @@ export default function Admin({
                                   try {
                                     await deactivateTask(taskItem.id);
                                     await loadSustainingTasks(sustainingView);
-                                  } catch {
-                                    setSustainingError("Failed to deactivate task.");
+                                  } catch (err: any) {
+                                    // Intentionally do not surface errors to the UI
+                                    console.error("Failed to deactivate task", err);
                                   }
                                 }}
                                 title="Set inactive"
