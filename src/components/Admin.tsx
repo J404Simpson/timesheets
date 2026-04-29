@@ -86,7 +86,7 @@ export default function Admin({
   const [deactivatingTaskId, setDeactivatingTaskId] = useState<number | null>(null);
   const [showNewProjectModal, setShowNewProjectModal] = useState(false);
   const [confirmModal, setConfirmModal] = useState<{
-    type: "project" | "phase" | null;
+    type: "project" | "phase" | "task" | null;
     id: number | null;
     name: string;
   }>({ type: null, id: null, name: "" });
@@ -207,6 +207,23 @@ export default function Admin({
       setConfirmModal({ type: null, id: null, name: "" });
     }
   };
+
+  const handleDeactivateTask = (task: Task) => {
+    if (task.active === false) return;
+    setConfirmModal({ type: "task", id: task.id, name: task.name });
+  };
+
+  const confirmDeactivateTask = async () => {
+    if (!confirmModal.id) return;
+    setDeactivatingTaskId(confirmModal.id);
+    try {
+      await deactivateTask(confirmModal.id);
+      await loadSustainingTasks(sustainingView);
+    } finally {
+      setDeactivatingTaskId(null);
+      setConfirmModal({ type: null, id: null, name: "" });
+    }
+  };
     // ...existing code...
 
     // Confirmation modal for deactivation
@@ -225,6 +242,11 @@ export default function Admin({
       confirmMessage = `Are you sure you want to set phase "${confirmModal.name}" to inactive?`;
       confirmLoading = deactivatingPhaseId === confirmModal.id;
       confirmAction = confirmDeactivatePhase;
+    } else if (confirmModal.type === "task") {
+      confirmTitle = "Set Task Inactive";
+      confirmMessage = `Are you sure you want to set task "${confirmModal.name}" to inactive?`;
+      confirmLoading = deactivatingTaskId === confirmModal.id;
+      confirmAction = confirmDeactivateTask;
     }
   const handleSaveNewProject = async () => {
     const trimmed = newProjectName.trim();
@@ -617,7 +639,7 @@ export default function Admin({
               <aside className="admin-users-list-panel">
                 <div className="admin-users-list-header">
                   <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-                    <h3 style={{ margin: 0 }}>All Tasks</h3>
+                    <h3 style={{ margin: 0 }}>Project Tasks</h3>
                     {departments.length > 0 && (
                       <select
                         className="admin-dept-filter admin-record-status-btn"
@@ -643,14 +665,12 @@ export default function Admin({
                 ) : (
                   <ul className="admin-user-list">
                     {allTasks
+                      .filter((task) => task.task_type === "PROJECT")
                       .filter((task) => taskDeptFilter === null || task.department_id === taskDeptFilter)
                       .map((task) => (
                         <li key={task.id}>
                           <div className="admin-user-item admin-record-item">
-                            <span style={{ display: "flex", flexDirection: "column", alignItems: "flex-start", lineHeight: 1.2 }}>
-                              <span className="admin-user-name">{task.name}</span>
-                              <span className="admin-user-email muted">{task.task_type ?? "UNKNOWN"}</span>
-                            </span>
+                            <span className="admin-user-name">{task.name}</span>
                           </div>
                         </li>
                       ))}
@@ -662,7 +682,6 @@ export default function Admin({
                 <div className="admin-users-list-header">
                   <h3>Details</h3>
                 </div>
-                <p className="muted">All tasks are listed with their `task_type`.</p>
               </section>
             </div>
           )}
@@ -710,17 +729,7 @@ export default function Admin({
                               <button
                                 type="button"
                                 className="btn secondary admin-record-status-btn"
-                                onClick={async () => {
-                                  setDeactivatingTaskId(taskItem.id);
-                                  try {
-                                    await deactivateTask(taskItem.id);
-                                    await loadSustainingTasks(sustainingView);
-                                  } catch (_err) {
-                                    // Intentionally do not surface server response or error details in UI or console
-                                  } finally {
-                                    setDeactivatingTaskId(null);
-                                  }
-                                }}
+                                onClick={() => handleDeactivateTask(taskItem)}
                                 title="Set inactive"
                                 disabled={deactivatingTaskId === taskItem.id}
                               >
