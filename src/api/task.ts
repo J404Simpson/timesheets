@@ -6,6 +6,7 @@ export type Task = {
   enabled: boolean;
   active: boolean;
   department_id?: number | null;
+  task_type?: "LEAVE" | "PROJECT" | "SUSTAINING";
 };
 
 export async function getTasksForPhaseAndEmployee(phaseId: number): Promise<Task[]> {

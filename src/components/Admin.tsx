@@ -624,7 +624,10 @@ export default function Admin({
                               className="admin-record-select"
                               onClick={() => setSelectedSustainingTaskId(taskItem.id)}
                             >
-                              <span className="admin-user-name">{taskItem.name}</span>
+                              <span style={{ display: "flex", flexDirection: "column", alignItems: "flex-start", lineHeight: 1.2 }}>
+                                <span className="admin-user-name">{taskItem.name}</span>
+                                <span className="admin-user-email muted">{taskItem.task_type ?? "UNKNOWN"}</span>
+                              </span>
                             </button>
 
                             {taskItem.active !== false ? (
@@ -632,13 +635,12 @@ export default function Admin({
                                 type="button"
                                 className="btn secondary admin-record-status-btn"
                                 onClick={async () => {
-                                  console.log("deactivate clicked", taskItem.id);
                                   setDeactivatingTaskId(taskItem.id);
                                   try {
                                     await deactivateTask(taskItem.id);
                                     await loadSustainingTasks(sustainingView);
-                                  } catch (err: any) {
-                                    console.error("Failed to deactivate task", err);
+                                  } catch (_err) {
+                                    // Intentionally do not surface server response or error details in UI or console
                                   } finally {
                                     setDeactivatingTaskId(null);
                                   }
