@@ -26,7 +26,7 @@ function ConfirmModal({ open, title, message, onConfirm, onCancel, confirmLabel 
 }
 import Recent from "./Recent";
 import ViewFooter from "./ViewFooter";
-import { getTasksForProjectPhase, getTasksForProjectPhaseWithInactive, deactivateTask, type Task } from "../api/task";
+import { getTasksForProjectPhase, getTasksForProjectPhaseWithInactive, deactivateTask, getAllTasks, type Task } from "../api/task";
 import { getDepartments, type Department } from "../api/department";
 import {
   createProject,
@@ -96,6 +96,10 @@ export default function Admin({
   const [projectError, setProjectError] = useState<string | null>(null);
   const [phaseError, setPhaseError] = useState<string | null>(null);
   const [taskError, setTaskError] = useState<string | null>(null);
+  const [showEditTasksView, setShowEditTasksView] = useState(false);
+  const [allTasks, setAllTasks] = useState<Task[]>([]);
+  const [loadingAllTasks, setLoadingAllTasks] = useState(false);
+  const [allTasksError, setAllTasksError] = useState<string | null>(null);
   const [users, setUsers] = useState<AdminUser[]>([]);
   const [selectedUserId, setSelectedUserId] = useState<number | null>(null);
   const [loadingUsers, setLoadingUsers] = useState(true);
@@ -255,6 +259,12 @@ export default function Admin({
   }, [activeSection, projectView]);
 
   useEffect(() => {
+    if (activeSection !== "projects") {
+      setShowEditTasksView(false);
+    }
+  }, [activeSection]);
+
+  useEffect(() => {
     if (activeSection !== "projects" || !selectedProjectId) {
       setPhases([]);
       setSelectedPhaseId(null);
@@ -319,6 +329,20 @@ export default function Admin({
       getDepartments().then(setDepartments).catch(() => {});
     }
   }, [activeSection, sustainingView]);
+
+  const loadAllTasks = async () => {
+    setLoadingAllTasks(true);
+    setAllTasksError(null);
+    try {
+      const fetched = await getAllTasks(true);
+      setAllTasks(fetched);
+    } catch {
+      setAllTasks([]);
+      setAllTasksError("Failed to load all tasks.");
+    } finally {
+      setLoadingAllTasks(false);
+    }
+  };
 
   const selectedUser = useMemo(
     () => users.find((u) => u.id === selectedUserId) ?? null,
@@ -410,7 +434,7 @@ export default function Admin({
         </div>
 
         <div className="admin-content">
-          {activeSection === "projects" && (
+          {activeSection === "projects" && !showEditTasksView && (
             <div className="admin-projects-layout">
               <aside className="admin-users-list-panel">
                 <div className="admin-users-list-header">
@@ -588,6 +612,61 @@ export default function Admin({
             </div>
           )}
 
+          {activeSection === "projects" && showEditTasksView && (
+            <div className="admin-projects-layout">
+              <aside className="admin-users-list-panel">
+                <div className="admin-users-list-header">
+                  <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                    <h3 style={{ margin: 0 }}>All Tasks</h3>
+                    {departments.length > 0 && (
+                      <select
+                        className="admin-dept-filter admin-record-status-btn"
+                        style={{ minHeight: 32, borderRadius: 8, padding: "0 12px", fontSize: 14 }}
+                        value={taskDeptFilter ?? ""}
+                        onChange={(e) => setTaskDeptFilter(e.target.value === "" ? null : Number(e.target.value))}
+                      >
+                        <option value="">All Departments</option>
+                        {departments.map((d) => (
+                          <option key={d.id} value={d.id}>{d.name}</option>
+                        ))}
+                      </select>
+                    )}
+                  </div>
+                </div>
+
+                {allTasksError && <p className="admin-error">{allTasksError}</p>}
+
+                {loadingAllTasks ? (
+                  <p className="muted">Loading all tasks...</p>
+                ) : allTasks.length === 0 ? (
+                  <p className="muted">No tasks found.</p>
+                ) : (
+                  <ul className="admin-user-list">
+                    {allTasks
+                      .filter((task) => taskDeptFilter === null || task.department_id === taskDeptFilter)
+                      .map((task) => (
+                        <li key={task.id}>
+                          <div className="admin-user-item admin-record-item">
+                            <span style={{ display: "flex", flexDirection: "column", alignItems: "flex-start", lineHeight: 1.2 }}>
+                              <span className="admin-user-name">{task.name}</span>
+                              <span className="admin-user-email muted">{task.task_type ?? "UNKNOWN"}</span>
+                            </span>
+                          </div>
+                        </li>
+                      ))}
+                  </ul>
+                )}
+              </aside>
+
+              <section className="admin-users-recent-panel">
+                <div className="admin-users-list-header">
+                  <h3>Details</h3>
+                </div>
+                <p className="muted">All tasks are listed with their `task_type`.</p>
+              </section>
+            </div>
+          )}
+
           {activeSection === "sustaining" && (
             <div className="admin-projects-layout">
               <aside className="admin-users-list-panel">
@@ -624,10 +703,7 @@ export default function Admin({
                               className="admin-record-select"
                               onClick={() => setSelectedSustainingTaskId(taskItem.id)}
                             >
-                              <span style={{ display: "flex", flexDirection: "column", alignItems: "flex-start", lineHeight: 1.2 }}>
-                                <span className="admin-user-name">{taskItem.name}</span>
-                                <span className="admin-user-email muted">{taskItem.task_type ?? "UNKNOWN"}</span>
-                              </span>
+                              <span className="admin-user-name">{taskItem.name}</span>
                             </button>
 
                             {taskItem.active !== false ? (
@@ -762,9 +838,16 @@ export default function Admin({
             <button
               type="button"
               className="btn week-nav-toggle"
-              onClick={() => {}}
+              onClick={async () => {
+                if (showEditTasksView) {
+                  setShowEditTasksView(false);
+                  return;
+                }
+                setShowEditTasksView(true);
+                await loadAllTasks();
+              }}
             >
-              Edit Tasks
+              {showEditTasksView ? "Back to Projects" : "Edit Tasks"}
             </button>
           ) : undefined
         }

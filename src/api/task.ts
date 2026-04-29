@@ -89,3 +89,23 @@ export async function deactivateTask(taskId: number): Promise<void> {
     throw new Error(`Failed to deactivate task (${status})`);
   }
 }
+
+export async function getAllTasks(includeInactive = true): Promise<Task[]> {
+  const accessToken = await acquireTokenSilent([
+    protectedResources.timesheetApi.scope,
+  ]);
+  const apiBase = import.meta.env.VITE_API_URL;
+  const q = includeInactive ? "?includeInactive=true" : "";
+  const response = await fetch(`${apiBase}/api/tasks${q}`, {
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+    },
+  });
+
+  if (!response.ok) {
+    throw new Error(`Failed to fetch tasks (${response.status})`);
+  }
+
+  const data = await response.json();
+  return data.tasks;
+}
