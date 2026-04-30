@@ -26,7 +26,7 @@ function ConfirmModal({ open, title, message, onConfirm, onCancel, confirmLabel 
 }
 import Recent from "./Recent";
 import ViewFooter from "./ViewFooter";
-import { getTasksForProjectPhase, getTasksForProjectPhaseWithInactive, deactivateTask, getAllTasks, type Task } from "../api/task";
+import { getTasksForProjectPhase, getTasksForProjectPhaseWithInactive, deactivateTask, getAllTasks, updateTaskEnabled, type Task } from "../api/task";
 import { getDepartments, type Department } from "../api/department";
 import {
   createProject,
@@ -100,6 +100,8 @@ export default function Admin({
   const [allTasks, setAllTasks] = useState<Task[]>([]);
   const [loadingAllTasks, setLoadingAllTasks] = useState(false);
   const [allTasksError, setAllTasksError] = useState<string | null>(null);
+  const [selectedEditTaskId, setSelectedEditTaskId] = useState<number | null>(null);
+  const [savingTaskEnabledId, setSavingTaskEnabledId] = useState<number | null>(null);
   const [users, setUsers] = useState<AdminUser[]>([]);
   const [selectedUserId, setSelectedUserId] = useState<number | null>(null);
   const [loadingUsers, setLoadingUsers] = useState(true);
@@ -358,8 +360,15 @@ export default function Admin({
     try {
       const fetched = await getAllTasks(true);
       setAllTasks(fetched);
+      const projectTasks = fetched.filter((task) => task.task_type === "PROJECT");
+      if (projectTasks.length === 0) {
+        setSelectedEditTaskId(null);
+      } else if (!selectedEditTaskId || !projectTasks.some((task) => task.id === selectedEditTaskId)) {
+        setSelectedEditTaskId(projectTasks[0].id);
+      }
     } catch {
       setAllTasks([]);
+      setSelectedEditTaskId(null);
       setAllTasksError("Failed to load all tasks.");
     } finally {
       setLoadingAllTasks(false);
@@ -374,6 +383,29 @@ export default function Admin({
     () => projects.find((project) => project.id === selectedProjectId) ?? null,
     [projects, selectedProjectId]
   );
+  const selectedEditTask = useMemo(
+    () => allTasks.find((task) => task.id === selectedEditTaskId) ?? null,
+    [allTasks, selectedEditTaskId]
+  );
+
+  const getDepartmentName = (departmentId?: number | null) => {
+    if (!departmentId) return "No department";
+    return departments.find((department) => department.id === departmentId)?.name ?? "No department";
+  };
+
+  const handleToggleEditTaskEnabled = async () => {
+    if (!selectedEditTask) return;
+    setSavingTaskEnabledId(selectedEditTask.id);
+    setAllTasksError(null);
+    try {
+      const updatedTask = await updateTaskEnabled(selectedEditTask.id, !selectedEditTask.enabled);
+      setAllTasks((prev) => prev.map((task) => (task.id === updatedTask.id ? { ...task, enabled: updatedTask.enabled } : task)));
+    } catch {
+      setAllTasksError("Failed to update task enabled state.");
+    } finally {
+      setSavingTaskEnabledId(null);
+    }
+  };
 
   const getUserDisplayName = (user: AdminUser) => {
     const name = `${user.first_name ?? ""} ${user.last_name ?? ""}`.trim();
@@ -669,8 +701,29 @@ export default function Admin({
                       .filter((task) => taskDeptFilter === null || task.department_id === taskDeptFilter)
                       .map((task) => (
                         <li key={task.id}>
-                          <div className="admin-user-item admin-record-item">
-                            <span className="admin-user-name">{task.name}</span>
+                          <div className={`admin-user-item admin-record-item ${selectedEditTaskId === task.id ? "is-active" : ""}`}>
+                            <button
+                              type="button"
+                              className="admin-record-select"
+                              onClick={() => setSelectedEditTaskId(task.id)}
+                            >
+                              <span className="admin-user-name">{task.name}</span>
+                            </button>
+                            <span
+                              style={{
+                                display: "inline-block",
+                                width: 20,
+                                height: 20,
+                                minWidth: 20,
+                                minHeight: 20,
+                                borderRadius: "50%",
+                                background: task.enabled ? "#34c759" : "transparent",
+                                border: "2px solid " + (task.enabled ? "#000" : "rgba(15,23,42,0.06)"),
+                                transition: "background 0.2s, border-color 0.2s",
+                                verticalAlign: "middle",
+                              }}
+                              title={task.enabled ? "Enabled" : "Disabled"}
+                            />
                           </div>
                         </li>
                       ))}
@@ -682,6 +735,49 @@ export default function Admin({
                 <div className="admin-users-list-header">
                   <h3>Details</h3>
                 </div>
+                {selectedEditTask ? (
+                  <div style={{ padding: 12 }}>
+                    <div
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "space-between",
+                        paddingBottom: 12,
+                        borderBottom: "1px solid rgba(15, 23, 42, 0.08)",
+                      }}
+                    >
+                      <strong>Enabled</strong>
+                      <button
+                        type="button"
+                        onClick={handleToggleEditTaskEnabled}
+                        disabled={savingTaskEnabledId === selectedEditTask.id}
+                        title={selectedEditTask.enabled ? "Disable task" : "Enable task"}
+                        style={{ border: 0, background: "transparent", padding: 0, cursor: "pointer" }}
+                      >
+                        <span
+                          style={{
+                            display: "inline-block",
+                            width: 20,
+                            height: 20,
+                            minWidth: 20,
+                            minHeight: 20,
+                            borderRadius: "50%",
+                            background: selectedEditTask.enabled ? "#34c759" : "transparent",
+                            border: "2px solid " + (selectedEditTask.enabled ? "#000" : "rgba(15,23,42,0.06)"),
+                            transition: "background 0.2s, border-color 0.2s",
+                            verticalAlign: "middle",
+                          }}
+                        />
+                      </button>
+                    </div>
+
+                    <p style={{ marginTop: 12 }}>
+                      <strong>Department:</strong> {getDepartmentName(selectedEditTask.department_id)}
+                    </p>
+                  </div>
+                ) : (
+                  <p className="muted">Select a task to view details.</p>
+                )}
               </section>
             </div>
           )}
@@ -794,7 +890,6 @@ export default function Admin({
                             onClick={() => setSelectedUserId(user.id)}
                           >
                             <span className="admin-user-name">{getUserDisplayName(user)}</span>
-                            <span className="admin-user-email muted">{user.email}</span>
                           </button>
                         </li>
                       );

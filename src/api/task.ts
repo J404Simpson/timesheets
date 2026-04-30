@@ -90,6 +90,28 @@ export async function deactivateTask(taskId: number): Promise<void> {
   }
 }
 
+export async function updateTaskEnabled(taskId: number, enabled: boolean): Promise<Task> {
+  const accessToken = await acquireTokenSilent([
+    protectedResources.timesheetApi.scope,
+  ]);
+  const apiBase = import.meta.env.VITE_API_URL;
+  const response = await fetch(`${apiBase}/api/tasks/${taskId}/enabled`, {
+    method: "PATCH",
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ enabled }),
+  });
+
+  if (!response.ok) {
+    throw new Error(`Failed to update task enabled state (${response.status})`);
+  }
+
+  const data = await response.json();
+  return data.task;
+}
+
 export async function getAllTasks(includeInactive = true): Promise<Task[]> {
   const accessToken = await acquireTokenSilent([
     protectedResources.timesheetApi.scope,

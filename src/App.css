@@ -781,7 +781,7 @@ body{
 
 .admin-edit-tasks-layout {
   display: grid;
-  grid-template-columns: 1fr 2fr;
+  grid-template-columns: 2fr 1fr;
   gap: 12px;
   flex: 1;
   min-height: 0;
@@ -892,7 +892,8 @@ body{
   cursor: pointer;
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  justify-content: center;
+  gap: 0;
   min-height: 44px;
   height: 44px;
   max-height: 44px;
@@ -947,10 +948,14 @@ body{
 .admin-user-name {
   font-weight: 600;
   color: var(--text);
+  font-size: 0.78rem;
+  line-height: 1.15;
+  display: block;
+  overflow-wrap: anywhere;
 }
 
 .admin-user-email {
-  font-size: 0.85rem;
+  font-size: 0.78rem;
 }
 
 .muted{ color:var(--muted); }
@@ -1119,8 +1124,8 @@ label {
 
 .week-nav-toggle:focus {
   outline: none;
-  border-color: var(--accent);
-  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
+  border-color: rgba(15, 23, 42, 0.2);
+  box-shadow: none;
 }
 
 /* Week Calendar Styles */
