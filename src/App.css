@@ -823,6 +823,13 @@ body{
   cursor: pointer;
 }
 
+.admin-dept-filter:focus,
+.admin-dept-filter:focus-visible {
+  outline: none;
+  border-color: rgba(15, 23, 42, 0.15);
+  box-shadow: none;
+}
+
 .admin-users-list-header {
   display: flex;
   align-items: center;
@@ -845,6 +852,18 @@ body{
   flex: 1;
   min-height: 0;
   overflow: auto;
+}
+
+.admin-view .admin-user-list > li {
+  min-height: 44px;
+  height: 44px;
+  max-height: 44px;
+}
+
+.admin-view .admin-user-list > li > .admin-user-item {
+  min-height: 44px;
+  height: 44px;
+  max-height: 44px;
 }
 
 .recent-activity {
@@ -1011,7 +1030,7 @@ body{
   flex: 1;
   text-align: center;
   justify-content: center;
-  border-radius: 20px;
+  border-radius: 6px;
   border: 1px solid rgba(15, 23, 42, 0.15);
   background: #ffffff;
   color: var(--text);
