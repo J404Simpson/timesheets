@@ -1203,10 +1203,10 @@ export default function Admin({
               disabled={savingNewTask}
             />
 
-            <p className="admin-detail-label" style={{ marginTop: 16 }}>Department</p>
+            <p className="admin-detail-label" style={{ marginTop: 12, marginBottom: 6 }}>Department</p>
             <select
               className="admin-dept-filter admin-record-status-btn"
-              style={{ minHeight: 32, borderRadius: 8, padding: "0 12px", fontSize: 14, width: "100%", marginBottom: 16 }}
+              style={{ minHeight: 32, borderRadius: 8, padding: "0 12px", fontSize: 14, width: "100%", marginBottom: 10 }}
               value={newTaskDepartmentId ?? ""}
               onChange={(e) => setNewTaskDepartmentId(e.target.value === "" ? null : Number(e.target.value))}
               disabled={savingNewTask}
@@ -1217,10 +1217,10 @@ export default function Admin({
               ))}
             </select>
 
-            <p className="admin-detail-label">Phase</p>
+            <p className="admin-detail-label" style={{ marginBottom: 6 }}>Phase</p>
             <select
               className="admin-dept-filter admin-record-status-btn"
-              style={{ minHeight: 32, borderRadius: 8, padding: "0 12px", fontSize: 14, width: "100%", marginBottom: 16 }}
+              style={{ minHeight: 32, borderRadius: 8, padding: "0 12px", fontSize: 14, width: "100%", marginBottom: 10 }}
               value={newTaskPhaseId ?? ""}
               onChange={(e) => setNewTaskPhaseId(e.target.value === "" ? null : Number(e.target.value))}
               disabled={savingNewTask}
@@ -1231,8 +1231,8 @@ export default function Admin({
               ))}
             </select>
 
-            <p className="admin-detail-label">Claimable</p>
-            <div className="admin-task-claimable-btns" style={{ marginBottom: 16 }}>
+            <p className="admin-detail-label" style={{ marginBottom: 6 }}>Claimable</p>
+            <div className="admin-task-claimable-btns" style={{ marginBottom: 24 }}>
               <button
                 type="button"
                 className={`btn admin-claimable-btn ${newTaskEnabled === true ? "is-selected" : ""}`}
