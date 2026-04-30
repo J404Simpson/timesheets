@@ -26,7 +26,7 @@ function ConfirmModal({ open, title, message, onConfirm, onCancel, confirmLabel 
 }
 import Recent from "./Recent";
 import ViewFooter from "./ViewFooter";
-import { getTasksForProjectPhase, getTasksForProjectPhaseWithInactive, deactivateTask, getAllTasks, updateTaskEnabled, updateTaskActive, type Task } from "../api/task";
+import { getTasksForProjectPhase, getTasksForProjectPhaseWithInactive, deactivateTask, getAllTasks, updateTaskEnabled, updateTaskActive, createTask, type Task } from "../api/task";
 import { getDepartments, type Department } from "../api/department";
 import {
   createProject,
@@ -106,6 +106,13 @@ export default function Admin({
   const [editTaskActiveFilter, setEditTaskActiveFilter] = useState<"active" | "inactive">("active");
   const [savingTaskEnabledId, setSavingTaskEnabledId] = useState<number | null>(null);
   const [savingTaskActiveId, setSavingTaskActiveId] = useState<number | null>(null);
+  const [showNewTaskModal, setShowNewTaskModal] = useState(false);
+  const [newTaskName, setNewTaskName] = useState("");
+  const [newTaskDepartmentId, setNewTaskDepartmentId] = useState<number | null>(null);
+  const [newTaskPhaseId, setNewTaskPhaseId] = useState<number | null>(null);
+  const [newTaskEnabled, setNewTaskEnabled] = useState(true);
+  const [savingNewTask, setSavingNewTask] = useState(false);
+  const [newTaskError, setNewTaskError] = useState<string | null>(null);
   const [users, setUsers] = useState<AdminUser[]>([]);
   const [selectedUserId, setSelectedUserId] = useState<number | null>(null);
   const [loadingUsers, setLoadingUsers] = useState(true);
@@ -283,6 +290,40 @@ export default function Admin({
       setSavingProject(false);
     }
   };
+
+  const handleSaveNewTask = async () => {
+    const trimmed = newTaskName.trim();
+    if (!trimmed) {
+      setNewTaskError("Task name is required.");
+      return;
+    }
+    if (!newTaskDepartmentId) {
+      setNewTaskError("Department is required.");
+      return;
+    }
+    if (!newTaskPhaseId) {
+      setNewTaskError("Phase is required.");
+      return;
+    }
+    setSavingNewTask(true);
+    setNewTaskError(null);
+    try {
+      const task = await createTask(trimmed, newTaskDepartmentId, newTaskPhaseId, newTaskEnabled);
+      setShowNewTaskModal(false);
+      setNewTaskName("");
+      setNewTaskDepartmentId(null);
+      setNewTaskPhaseId(null);
+      setNewTaskEnabled(true);
+      await loadAllTasks();
+      setSelectedEditTaskId(task.id);
+    } catch (err) {
+      const errorMsg = err instanceof Error ? err.message : "Failed to create task. Please try again.";
+      setNewTaskError(errorMsg);
+    } finally {
+      setSavingNewTask(false);
+    }
+  };
+
   useEffect(() => {
     loadUsers();
   }, []);
@@ -420,6 +461,18 @@ export default function Admin({
       .map(([id, name]) => ({ id, name }))
       .sort((a, b) => a.name.localeCompare(b.name));
   }, [projectEditTasks, editTaskDeptFilter, editTaskActiveFilter]);
+
+  const allAvailablePhases = useMemo(() => {
+    const phaseMap = new Map<number, string>();
+    for (const task of projectEditTasks) {
+      for (const phase of task.phases ?? []) {
+        phaseMap.set(phase.id, phase.name);
+      }
+    }
+    return Array.from(phaseMap.entries())
+      .map(([id, name]) => ({ id, name }))
+      .sort((a, b) => a.name.localeCompare(b.name));
+  }, [projectEditTasks]);
 
   const filteredEditTasks = useMemo(() => {
     return projectEditTasks
@@ -1062,12 +1115,21 @@ export default function Admin({
               type="button"
               className="btn primary week-nav-create"
               onClick={() => {
-                setNewProjectName("");
-                setNewProjectError(null);
-                setShowNewProjectModal(true);
+                if (showEditTasksView) {
+                  setNewTaskName("");
+                  setNewTaskDepartmentId(null);
+                  setNewTaskPhaseId(null);
+                  setNewTaskEnabled(true);
+                  setNewTaskError(null);
+                  setShowNewTaskModal(true);
+                } else {
+                  setNewProjectName("");
+                  setNewProjectError(null);
+                  setShowNewProjectModal(true);
+                }
               }}
             >
-              New Project
+              {showEditTasksView ? "New Task" : "New Project"}
             </button>
           ) : undefined
         }
@@ -1115,6 +1177,84 @@ export default function Admin({
                 disabled={savingProject || !newProjectName.trim()}
               >
                 {savingProject ? "Saving..." : "Save"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showNewTaskModal && (
+        <div className="modal-overlay" onClick={() => setShowNewTaskModal(false)}>
+          <div className="modal-box" onClick={(e) => e.stopPropagation()}>
+            <h3 className="modal-title" style={{ textAlign: 'center' }}>New Task</h3>
+            <input
+              id="new-task-name"
+              className="modal-input"
+              type="text"
+              placeholder="Enter task name"
+              value={newTaskName}
+              onChange={(e) => setNewTaskName(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && handleSaveNewTask()}
+              autoFocus
+              disabled={savingNewTask}
+            />
+
+            <p className="admin-detail-label" style={{ marginTop: 16 }}>Department</p>
+            <select
+              className="admin-dept-filter admin-record-status-btn"
+              style={{ minHeight: 32, borderRadius: 8, padding: "0 12px", fontSize: 14, width: "100%", marginBottom: 16 }}
+              value={newTaskDepartmentId ?? ""}
+              onChange={(e) => setNewTaskDepartmentId(e.target.value === "" ? null : Number(e.target.value))}
+              disabled={savingNewTask}
+            >
+              <option value="">Select Department</option>
+              {departments.map((dept) => (
+                <option key={dept.id} value={dept.id}>{dept.name}</option>
+              ))}
+            </select>
+
+            <p className="admin-detail-label">Phase</p>
+            <select
+              className="admin-dept-filter admin-record-status-btn"
+              style={{ minHeight: 32, borderRadius: 8, padding: "0 12px", fontSize: 14, width: "100%", marginBottom: 16 }}
+              value={newTaskPhaseId ?? ""}
+              onChange={(e) => setNewTaskPhaseId(e.target.value === "" ? null : Number(e.target.value))}
+              disabled={savingNewTask}
+            >
+              <option value="">Select Phase</option>
+              {allAvailablePhases.map((phase) => (
+                <option key={phase.id} value={phase.id}>{phase.name}</option>
+              ))}
+            </select>
+
+            <p className="admin-detail-label">Claimable</p>
+            <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 16 }}>
+              <span
+                className={`admin-enabled-indicator ${newTaskEnabled ? "is-enabled" : ""}`}
+                style={{ cursor: savingNewTask ? "not-allowed" : "pointer" }}
+                title={newTaskEnabled ? "Enabled" : "Disabled"}
+                onClick={() => !savingNewTask && setNewTaskEnabled(!newTaskEnabled)}
+              />
+              <span className="muted">{newTaskEnabled ? "Claimable" : "Not Claimable"}</span>
+            </div>
+
+            {newTaskError && <p className="modal-error">{newTaskError}</p>}
+            <div className="modal-actions">
+              <button
+                type="button"
+                className="btn secondary"
+                onClick={() => setShowNewTaskModal(false)}
+                disabled={savingNewTask}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                className="btn primary"
+                onClick={handleSaveNewTask}
+                disabled={savingNewTask || !newTaskName.trim() || !newTaskDepartmentId || !newTaskPhaseId}
+              >
+                {savingNewTask ? "Saving..." : "Save"}
               </button>
             </div>
           </div>
