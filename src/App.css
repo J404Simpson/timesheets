@@ -1008,8 +1008,8 @@ select.admin-record-status-btn,
 
 .admin-detail-label {
   font-weight: 600;
-  font-size: 13px;
-  color: var(--muted);
+  font-size: 16px;
+  color: #000;
   text-transform: none;
   letter-spacing: normal;
   margin: 14px 0 4px 0;

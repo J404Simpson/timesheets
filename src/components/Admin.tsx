@@ -1204,10 +1204,10 @@ export default function Admin({
               disabled={savingNewTask}
             />
 
-            <p className="admin-detail-label" style={{ marginTop: 8, marginBottom: 3 }}>Department</p>
+            <p className="admin-detail-label">Department</p>
             <select
               className="admin-dept-filter admin-record-status-btn"
-              style={{ minHeight: 32, borderRadius: 8, padding: "0 12px", fontSize: 14, width: "100%", marginBottom: 6 }}
+              style={{ minHeight: 32, borderRadius: 8, padding: "0 12px", fontSize: 14, width: "100%" }}
               value={newTaskDepartmentId ?? ""}
               onChange={(e) => setNewTaskDepartmentId(e.target.value === "" ? null : Number(e.target.value))}
               disabled={savingNewTask}
@@ -1218,10 +1218,10 @@ export default function Admin({
               ))}
             </select>
 
-            <p className="admin-detail-label" style={{ marginTop: 8, marginBottom: 3 }}>Phase</p>
+            <p className="admin-detail-label">Phase</p>
             <select
               className="admin-dept-filter admin-record-status-btn"
-              style={{ minHeight: 32, borderRadius: 8, padding: "0 12px", fontSize: 14, width: "100%", marginBottom: 6 }}
+              style={{ minHeight: 32, borderRadius: 8, padding: "0 12px", fontSize: 14, width: "100%" }}
               value={newTaskPhaseId ?? ""}
               onChange={(e) => setNewTaskPhaseId(e.target.value === "" ? null : Number(e.target.value))}
               disabled={savingNewTask}
@@ -1232,7 +1232,7 @@ export default function Admin({
               ))}
             </select>
 
-            <p className="admin-detail-label" style={{ marginTop: 8, marginBottom: 3 }}>Claimable</p>
+            <p className="admin-detail-label">Claimable</p>
             <div className="admin-task-claimable-btns" style={{ marginBottom: 16 }}>
               <button
                 type="button"
