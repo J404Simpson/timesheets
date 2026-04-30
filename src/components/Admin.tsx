@@ -1193,7 +1193,8 @@ export default function Admin({
             <h3 className="modal-title" style={{ textAlign: 'center' }}>New Task</h3>
             <input
               id="new-task-name"
-              className="modal-input"
+              className="modal-input new-task-name-input"
+              style={{ marginTop: 2 }}
               type="text"
               placeholder="Enter task name"
               value={newTaskName}
@@ -1217,7 +1218,7 @@ export default function Admin({
               ))}
             </select>
 
-            <p className="admin-detail-label" style={{ marginBottom: 3 }}>Phase</p>
+            <p className="admin-detail-label" style={{ marginTop: 8, marginBottom: 3 }}>Phase</p>
             <select
               className="admin-dept-filter admin-record-status-btn"
               style={{ minHeight: 32, borderRadius: 8, padding: "0 12px", fontSize: 14, width: "100%", marginBottom: 6 }}
@@ -1231,7 +1232,7 @@ export default function Admin({
               ))}
             </select>
 
-            <p className="admin-detail-label" style={{ marginBottom: 3 }}>Claimable</p>
+            <p className="admin-detail-label" style={{ marginTop: 8, marginBottom: 3 }}>Claimable</p>
             <div className="admin-task-claimable-btns" style={{ marginBottom: 16 }}>
               <button
                 type="button"

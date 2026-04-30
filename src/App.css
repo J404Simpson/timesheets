@@ -437,6 +437,11 @@ body{
   box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
 }
 
+.new-task-name-input:focus {
+  border-color: rgba(15, 23, 42, 0.45);
+  box-shadow: none;
+}
+
 .modal-error {
   margin: 0;
   color: #dc2626;
@@ -1005,8 +1010,8 @@ select.admin-record-status-btn,
   font-weight: 600;
   font-size: 13px;
   color: var(--muted);
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
+  text-transform: none;
+  letter-spacing: normal;
   margin: 14px 0 4px 0;
 }
 
