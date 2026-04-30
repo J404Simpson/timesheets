@@ -110,7 +110,7 @@ export default function Admin({
   const [newTaskName, setNewTaskName] = useState("");
   const [newTaskDepartmentId, setNewTaskDepartmentId] = useState<number | null>(null);
   const [newTaskPhaseId, setNewTaskPhaseId] = useState<number | null>(null);
-  const [newTaskEnabled, setNewTaskEnabled] = useState(true);
+  const [newTaskEnabled, setNewTaskEnabled] = useState<boolean | null>(null);
   const [savingNewTask, setSavingNewTask] = useState(false);
   const [newTaskError, setNewTaskError] = useState<string | null>(null);
   const [users, setUsers] = useState<AdminUser[]>([]);
@@ -305,6 +305,10 @@ export default function Admin({
       setNewTaskError("Phase is required.");
       return;
     }
+    if (newTaskEnabled === null) {
+      setNewTaskError("Claimable selection is required.");
+      return;
+    }
     setSavingNewTask(true);
     setNewTaskError(null);
     try {
@@ -313,7 +317,7 @@ export default function Admin({
       setNewTaskName("");
       setNewTaskDepartmentId(null);
       setNewTaskPhaseId(null);
-      setNewTaskEnabled(true);
+      setNewTaskEnabled(null);
       await loadAllTasks();
       setSelectedEditTaskId(task.id);
     } catch (err) {
@@ -1119,7 +1123,7 @@ export default function Admin({
                   setNewTaskName("");
                   setNewTaskDepartmentId(null);
                   setNewTaskPhaseId(null);
-                  setNewTaskEnabled(true);
+                  setNewTaskEnabled(null);
                   setNewTaskError(null);
                   setShowNewTaskModal(true);
                 } else {
@@ -1228,14 +1232,23 @@ export default function Admin({
             </select>
 
             <p className="admin-detail-label">Claimable</p>
-            <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 16 }}>
-              <span
-                className={`admin-enabled-indicator ${newTaskEnabled ? "is-enabled" : ""}`}
-                style={{ cursor: savingNewTask ? "not-allowed" : "pointer" }}
-                title={newTaskEnabled ? "Enabled" : "Disabled"}
-                onClick={() => !savingNewTask && setNewTaskEnabled(!newTaskEnabled)}
-              />
-              <span className="muted">{newTaskEnabled ? "Claimable" : "Not Claimable"}</span>
+            <div className="admin-task-claimable-btns" style={{ marginBottom: 16 }}>
+              <button
+                type="button"
+                className={`btn admin-claimable-btn ${newTaskEnabled === true ? "is-selected" : ""}`}
+                onClick={() => setNewTaskEnabled(true)}
+                disabled={savingNewTask}
+              >
+                Claimable
+              </button>
+              <button
+                type="button"
+                className={`btn admin-claimable-btn ${newTaskEnabled === false ? "is-selected" : ""}`}
+                onClick={() => setNewTaskEnabled(false)}
+                disabled={savingNewTask}
+              >
+                Un-Claimable
+              </button>
             </div>
 
             {newTaskError && <p className="modal-error">{newTaskError}</p>}
@@ -1252,7 +1265,7 @@ export default function Admin({
                 type="button"
                 className="btn primary"
                 onClick={handleSaveNewTask}
-                disabled={savingNewTask || !newTaskName.trim() || !newTaskDepartmentId || !newTaskPhaseId}
+                disabled={savingNewTask || !newTaskName.trim() || !newTaskDepartmentId || !newTaskPhaseId || newTaskEnabled === null}
               >
                 {savingNewTask ? "Saving..." : "Save"}
               </button>
