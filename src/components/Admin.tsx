@@ -1204,6 +1204,7 @@ export default function Admin({
               disabled={savingNewTask}
             />
 
+            <div style={{ display: "flex", flexDirection: "column" }}>
             <p className="admin-detail-label">Department</p>
             <select
               className="admin-dept-filter admin-record-status-btn"
@@ -1233,7 +1234,7 @@ export default function Admin({
             </select>
 
             <p className="admin-detail-label">Claimable</p>
-            <div className="admin-task-claimable-btns" style={{ marginBottom: 16 }}>
+            <div className="admin-task-claimable-btns">
               <button
                 type="button"
                 className={`btn admin-claimable-btn ${newTaskEnabled === true ? "is-selected" : ""}`}
@@ -1250,6 +1251,7 @@ export default function Admin({
               >
                 Un-Claimable
               </button>
+            </div>
             </div>
 
             {newTaskError && <p className="modal-error">{newTaskError}</p>}
