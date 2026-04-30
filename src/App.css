@@ -964,6 +964,72 @@ body{
   opacity: 0.7;
 }
 
+.admin-task-detail {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  padding: 12px;
+  box-sizing: border-box;
+}
+
+.admin-task-detail-body {
+  flex: 1;
+}
+
+.admin-detail-label {
+  font-weight: 600;
+  font-size: 13px;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin: 14px 0 4px 0;
+}
+
+.admin-detail-label:first-child {
+  margin-top: 0;
+}
+
+.admin-detail-box {
+  font-size: 14px;
+  color: var(--text);
+  border: 1px solid rgba(15, 23, 42, 0.15);
+  border-radius: 6px;
+  background: #ffffff;
+  padding: 6px 10px;
+  min-height: 34px;
+  display: flex;
+  align-items: center;
+}
+
+.admin-task-claimable-btns {
+  display: flex;
+  gap: 8px;
+  padding-top: 12px;
+}
+
+.admin-claimable-btn {
+  flex: 1;
+  text-align: center;
+  justify-content: center;
+  border-radius: 20px;
+  border: 1px solid rgba(15, 23, 42, 0.15);
+  background: #ffffff;
+  color: var(--text);
+  font-size: 14px;
+  padding: 8px 12px;
+}
+
+.admin-claimable-btn.is-selected {
+  background: var(--accent);
+  color: #ffffff;
+  border-color: var(--accent);
+}
+
+.admin-claimable-btn:disabled {
+  cursor: default;
+  opacity: 1;
+}
+
 .admin-task-item {
   flex-direction: row;
   align-items: center;

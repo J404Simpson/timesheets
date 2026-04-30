@@ -714,33 +714,39 @@ export default function Admin({
                   <h3>Details</h3>
                 </div>
                 {selectedEditTask ? (
-                  <div style={{ padding: 12 }}>
-                    <div
-                      style={{
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "space-between",
-                        paddingBottom: 12,
-                        borderBottom: "1px solid rgba(15, 23, 42, 0.08)",
-                      }}
-                    >
-                      <strong>Enabled</strong>
-                      <button
-                        type="button"
-                        className="admin-enabled-toggle-btn"
-                        onClick={handleToggleEditTaskEnabled}
-                        disabled={savingTaskEnabledId === selectedEditTask.id}
-                        title={selectedEditTask.enabled ? "Disable task" : "Enable task"}
-                      >
-                        <span
-                          className={`admin-enabled-indicator ${selectedEditTask.enabled ? "is-enabled" : ""}`}
-                        />
-                      </button>
+                  <div className="admin-task-detail">
+                    <div className="admin-task-detail-body">
+                      <p className="admin-detail-label">Phase</p>
+                      <div className="admin-detail-box">
+                        {selectedEditTask.phases && selectedEditTask.phases.length > 0
+                          ? selectedEditTask.phases.map((ph) => ph.name).join(", ")
+                          : <span className="muted">No phase assigned</span>}
+                      </div>
+
+                      <p className="admin-detail-label">Department</p>
+                      <div className="admin-detail-box">
+                        {getDepartmentName(selectedEditTask.department_id)}
+                      </div>
                     </div>
 
-                    <p style={{ marginTop: 12 }}>
-                      <strong>Department:</strong> {getDepartmentName(selectedEditTask.department_id)}
-                    </p>
+                    <div className="admin-task-claimable-btns">
+                      <button
+                        type="button"
+                        className={`btn admin-claimable-btn ${selectedEditTask.enabled ? "is-selected" : ""}`}
+                        onClick={() => !selectedEditTask.enabled && handleToggleEditTaskEnabled()}
+                        disabled={savingTaskEnabledId === selectedEditTask.id || selectedEditTask.enabled}
+                      >
+                        Claimable
+                      </button>
+                      <button
+                        type="button"
+                        className={`btn admin-claimable-btn ${!selectedEditTask.enabled ? "is-selected" : ""}`}
+                        onClick={() => selectedEditTask.enabled && handleToggleEditTaskEnabled()}
+                        disabled={savingTaskEnabledId === selectedEditTask.id || !selectedEditTask.enabled}
+                      >
+                        Un-Claimable
+                      </button>
+                    </div>
                   </div>
                 ) : (
                   <p className="muted">Select a task to view details.</p>
