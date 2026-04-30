@@ -103,7 +103,7 @@ export default function Admin({
   const [selectedEditTaskId, setSelectedEditTaskId] = useState<number | null>(null);
   const [editTaskDeptFilter, setEditTaskDeptFilter] = useState<number | null>(null);
   const [editTaskPhaseFilter, setEditTaskPhaseFilter] = useState<number | null>(null);
-  const [editTaskActiveFilter, setEditTaskActiveFilter] = useState<"all" | "active" | "inactive">("all");
+  const [editTaskActiveFilter, setEditTaskActiveFilter] = useState<"active" | "inactive">("active");
   const [savingTaskEnabledId, setSavingTaskEnabledId] = useState<number | null>(null);
   const [savingTaskActiveId, setSavingTaskActiveId] = useState<number | null>(null);
   const [users, setUsers] = useState<AdminUser[]>([]);
@@ -416,7 +416,6 @@ export default function Admin({
     return projectEditTasks
       .filter((task) => editTaskDeptFilter === null || task.department_id === editTaskDeptFilter)
       .filter((task) => {
-        if (editTaskActiveFilter === "all") return true;
         if (editTaskActiveFilter === "active") return task.active !== false;
         return task.active === false;
       })
@@ -755,9 +754,8 @@ export default function Admin({
                       className="admin-dept-filter admin-record-status-btn"
                       style={{ minHeight: 32, borderRadius: 8, padding: "0 12px", fontSize: 14 }}
                       value={editTaskActiveFilter}
-                      onChange={(e) => setEditTaskActiveFilter(e.target.value as "all" | "active" | "inactive")}
+                      onChange={(e) => setEditTaskActiveFilter(e.target.value as "active" | "inactive")}
                     >
-                      <option value="all">All</option>
                       <option value="active">Active</option>
                       <option value="inactive">Inactive</option>
                     </select>
@@ -803,22 +801,18 @@ export default function Admin({
                   <div className="admin-task-detail">
                     <div className="admin-task-detail-body">
                       <p className="admin-detail-label">Status</p>
-                      <div className="admin-task-claimable-btns" style={{ paddingTop: 0 }}>
+                      <div style={{ paddingTop: 0 }}>
                         <button
                           type="button"
-                          className={`btn admin-claimable-btn ${selectedEditTask.active ? "is-selected" : ""}`}
-                          onClick={() => !selectedEditTask.active && handleSetEditTaskActive(true)}
-                          disabled={savingTaskActiveId === selectedEditTask.id || selectedEditTask.active}
+                          className="btn secondary admin-record-status-btn"
+                          onClick={() => handleSetEditTaskActive(!selectedEditTask.active)}
+                          disabled={savingTaskActiveId === selectedEditTask.id}
                         >
-                          Active
-                        </button>
-                        <button
-                          type="button"
-                          className={`btn admin-claimable-btn ${!selectedEditTask.active ? "is-selected" : ""}`}
-                          onClick={() => selectedEditTask.active && handleSetEditTaskActive(false)}
-                          disabled={savingTaskActiveId === selectedEditTask.id || !selectedEditTask.active}
-                        >
-                          Inactive
+                          {savingTaskActiveId === selectedEditTask.id
+                            ? "Saving..."
+                            : selectedEditTask.active
+                              ? "Active"
+                              : "Inactive"}
                         </button>
                       </div>
 
