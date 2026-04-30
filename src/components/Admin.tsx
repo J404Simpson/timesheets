@@ -635,11 +635,11 @@ export default function Admin({
           )}
 
           {activeSection === "projects" && showEditTasksView && (
-            <div className="admin-projects-layout">
+            <div className="admin-edit-tasks-layout">
               <aside className="admin-users-list-panel">
                 <div className="admin-users-list-header">
                   <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-                    <h3 style={{ margin: 0 }}>Project Tasks</h3>
+                    <h3 style={{ margin: 0 }}>Tasks</h3>
                     {departments.length > 0 && (
                       <select
                         className="admin-dept-filter admin-record-status-btn"

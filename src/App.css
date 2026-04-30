@@ -779,6 +779,15 @@ body{
   overflow: hidden;
 }
 
+.admin-edit-tasks-layout {
+  display: grid;
+  grid-template-columns: 1fr 2fr;
+  gap: 12px;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+
 .admin-users-list-panel,
 .admin-users-recent-panel {
   border: 1px solid rgba(15, 23, 42, 0.08);
