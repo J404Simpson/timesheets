@@ -26,7 +26,7 @@ function ConfirmModal({ open, title, message, onConfirm, onCancel, confirmLabel 
 }
 import Recent from "./Recent";
 import ViewFooter from "./ViewFooter";
-import { getTasksForProjectPhase, getTasksForProjectPhaseWithInactive, deactivateTask, getAllTasks, updateTaskEnabled, type Task } from "../api/task";
+import { getTasksForProjectPhase, getTasksForProjectPhaseWithInactive, deactivateTask, getAllTasks, updateTaskEnabled, updateTaskActive, type Task } from "../api/task";
 import { getDepartments, type Department } from "../api/department";
 import {
   createProject,
@@ -101,7 +101,11 @@ export default function Admin({
   const [loadingAllTasks, setLoadingAllTasks] = useState(false);
   const [allTasksError, setAllTasksError] = useState<string | null>(null);
   const [selectedEditTaskId, setSelectedEditTaskId] = useState<number | null>(null);
+  const [editTaskDeptFilter, setEditTaskDeptFilter] = useState<number | null>(null);
+  const [editTaskPhaseFilter, setEditTaskPhaseFilter] = useState<number | null>(null);
+  const [editTaskActiveFilter, setEditTaskActiveFilter] = useState<"all" | "active" | "inactive">("all");
   const [savingTaskEnabledId, setSavingTaskEnabledId] = useState<number | null>(null);
+  const [savingTaskActiveId, setSavingTaskActiveId] = useState<number | null>(null);
   const [users, setUsers] = useState<AdminUser[]>([]);
   const [selectedUserId, setSelectedUserId] = useState<number | null>(null);
   const [loadingUsers, setLoadingUsers] = useState(true);
@@ -388,6 +392,47 @@ export default function Admin({
     [allTasks, selectedEditTaskId]
   );
 
+  const projectEditTasks = useMemo(
+    () => allTasks.filter((task) => task.task_type === "PROJECT"),
+    [allTasks]
+  );
+
+  const editTaskPhaseOptions = useMemo(() => {
+    const phaseMap = new Map<number, string>();
+    for (const task of projectEditTasks) {
+      if (editTaskDeptFilter !== null && task.department_id !== editTaskDeptFilter) continue;
+      if (editTaskActiveFilter === "active" && task.active === false) continue;
+      if (editTaskActiveFilter === "inactive" && task.active !== false) continue;
+      for (const phase of task.phases ?? []) {
+        phaseMap.set(phase.id, phase.name);
+      }
+    }
+    return Array.from(phaseMap.entries())
+      .map(([id, name]) => ({ id, name }))
+      .sort((a, b) => a.name.localeCompare(b.name));
+  }, [projectEditTasks, editTaskDeptFilter, editTaskActiveFilter]);
+
+  const filteredEditTasks = useMemo(() => {
+    return projectEditTasks
+      .filter((task) => editTaskDeptFilter === null || task.department_id === editTaskDeptFilter)
+      .filter((task) => {
+        if (editTaskActiveFilter === "all") return true;
+        if (editTaskActiveFilter === "active") return task.active !== false;
+        return task.active === false;
+      })
+      .filter((task) => editTaskPhaseFilter === null || (task.phases ?? []).some((phase) => phase.id === editTaskPhaseFilter));
+  }, [projectEditTasks, editTaskDeptFilter, editTaskActiveFilter, editTaskPhaseFilter]);
+
+  useEffect(() => {
+    if (filteredEditTasks.length === 0) {
+      setSelectedEditTaskId(null);
+      return;
+    }
+    if (!selectedEditTaskId || !filteredEditTasks.some((task) => task.id === selectedEditTaskId)) {
+      setSelectedEditTaskId(filteredEditTasks[0].id);
+    }
+  }, [filteredEditTasks, selectedEditTaskId]);
+
   const getDepartmentName = (departmentId?: number | null) => {
     if (!departmentId) return "No department";
     return departments.find((department) => department.id === departmentId)?.name ?? "No department";
@@ -404,6 +449,24 @@ export default function Admin({
       setAllTasksError("Failed to update task enabled state.");
     } finally {
       setSavingTaskEnabledId(null);
+    }
+  };
+
+  const handleSetEditTaskActive = async (active: boolean) => {
+    if (!selectedEditTask) return;
+    setSavingTaskActiveId(selectedEditTask.id);
+    setAllTasksError(null);
+    try {
+      const updatedTask = await updateTaskActive(selectedEditTask.id, active);
+      setAllTasks((prev) => prev.map((task) => (
+        task.id === updatedTask.id
+          ? { ...task, active: updatedTask.active }
+          : task
+      )));
+    } catch {
+      setAllTasksError("Failed to update task active state.");
+    } finally {
+      setSavingTaskActiveId(null);
     }
   };
 
@@ -665,8 +728,11 @@ export default function Admin({
                       <select
                         className="admin-dept-filter admin-record-status-btn"
                         style={{ minHeight: 32, borderRadius: 8, padding: "0 12px", fontSize: 14 }}
-                        value={taskDeptFilter ?? ""}
-                        onChange={(e) => setTaskDeptFilter(e.target.value === "" ? null : Number(e.target.value))}
+                        value={editTaskDeptFilter ?? ""}
+                        onChange={(e) => {
+                          setEditTaskDeptFilter(e.target.value === "" ? null : Number(e.target.value));
+                          setEditTaskPhaseFilter(null);
+                        }}
                       >
                         <option value="">All Departments</option>
                         {departments.map((d) => (
@@ -674,6 +740,27 @@ export default function Admin({
                         ))}
                       </select>
                     )}
+                    <select
+                      className="admin-dept-filter admin-record-status-btn"
+                      style={{ minHeight: 32, borderRadius: 8, padding: "0 12px", fontSize: 14 }}
+                      value={editTaskPhaseFilter ?? ""}
+                      onChange={(e) => setEditTaskPhaseFilter(e.target.value === "" ? null : Number(e.target.value))}
+                    >
+                      <option value="">All Phases</option>
+                      {editTaskPhaseOptions.map((phase) => (
+                        <option key={phase.id} value={phase.id}>{phase.name}</option>
+                      ))}
+                    </select>
+                    <select
+                      className="admin-dept-filter admin-record-status-btn"
+                      style={{ minHeight: 32, borderRadius: 8, padding: "0 12px", fontSize: 14 }}
+                      value={editTaskActiveFilter}
+                      onChange={(e) => setEditTaskActiveFilter(e.target.value as "all" | "active" | "inactive")}
+                    >
+                      <option value="all">All</option>
+                      <option value="active">Active</option>
+                      <option value="inactive">Inactive</option>
+                    </select>
                   </div>
                 </div>
 
@@ -683,12 +770,11 @@ export default function Admin({
                   <p className="muted">Loading all tasks...</p>
                 ) : allTasks.length === 0 ? (
                   <p className="muted">No tasks found.</p>
+                ) : filteredEditTasks.length === 0 ? (
+                  <p className="muted">No tasks match the selected filters.</p>
                 ) : (
                   <ul className="admin-user-list">
-                    {allTasks
-                      .filter((task) => task.task_type === "PROJECT")
-                      .filter((task) => taskDeptFilter === null || task.department_id === taskDeptFilter)
-                      .map((task) => (
+                    {filteredEditTasks.map((task) => (
                         <li key={task.id}>
                           <div className={`admin-user-item admin-record-item ${selectedEditTaskId === task.id ? "is-active" : ""}`}>
                             <button
@@ -716,6 +802,26 @@ export default function Admin({
                 {selectedEditTask ? (
                   <div className="admin-task-detail">
                     <div className="admin-task-detail-body">
+                      <p className="admin-detail-label">Status</p>
+                      <div className="admin-task-claimable-btns" style={{ paddingTop: 0 }}>
+                        <button
+                          type="button"
+                          className={`btn admin-claimable-btn ${selectedEditTask.active ? "is-selected" : ""}`}
+                          onClick={() => !selectedEditTask.active && handleSetEditTaskActive(true)}
+                          disabled={savingTaskActiveId === selectedEditTask.id || selectedEditTask.active}
+                        >
+                          Active
+                        </button>
+                        <button
+                          type="button"
+                          className={`btn admin-claimable-btn ${!selectedEditTask.active ? "is-selected" : ""}`}
+                          onClick={() => selectedEditTask.active && handleSetEditTaskActive(false)}
+                          disabled={savingTaskActiveId === selectedEditTask.id || !selectedEditTask.active}
+                        >
+                          Inactive
+                        </button>
+                      </div>
+
                       <p className="admin-detail-label">Phase</p>
                       <div className="admin-detail-box">
                         {selectedEditTask.phases && selectedEditTask.phases.length > 0
