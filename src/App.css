@@ -949,6 +949,12 @@ body{
   text-align: center;
 }
 
+select.admin-record-status-btn,
+.admin-dept-filter.admin-record-status-btn {
+  text-align: left;
+  text-align-last: left;
+}
+
 .admin-enabled-indicator {
   display: inline-block;
   width: 34px;
@@ -963,7 +969,7 @@ body{
 }
 
 .admin-enabled-indicator.is-enabled {
-  background: #34c759;
+  background: var(--accent);
   border-color: #000;
 }
 

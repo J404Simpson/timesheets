@@ -86,7 +86,7 @@ export default function Admin({
   const [deactivatingTaskId, setDeactivatingTaskId] = useState<number | null>(null);
   const [showNewProjectModal, setShowNewProjectModal] = useState(false);
   const [confirmModal, setConfirmModal] = useState<{
-    type: "project" | "phase" | "task" | null;
+    type: "project" | "phase" | "task" | "edit-task-status" | null;
     id: number | null;
     name: string;
   }>({ type: null, id: null, name: "" });
@@ -253,6 +253,15 @@ export default function Admin({
       confirmMessage = `Are you sure you want to set task "${confirmModal.name}" to inactive?`;
       confirmLoading = deactivatingTaskId === confirmModal.id;
       confirmAction = confirmDeactivateTask;
+    } else if (confirmModal.type === "edit-task-status") {
+      confirmTitle = "Set Task Inactive";
+      confirmMessage = `Are you sure you want to set task "${confirmModal.name}" to inactive?`;
+      confirmLoading = savingTaskActiveId === confirmModal.id;
+      confirmAction = async () => {
+        if (!confirmModal.id) return;
+        await handleSetEditTaskActive(false, confirmModal.id);
+        setConfirmModal({ type: null, id: null, name: "" });
+      };
     }
   const handleSaveNewProject = async () => {
     const trimmed = newProjectName.trim();
@@ -451,12 +460,13 @@ export default function Admin({
     }
   };
 
-  const handleSetEditTaskActive = async (active: boolean) => {
-    if (!selectedEditTask) return;
-    setSavingTaskActiveId(selectedEditTask.id);
+  const handleSetEditTaskActive = async (active: boolean, taskIdOverride?: number) => {
+    const taskId = taskIdOverride ?? selectedEditTask?.id;
+    if (!taskId) return;
+    setSavingTaskActiveId(taskId);
     setAllTasksError(null);
     try {
-      const updatedTask = await updateTaskActive(selectedEditTask.id, active);
+      const updatedTask = await updateTaskActive(taskId, active);
       setAllTasks((prev) => prev.map((task) => (
         task.id === updatedTask.id
           ? { ...task, active: updatedTask.active }
@@ -467,6 +477,15 @@ export default function Admin({
     } finally {
       setSavingTaskActiveId(null);
     }
+  };
+
+  const handleEditTaskStatusToggle = () => {
+    if (!selectedEditTask) return;
+    if (selectedEditTask.active) {
+      setConfirmModal({ type: "edit-task-status", id: selectedEditTask.id, name: selectedEditTask.name });
+      return;
+    }
+    void handleSetEditTaskActive(true);
   };
 
   const getUserDisplayName = (user: AdminUser) => {
@@ -800,22 +819,6 @@ export default function Admin({
                 {selectedEditTask ? (
                   <div className="admin-task-detail">
                     <div className="admin-task-detail-body">
-                      <p className="admin-detail-label">Status</p>
-                      <div style={{ paddingTop: 0 }}>
-                        <button
-                          type="button"
-                          className="btn secondary admin-record-status-btn"
-                          onClick={() => handleSetEditTaskActive(!selectedEditTask.active)}
-                          disabled={savingTaskActiveId === selectedEditTask.id}
-                        >
-                          {savingTaskActiveId === selectedEditTask.id
-                            ? "Saving..."
-                            : selectedEditTask.active
-                              ? "Active"
-                              : "Inactive"}
-                        </button>
-                      </div>
-
                       <p className="admin-detail-label">Phase</p>
                       <div className="admin-detail-box">
                         {selectedEditTask.phases && selectedEditTask.phases.length > 0
@@ -826,6 +829,22 @@ export default function Admin({
                       <p className="admin-detail-label">Department</p>
                       <div className="admin-detail-box">
                         {getDepartmentName(selectedEditTask.department_id)}
+                      </div>
+
+                      <p className="admin-detail-label">Status</p>
+                      <div style={{ paddingTop: 0 }}>
+                        <button
+                          type="button"
+                          className="btn secondary admin-record-status-btn"
+                          onClick={handleEditTaskStatusToggle}
+                          disabled={savingTaskActiveId === selectedEditTask.id}
+                        >
+                          {savingTaskActiveId === selectedEditTask.id
+                            ? "Saving..."
+                            : selectedEditTask.active
+                              ? "Active"
+                              : "Inactive"}
+                        </button>
                       </div>
                     </div>
 
