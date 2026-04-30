@@ -640,21 +640,10 @@ export default function Admin({
                       .filter((task) => taskDeptFilter === null || task.department_id === taskDeptFilter)
                       .map((task) => (
                         <li key={task.id}>
-                          <div className={`admin-user-item admin-record-item`} style={{ minHeight: 42, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                          <div className="admin-user-item admin-record-item">
                             <span className="admin-user-name">{task.name}</span>
                             <span
-                              style={{
-                                display: 'inline-block',
-                                width: 20,
-                                height: 20,
-                                minWidth: 20,
-                                minHeight: 20,
-                                borderRadius: '50%',
-                                background: task.enabled ? '#34c759' : 'transparent',
-                                border: '2px solid ' + (task.enabled ? '#000' : 'rgba(15,23,42,0.06)'),
-                                transition: 'background 0.2s, border-color 0.2s',
-                                verticalAlign: 'middle',
-                              }}
+                              className={`admin-enabled-indicator ${task.enabled ? "is-enabled" : ""}`}
                               title={task.enabled ? 'Enabled' : 'Disabled'}
                             />
                           </div>
@@ -710,18 +699,7 @@ export default function Admin({
                               <span className="admin-user-name">{task.name}</span>
                             </button>
                             <span
-                              style={{
-                                display: "inline-block",
-                                width: 20,
-                                height: 20,
-                                minWidth: 20,
-                                minHeight: 20,
-                                borderRadius: "50%",
-                                background: task.enabled ? "#34c759" : "transparent",
-                                border: "2px solid " + (task.enabled ? "#000" : "rgba(15,23,42,0.06)"),
-                                transition: "background 0.2s, border-color 0.2s",
-                                verticalAlign: "middle",
-                              }}
+                              className={`admin-enabled-indicator ${task.enabled ? "is-enabled" : ""}`}
                               title={task.enabled ? "Enabled" : "Disabled"}
                             />
                           </div>
@@ -749,24 +727,13 @@ export default function Admin({
                       <strong>Enabled</strong>
                       <button
                         type="button"
+                        className="admin-enabled-toggle-btn"
                         onClick={handleToggleEditTaskEnabled}
                         disabled={savingTaskEnabledId === selectedEditTask.id}
                         title={selectedEditTask.enabled ? "Disable task" : "Enable task"}
-                        style={{ border: 0, background: "transparent", padding: 0, cursor: "pointer" }}
                       >
                         <span
-                          style={{
-                            display: "inline-block",
-                            width: 20,
-                            height: 20,
-                            minWidth: 20,
-                            minHeight: 20,
-                            borderRadius: "50%",
-                            background: selectedEditTask.enabled ? "#34c759" : "transparent",
-                            border: "2px solid " + (selectedEditTask.enabled ? "#000" : "rgba(15,23,42,0.06)"),
-                            transition: "background 0.2s, border-color 0.2s",
-                            verticalAlign: "middle",
-                          }}
+                          className={`admin-enabled-indicator ${selectedEditTask.enabled ? "is-enabled" : ""}`}
                         />
                       </button>
                     </div>

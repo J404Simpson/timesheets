@@ -930,6 +930,40 @@ body{
   text-align: center;
 }
 
+.admin-enabled-indicator {
+  display: inline-block;
+  width: 34px;
+  height: 34px;
+  min-width: 34px;
+  min-height: 34px;
+  border-radius: 50%;
+  background: transparent;
+  border: 2px solid rgba(15, 23, 42, 0.06);
+  transition: background 0.2s, border-color 0.2s;
+  vertical-align: middle;
+}
+
+.admin-enabled-indicator.is-enabled {
+  background: #34c759;
+  border-color: #000;
+}
+
+.admin-enabled-toggle-btn {
+  border: 0;
+  background: transparent;
+  padding: 0;
+  margin: 0;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.admin-enabled-toggle-btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
 .admin-task-item {
   flex-direction: row;
   align-items: center;
@@ -948,14 +982,14 @@ body{
 .admin-user-name {
   font-weight: 600;
   color: var(--text);
-  font-size: 0.78rem;
+  font-size: 16px;
   line-height: 1.15;
   display: block;
   overflow-wrap: anywhere;
 }
 
 .admin-user-email {
-  font-size: 0.78rem;
+  font-size: 16px;
 }
 
 .muted{ color:var(--muted); }
