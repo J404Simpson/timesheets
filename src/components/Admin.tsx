@@ -1234,7 +1234,7 @@ export default function Admin({
             </select>
 
             <p className="admin-detail-label">Claimable</p>
-            <div className="admin-task-claimable-btns">
+            <div className="admin-task-claimable-btns new-task-claimable-btns">
               <button
                 type="button"
                 className={`btn admin-claimable-btn ${newTaskEnabled === true ? "is-selected" : ""}`}
@@ -1255,7 +1255,7 @@ export default function Admin({
             </div>
 
             {newTaskError && <p className="modal-error">{newTaskError}</p>}
-            <div className="modal-actions">
+            <div className="modal-actions new-task-modal-actions">
               <button
                 type="button"
                 className="btn secondary"

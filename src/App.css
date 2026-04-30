@@ -1037,6 +1037,14 @@ select.admin-record-status-btn,
   padding-top: 12px;
 }
 
+.new-task-claimable-btns {
+  padding-top: 0;
+}
+
+.new-task-modal-actions {
+  margin-top: 12px;
+}
+
 .admin-claimable-btn {
   flex: 1;
   text-align: center;
