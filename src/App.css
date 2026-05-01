@@ -442,8 +442,8 @@ body{
   background: #ffffff;
 }
 
-.new-task-name-input:focus,
-.new-task-name-input:focus-visible {
+.modal-box .new-task-name-input:focus,
+.modal-box .new-task-name-input:focus-visible {
   outline: none;
   border-color: rgba(15, 23, 42, 0.45);
   box-shadow: none !important;
