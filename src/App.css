@@ -437,7 +437,7 @@ body{
   box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
 }
 
-.new-task-name-input {
+.modal-box .new-task-name-input {
   border-color: rgba(15, 23, 42, 0.15);
   background: #ffffff;
 }
