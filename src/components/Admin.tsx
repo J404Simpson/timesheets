@@ -76,6 +76,7 @@ export default function Admin({
   const [sustainingView, setSustainingView] = useState<"active" | "inactive">("active");
   const [loadingSustainingTasks, setLoadingSustainingTasks] = useState(false);
   const [selectedSustainingTaskId, setSelectedSustainingTaskId] = useState<number | null>(null);
+  const [sustainingDeptFilter, setSustainingDeptFilter] = useState<number | null>(null);
   const [departments, setDepartments] = useState<Department[]>([]);
   const [taskDeptFilter, setTaskDeptFilter] = useState<number | null>(null);
   const [loadingProjects, setLoadingProjects] = useState(false);
@@ -941,8 +942,8 @@ export default function Admin({
                       <select
                         className="admin-dept-filter admin-record-status-btn"
                         style={{ minHeight: 32, borderRadius: 8, padding: "0 12px", fontSize: 14 }}
-                        value={taskDeptFilter ?? ""}
-                        onChange={(e) => setTaskDeptFilter(e.target.value === "" ? null : Number(e.target.value))}
+                        value={sustainingDeptFilter ?? ""}
+                        onChange={(e) => setSustainingDeptFilter(e.target.value === "" ? null : Number(e.target.value))}
                       >
                         <option value="">All Departments</option>
                         {departments.map((d) => (
@@ -966,7 +967,7 @@ export default function Admin({
                 ) : (() => {
                   const filtered = sustainingTasks
                     .filter((t) => (sustainingView === "active" ? t.active : !t.active))
-                    .filter((t) => taskDeptFilter === null || (t.departments ?? []).some((d) => d.id === taskDeptFilter));
+                    .filter((t) => sustainingDeptFilter === null || (t.departments ?? []).some((d) => d.id === sustainingDeptFilter));
 
                   return filtered.length === 0 ? (
                     <p className="muted">No sustaining tasks found.</p>

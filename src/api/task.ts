@@ -11,6 +11,38 @@ export type Task = {
   departments?: { id: number; name: string }[];
 };
 
+function normalizeDepartments(value: unknown): { id: number; name: string }[] {
+  const toArray = (input: unknown): unknown[] => {
+    if (Array.isArray(input)) return input;
+    if (typeof input === "string") {
+      try {
+        const parsed = JSON.parse(input);
+        return Array.isArray(parsed) ? parsed : [];
+      } catch {
+        return [];
+      }
+    }
+    return [];
+  };
+
+  return toArray(value)
+    .map((item) => {
+      const obj = item as { id?: unknown; name?: unknown };
+      return {
+        id: typeof obj.id === "number" ? obj.id : Number(obj.id ?? 0),
+        name: typeof obj.name === "string" ? obj.name : String(obj.name ?? ""),
+      };
+    })
+    .filter((d) => Number.isFinite(d.id) && d.id > 0 && d.name.length > 0);
+}
+
+function normalizeTask(task: Task & { departments?: unknown }): Task {
+  return {
+    ...task,
+    departments: normalizeDepartments(task.departments),
+  };
+}
+
 export async function getTasksForPhaseAndEmployee(phaseId: number): Promise<Task[]> {
   const accessToken = await acquireTokenSilent([
     protectedResources.timesheetApi.scope,
@@ -45,7 +77,7 @@ export async function getTasksForProjectPhase(projectId: number, phaseId: number
     throw new Error(`Failed to fetch project phase tasks (${response.status})`);
   }
   const data = await response.json();
-  return data.tasks;
+  return (data.tasks ?? []).map(normalizeTask);
 }
 
 export async function getTasksForProjectPhaseWithInactive(projectId: number, phaseId: number, includeInactive = false): Promise<Task[]> {
@@ -66,7 +98,7 @@ export async function getTasksForProjectPhaseWithInactive(projectId: number, pha
     throw new Error(`Failed to fetch project phase tasks (${response.status})`);
   }
   const data = await response.json();
-  return data.tasks;
+  return (data.tasks ?? []).map(normalizeTask);
 }
 
 export async function deactivateTask(taskId: number): Promise<void> {
