@@ -683,9 +683,6 @@ export default function Admin({
                   </ul>
                 )}
               </aside>
-                      </ul>
-                    );
-                  })()
 
               <section className="admin-users-recent-panel admin-phase-panel">
                 <div className="admin-users-list-header">
@@ -964,20 +961,18 @@ export default function Admin({
                   </div>
                 </div>
 
-                {/* Errors intentionally not shown in UI */}
-
                 {loadingSustainingTasks ? (
                   <p className="muted">Loading sustaining tasks...</p>
+                ) : (() => {
+                  const filtered = sustainingTasks
+                    .filter((t) => (sustainingView === "active" ? t.active : !t.active))
+                    .filter((t) => taskDeptFilter === null || (t.departments ?? []).some((d) => d.id === taskDeptFilter));
+
+                  return filtered.length === 0 ? (
+                    <p className="muted">No sustaining tasks found.</p>
                   ) : (
-                    (() => {
-                      const filtered = sustainingTasks
-                        .filter((t) => (sustainingView === "active" ? t.active : !t.active))
-                        .filter((t) => taskDeptFilter === null || (t.departments ?? []).some((d) => d.id === taskDeptFilter));
-                      return filtered.length === 0 ? (
-                        <p className="muted">No sustaining tasks found.</p>
-                      ) : (
-                        <ul className="admin-user-list">
-                          {filtered.map((taskItem) => (
+                    <ul className="admin-user-list">
+                      {filtered.map((taskItem) => (
                         <li key={taskItem.id}>
                           <div className={`admin-user-item admin-record-item ${selectedSustainingTaskId === taskItem.id ? "is-active" : ""}`}>
                             <button
@@ -1004,58 +999,12 @@ export default function Admin({
                           </div>
                         </li>
                       ))}
-                  </ul>
-                )}
+                    </ul>
+                  );
+                })()}
               </aside>
-                        </ul>
-                      );
-                    })()
 
               <section className="admin-users-recent-panel">
-                  {/* Errors intentionally not shown in UI */}
-
-                  {loadingSustainingTasks ? (
-                    <p className="muted">Loading sustaining tasks...</p>
-                  ) : (() => {
-                    const filtered = sustainingTasks
-                      .filter((t) => (sustainingView === "active" ? t.active : !t.active))
-                      .filter((t) => taskDeptFilter === null || (t.departments ?? []).some((d) => d.id === taskDeptFilter));
-                    return filtered.length === 0 ? (
-                      <p className="muted">No sustaining tasks found.</p>
-                    ) : (
-                      <ul className="admin-user-list">
-                        {filtered.map((taskItem) => (
-                          <li key={taskItem.id}>
-                            <div className={`admin-user-item admin-record-item ${selectedSustainingTaskId === taskItem.id ? "is-active" : ""}`}>
-                              <button
-                                type="button"
-                                className="admin-record-select"
-                                onClick={() => setSelectedSustainingTaskId(taskItem.id)}
-                              >
-                                <span className="admin-user-name">{taskItem.name}</span>
-                              </button>
-                              {taskItem.active !== false ? (
-                                <button
-                                  type="button"
-                                  className="btn secondary admin-record-status-btn"
-                                  onClick={() => handleDeactivateTask(taskItem)}
-                                  title="Set inactive"
-                                  disabled={deactivatingTaskId === taskItem.id}
-                                >
-                                  {deactivatingTaskId === taskItem.id ? "Saving..." : "Active"}
-                                </button>
-                              ) : (
-                                <span className="admin-user-email muted">Inactive</span>
-                              )}
-                            </div>
-                          </li>
-                        ))}
-                      </ul>
-                    );
-                  })()}
-                </aside>
-
-                <section className="admin-users-recent-panel">
                 <div className="admin-users-list-header">
                   <h3>Details</h3>
                 </div>
