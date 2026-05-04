@@ -932,11 +932,24 @@ export default function Admin({
           )}
 
           {activeSection === "sustaining" && (
-            <div className="admin-projects-layout">
+            <div className="admin-edit-tasks-layout">
               <aside className="admin-users-list-panel">
                 <div className="admin-users-list-header">
                   <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-                    <h3 style={{ margin: 0 }}>Sustaining Tasks</h3>
+                    <h3 style={{ margin: 0 }}>Tasks</h3>
+                    {departments.length > 0 && (
+                      <select
+                        className="admin-dept-filter admin-record-status-btn"
+                        style={{ minHeight: 32, borderRadius: 8, padding: "0 12px", fontSize: 14 }}
+                        value={taskDeptFilter ?? ""}
+                        onChange={(e) => setTaskDeptFilter(e.target.value === "" ? null : Number(e.target.value))}
+                      >
+                        <option value="">All Departments</option>
+                        {departments.map((d) => (
+                          <option key={d.id} value={d.id}>{d.name}</option>
+                        ))}
+                      </select>
+                    )}
                     <button
                       type="button"
                       className="btn secondary"
@@ -994,14 +1007,35 @@ export default function Admin({
                 <div className="admin-users-list-header">
                   <h3>Details</h3>
                 </div>
-                {selectedSustainingTaskId ? (
-                  <div style={{ padding: 12 }}>
-                    <p><strong>Task:</strong> {sustainingTasks.find((t) => t.id === selectedSustainingTaskId)?.name}</p>
-                    <p className="muted">Toggle enabled state from the Tasks panel.</p>
-                  </div>
-                ) : (
-                  <p className="muted">Select a sustaining task to view details.</p>
-                )}
+                {(() => {
+                  const selectedSustainingTask = sustainingTasks.find((t) => t.id === selectedSustainingTaskId);
+                  return selectedSustainingTask ? (
+                    <div className="admin-task-detail">
+                      <div className="admin-task-detail-body">
+                        <p className="admin-detail-label">Departments</p>
+                        <div className="admin-detail-box">
+                          {selectedSustainingTask.departments && selectedSustainingTask.departments.length > 0
+                            ? selectedSustainingTask.departments.map((d) => d.name).join(", ")
+                            : <span className="muted">No department assigned</span>}
+                        </div>
+
+                        <p className="admin-detail-label">Status</p>
+                        <div style={{ paddingTop: 0 }}>
+                          <button
+                            type="button"
+                            className="btn secondary admin-record-status-btn"
+                            onClick={() => handleDeactivateTask(selectedSustainingTask)}
+                            disabled={deactivatingTaskId === selectedSustainingTask.id || !selectedSustainingTask.active}
+                          >
+                            {deactivatingTaskId === selectedSustainingTask.id ? "Saving..." : selectedSustainingTask.active ? "Active" : "Inactive"}
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  ) : (
+                    <p className="muted">Select a sustaining task to view details.</p>
+                  );
+                })()}
               </section>
             </div>
           )}
