@@ -1017,7 +1017,13 @@ export default function Admin({
                         <p className="admin-detail-label">Departments</p>
                         <div className="admin-detail-box">
                           {selectedSustainingTask.departments && selectedSustainingTask.departments.length > 0
-                            ? selectedSustainingTask.departments.map((d) => d.name).join(", ")
+                            ? (
+                              <div style={{ display: "flex", flexDirection: "column", gap: 2, width: "100%" }}>
+                                {selectedSustainingTask.departments.map((d) => (
+                                  <div key={d.id}>{d.name}</div>
+                                ))}
+                              </div>
+                            )
                             : <span className="muted">No department assigned</span>}
                         </div>
 
