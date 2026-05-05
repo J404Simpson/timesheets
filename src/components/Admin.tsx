@@ -1383,13 +1383,13 @@ export default function Admin({
               <p className="admin-detail-label">Departments</p>
               <div
                 className="admin-detail-box"
-                style={{ maxHeight: 180, overflowY: "auto", display: "flex", flexDirection: "column", gap: 6, padding: "8px 12px" }}
+                style={{ maxHeight: 180, overflowY: "auto", display: "flex", flexDirection: "column", alignItems: "flex-start", gap: 6, padding: "8px 12px" }}
               >
                 {departments.length === 0 ? (
                   <span className="muted">No departments available</span>
                 ) : (
                   departments.map((dept) => (
-                    <label key={dept.id} style={{ display: "flex", flexDirection: "row", alignItems: "center", gap: 8, cursor: "pointer", fontSize: 14, marginBottom: 0, fontWeight: 400 }}>
+                    <label key={dept.id} style={{ display: "flex", flexDirection: "row", alignItems: "center", justifyContent: "flex-start", width: "100%", gap: 8, cursor: "pointer", fontSize: 14, marginBottom: 0, fontWeight: 400, textAlign: "left" }}>
                       <input
                         type="checkbox"
                         checked={newSustainingTaskDeptIds.includes(dept.id)}
