@@ -26,7 +26,7 @@ function ConfirmModal({ open, title, message, onConfirm, onCancel, confirmLabel 
 }
 import Recent from "./Recent";
 import ViewFooter from "./ViewFooter";
-import { getTasksForProjectPhase, getTasksForProjectPhaseWithInactive, deactivateTask, getAllTasks, updateTaskEnabled, updateTaskActive, createTask, type Task } from "../api/task";
+import { getTasksForProjectPhase, getTasksForProjectPhaseWithInactive, deactivateTask, getAllTasks, updateTaskEnabled, updateTaskActive, createTask, createSustainingTask, type Task } from "../api/task";
 import { getDepartments, type Department } from "../api/department";
 import {
   createProject,
@@ -114,6 +114,12 @@ export default function Admin({
   const [newTaskEnabled, setNewTaskEnabled] = useState<boolean | null>(null);
   const [savingNewTask, setSavingNewTask] = useState(false);
   const [newTaskError, setNewTaskError] = useState<string | null>(null);
+  const [showNewSustainingTaskModal, setShowNewSustainingTaskModal] = useState(false);
+  const [newSustainingTaskName, setNewSustainingTaskName] = useState("");
+  const [newSustainingTaskDeptIds, setNewSustainingTaskDeptIds] = useState<number[]>([]);
+  const [newSustainingTaskEnabled, setNewSustainingTaskEnabled] = useState<boolean | null>(null);
+  const [newSustainingTaskError, setNewSustainingTaskError] = useState<string | null>(null);
+  const [savingNewSustainingTask, setSavingNewSustainingTask] = useState(false);
   const [users, setUsers] = useState<AdminUser[]>([]);
   const [selectedUserId, setSelectedUserId] = useState<number | null>(null);
   const [loadingUsers, setLoadingUsers] = useState(true);
@@ -326,6 +332,37 @@ export default function Admin({
       setNewTaskError(errorMsg);
     } finally {
       setSavingNewTask(false);
+    }
+  };
+
+  const handleSaveNewSustainingTask = async () => {
+    const trimmed = newSustainingTaskName.trim();
+    if (!trimmed) {
+      setNewSustainingTaskError("Task name is required.");
+      return;
+    }
+    if (newSustainingTaskDeptIds.length === 0) {
+      setNewSustainingTaskError("At least one department is required.");
+      return;
+    }
+    if (newSustainingTaskEnabled === null) {
+      setNewSustainingTaskError("Claimable selection is required.");
+      return;
+    }
+    setSavingNewSustainingTask(true);
+    setNewSustainingTaskError(null);
+    try {
+      await createSustainingTask(trimmed, newSustainingTaskDeptIds, newSustainingTaskEnabled);
+      setShowNewSustainingTaskModal(false);
+      setNewSustainingTaskName("");
+      setNewSustainingTaskDeptIds([]);
+      setNewSustainingTaskEnabled(null);
+      await loadSustainingTasks(sustainingView);
+    } catch (err) {
+      const errorMsg = err instanceof Error ? err.message : "Failed to create task. Please try again.";
+      setNewSustainingTaskError(errorMsg);
+    } finally {
+      setSavingNewSustainingTask(false);
     }
   };
 
@@ -1177,6 +1214,20 @@ export default function Admin({
             >
               {showEditTasksView ? "New Task" : "New Project"}
             </button>
+          ) : activeSection === "sustaining" ? (
+            <button
+              type="button"
+              className="btn primary week-nav-create"
+              onClick={() => {
+                setNewSustainingTaskName("");
+                setNewSustainingTaskDeptIds([]);
+                setNewSustainingTaskEnabled(null);
+                setNewSustainingTaskError(null);
+                setShowNewSustainingTaskModal(true);
+              }}
+            >
+              New Task
+            </button>
           ) : undefined
         }
         endContent={
@@ -1313,6 +1364,93 @@ export default function Admin({
                 disabled={savingNewTask || !newTaskName.trim() || !newTaskDepartmentId || !newTaskPhaseId || newTaskEnabled === null}
               >
                 {savingNewTask ? "Saving..." : "Save"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showNewSustainingTaskModal && (
+        <div className="modal-overlay" onClick={() => setShowNewSustainingTaskModal(false)}>
+          <div className="modal-box" onClick={(e) => e.stopPropagation()}>
+            <h3 className="modal-title" style={{ textAlign: "center" }}>New Sustaining Task</h3>
+            <input
+              className="modal-input new-task-name-input"
+              style={{ marginTop: 2 }}
+              type="text"
+              placeholder="Enter task name"
+              value={newSustainingTaskName}
+              onChange={(e) => setNewSustainingTaskName(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && handleSaveNewSustainingTask()}
+              autoFocus
+              disabled={savingNewSustainingTask}
+            />
+
+            <div style={{ display: "flex", flexDirection: "column" }}>
+              <p className="admin-detail-label">Departments</p>
+              <div
+                className="admin-detail-box"
+                style={{ maxHeight: 180, overflowY: "auto", display: "flex", flexDirection: "column", gap: 6, padding: "8px 12px" }}
+              >
+                {departments.length === 0 ? (
+                  <span className="muted">No departments available</span>
+                ) : (
+                  departments.map((dept) => (
+                    <label key={dept.id} style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer", fontSize: 14 }}>
+                      <input
+                        type="checkbox"
+                        checked={newSustainingTaskDeptIds.includes(dept.id)}
+                        onChange={(e) => {
+                          setNewSustainingTaskDeptIds((prev) =>
+                            e.target.checked ? [...prev, dept.id] : prev.filter((id) => id !== dept.id)
+                          );
+                        }}
+                        disabled={savingNewSustainingTask}
+                      />
+                      {dept.name}
+                    </label>
+                  ))
+                )}
+              </div>
+
+              <p className="admin-detail-label">Claimable</p>
+              <div className="admin-task-claimable-btns new-task-claimable-btns">
+                <button
+                  type="button"
+                  className={`btn admin-claimable-btn ${newSustainingTaskEnabled === true ? "is-selected" : ""}`}
+                  onClick={() => setNewSustainingTaskEnabled(true)}
+                  disabled={savingNewSustainingTask}
+                >
+                  Claimable
+                </button>
+                <button
+                  type="button"
+                  className={`btn admin-claimable-btn ${newSustainingTaskEnabled === false ? "is-selected" : ""}`}
+                  onClick={() => setNewSustainingTaskEnabled(false)}
+                  disabled={savingNewSustainingTask}
+                >
+                  Un-Claimable
+                </button>
+              </div>
+            </div>
+
+            {newSustainingTaskError && <p className="modal-error">{newSustainingTaskError}</p>}
+            <div className="modal-actions new-task-modal-actions">
+              <button
+                type="button"
+                className="btn secondary"
+                onClick={() => setShowNewSustainingTaskModal(false)}
+                disabled={savingNewSustainingTask}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                className="btn primary"
+                onClick={handleSaveNewSustainingTask}
+                disabled={savingNewSustainingTask || !newSustainingTaskName.trim() || newSustainingTaskDeptIds.length === 0 || newSustainingTaskEnabled === null}
+              >
+                {savingNewSustainingTask ? "Saving..." : "Save"}
               </button>
             </div>
           </div>

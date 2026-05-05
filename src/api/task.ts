@@ -187,6 +187,32 @@ export async function getAllTasks(includeInactive = true): Promise<Task[]> {
   const data = await response.json();
   return data.tasks;
 }
+export async function createSustainingTask(
+  name: string,
+  department_ids: number[],
+  enabled: boolean
+): Promise<Task> {
+  const accessToken = await acquireTokenSilent([
+    protectedResources.timesheetApi.scope,
+  ]);
+  const apiBase = import.meta.env.VITE_API_URL;
+  const response = await fetch(`${apiBase}/api/tasks/sustaining`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ name, department_ids, enabled }),
+  });
+
+  if (!response.ok) {
+    throw new Error(`Failed to create sustaining task (${response.status})`);
+  }
+
+  const data = await response.json();
+  return data.task;
+}
+
 export async function createTask(
   name: string,
   department_id: number,
