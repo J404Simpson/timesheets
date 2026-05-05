@@ -1389,7 +1389,7 @@ export default function Admin({
                   <span className="muted">No departments available</span>
                 ) : (
                   departments.map((dept) => (
-                    <label key={dept.id} style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer", fontSize: 14 }}>
+                    <label key={dept.id} style={{ display: "flex", flexDirection: "row", alignItems: "center", gap: 8, cursor: "pointer", fontSize: 14, marginBottom: 0, fontWeight: 400 }}>
                       <input
                         type="checkbox"
                         checked={newSustainingTaskDeptIds.includes(dept.id)}
