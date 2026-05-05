@@ -117,7 +117,6 @@ export default function Admin({
   const [showNewSustainingTaskModal, setShowNewSustainingTaskModal] = useState(false);
   const [newSustainingTaskName, setNewSustainingTaskName] = useState("");
   const [newSustainingTaskDeptIds, setNewSustainingTaskDeptIds] = useState<number[]>([]);
-  const [newSustainingTaskEnabled, setNewSustainingTaskEnabled] = useState<boolean | null>(null);
   const [newSustainingTaskError, setNewSustainingTaskError] = useState<string | null>(null);
   const [savingNewSustainingTask, setSavingNewSustainingTask] = useState(false);
   const [users, setUsers] = useState<AdminUser[]>([]);
@@ -345,18 +344,13 @@ export default function Admin({
       setNewSustainingTaskError("At least one department is required.");
       return;
     }
-    if (newSustainingTaskEnabled === null) {
-      setNewSustainingTaskError("Claimable selection is required.");
-      return;
-    }
     setSavingNewSustainingTask(true);
     setNewSustainingTaskError(null);
     try {
-      await createSustainingTask(trimmed, newSustainingTaskDeptIds, newSustainingTaskEnabled);
+      await createSustainingTask(trimmed, newSustainingTaskDeptIds, false);
       setShowNewSustainingTaskModal(false);
       setNewSustainingTaskName("");
       setNewSustainingTaskDeptIds([]);
-      setNewSustainingTaskEnabled(null);
       await loadSustainingTasks(sustainingView);
     } catch (err) {
       const errorMsg = err instanceof Error ? err.message : "Failed to create task. Please try again.";
@@ -1221,7 +1215,6 @@ export default function Admin({
               onClick={() => {
                 setNewSustainingTaskName("");
                 setNewSustainingTaskDeptIds([]);
-                setNewSustainingTaskEnabled(null);
                 setNewSustainingTaskError(null);
                 setShowNewSustainingTaskModal(true);
               }}
@@ -1413,25 +1406,6 @@ export default function Admin({
                 )}
               </div>
 
-              <p className="admin-detail-label">Claimable</p>
-              <div className="admin-task-claimable-btns new-task-claimable-btns">
-                <button
-                  type="button"
-                  className={`btn admin-claimable-btn ${newSustainingTaskEnabled === true ? "is-selected" : ""}`}
-                  onClick={() => setNewSustainingTaskEnabled(true)}
-                  disabled={savingNewSustainingTask}
-                >
-                  Claimable
-                </button>
-                <button
-                  type="button"
-                  className={`btn admin-claimable-btn ${newSustainingTaskEnabled === false ? "is-selected" : ""}`}
-                  onClick={() => setNewSustainingTaskEnabled(false)}
-                  disabled={savingNewSustainingTask}
-                >
-                  Un-Claimable
-                </button>
-              </div>
             </div>
 
             {newSustainingTaskError && <p className="modal-error">{newSustainingTaskError}</p>}
@@ -1448,7 +1422,7 @@ export default function Admin({
                 type="button"
                 className="btn primary"
                 onClick={handleSaveNewSustainingTask}
-                disabled={savingNewSustainingTask || !newSustainingTaskName.trim() || newSustainingTaskDeptIds.length === 0 || newSustainingTaskEnabled === null}
+                disabled={savingNewSustainingTask || !newSustainingTaskName.trim() || newSustainingTaskDeptIds.length === 0}
               >
                 {savingNewSustainingTask ? "Saving..." : "Save"}
               </button>
