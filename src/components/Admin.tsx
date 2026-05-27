@@ -26,7 +26,7 @@ function ConfirmModal({ open, title, message, onConfirm, onCancel, confirmLabel 
 }
 import Recent from "./Recent";
 import ViewFooter from "./ViewFooter";
-import { getTasksForProjectPhase, getTasksForProjectPhaseWithInactive, deactivateTask, getAllTasks, updateTaskEnabled, updateTaskActive, createTask, createSustainingTask, type Task } from "../api/task";
+import { getTasksForProjectPhase, getTasksForProjectPhaseWithInactive, deactivateTask, getAllTasks, updateTaskEnabled, updateTaskActive, updateTaskName, createTask, createSustainingTask, type Task } from "../api/task";
 import { getDepartments, type Department } from "../api/department";
 import {
   createProject,
@@ -87,7 +87,7 @@ export default function Admin({
   const [deactivatingTaskId, setDeactivatingTaskId] = useState<number | null>(null);
   const [showNewProjectModal, setShowNewProjectModal] = useState(false);
   const [confirmModal, setConfirmModal] = useState<{
-    type: "project" | "phase" | "task" | "edit-task-status" | null;
+    type: "project" | "phase" | "task" | "edit-task-status" | "edit-task-name" | null;
     id: number | null;
     name: string;
   }>({ type: null, id: null, name: "" });
@@ -105,8 +105,10 @@ export default function Admin({
   const [editTaskDeptFilter, setEditTaskDeptFilter] = useState<number | null>(null);
   const [editTaskPhaseFilter, setEditTaskPhaseFilter] = useState<number | null>(null);
   const [editTaskActiveFilter, setEditTaskActiveFilter] = useState<"active" | "inactive">("active");
+  const [editTaskNameDraft, setEditTaskNameDraft] = useState("");
   const [savingTaskEnabledId, setSavingTaskEnabledId] = useState<number | null>(null);
   const [savingTaskActiveId, setSavingTaskActiveId] = useState<number | null>(null);
+  const [savingTaskNameId, setSavingTaskNameId] = useState<number | null>(null);
   const [showNewTaskModal, setShowNewTaskModal] = useState(false);
   const [newTaskName, setNewTaskName] = useState("");
   const [newTaskDepartmentId, setNewTaskDepartmentId] = useState<number | null>(null);
@@ -250,6 +252,7 @@ export default function Admin({
     let confirmTitle = "";
     let confirmMessage = "";
     let confirmLoading = false;
+    let confirmLabel = "Confirm";
     let confirmAction = () => {};
     if (confirmModal.type === "project") {
       confirmTitle = "Set Project Inactive";
@@ -270,10 +273,35 @@ export default function Admin({
       confirmTitle = "Set Task Inactive";
       confirmMessage = `Are you sure you want to set task "${confirmModal.name}" to inactive?`;
       confirmLoading = savingTaskActiveId === confirmModal.id;
+      confirmLabel = "Set Inactive";
       confirmAction = async () => {
         if (!confirmModal.id) return;
         await handleSetEditTaskActive(false, confirmModal.id);
         setConfirmModal({ type: null, id: null, name: "" });
+      };
+    } else if (confirmModal.type === "edit-task-name") {
+      confirmTitle = "Confirm Name Change";
+      confirmMessage = `Are you sure you want to rename this task to "${confirmModal.name}"?`;
+      confirmLoading = savingTaskNameId === confirmModal.id;
+      confirmLabel = "Save Name";
+      confirmAction = async () => {
+        if (!confirmModal.id || !confirmModal.name.trim()) return;
+        setSavingTaskNameId(confirmModal.id);
+        setAllTasksError(null);
+        try {
+          const updatedTask = await updateTaskName(confirmModal.id, confirmModal.name.trim());
+          setAllTasks((prev) => prev.map((task) => (
+            task.id === updatedTask.id
+              ? { ...task, name: updatedTask.name }
+              : task
+          )));
+          setEditTaskNameDraft(updatedTask.name);
+          setConfirmModal({ type: null, id: null, name: "" });
+        } catch {
+          setAllTasksError("Failed to update task name.");
+        } finally {
+          setSavingTaskNameId(null);
+        }
       };
     }
   const handleSaveNewProject = async () => {
@@ -530,6 +558,10 @@ export default function Admin({
     }
   }, [filteredEditTasks, selectedEditTaskId]);
 
+  useEffect(() => {
+    setEditTaskNameDraft(selectedEditTask?.name ?? "");
+  }, [selectedEditTask]);
+
   const getDepartmentName = (departmentId?: number | null) => {
     if (!departmentId) return "No department";
     return departments.find((department) => department.id === departmentId)?.name ?? "No department";
@@ -575,6 +607,19 @@ export default function Admin({
       return;
     }
     void handleSetEditTaskActive(true);
+  };
+
+  const handleRequestEditTaskNameSave = () => {
+    if (!selectedEditTask) return;
+    const trimmed = editTaskNameDraft.trim();
+    if (!trimmed) {
+      setAllTasksError("Task name is required.");
+      return;
+    }
+    if (trimmed === selectedEditTask.name) {
+      return;
+    }
+    setConfirmModal({ type: "edit-task-name", id: selectedEditTask.id, name: trimmed });
   };
 
   const getUserDisplayName = (user: AdminUser) => {
@@ -908,6 +953,32 @@ export default function Admin({
                 {selectedEditTask ? (
                   <div className="admin-task-detail">
                     <div className="admin-task-detail-body">
+                      <p className="admin-detail-label">Name</p>
+                      <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                        <input
+                          type="text"
+                          className="modal-input"
+                          style={{ marginTop: 0 }}
+                          value={editTaskNameDraft}
+                          onChange={(e) => setEditTaskNameDraft(e.target.value)}
+                          disabled={savingTaskNameId === selectedEditTask.id}
+                        />
+                        <div>
+                          <button
+                            type="button"
+                            className="btn secondary admin-record-status-btn"
+                            onClick={handleRequestEditTaskNameSave}
+                            disabled={
+                              savingTaskNameId === selectedEditTask.id
+                              || !editTaskNameDraft.trim()
+                              || editTaskNameDraft.trim() === selectedEditTask.name
+                            }
+                          >
+                            {savingTaskNameId === selectedEditTask.id ? "Saving..." : "Save Name"}
+                          </button>
+                        </div>
+                      </div>
+
                       <p className="admin-detail-label">Department</p>
                       <div className="admin-detail-box">
                         {getDepartmentName(selectedEditTask.department_id)}
@@ -1438,7 +1509,7 @@ export default function Admin({
         onCancel={() => setConfirmModal({ type: null, id: null, name: "" })}
         onConfirm={confirmAction}
         loading={confirmLoading}
-        confirmLabel="Set Inactive"
+        confirmLabel={confirmLabel}
       />
     </section>
   );

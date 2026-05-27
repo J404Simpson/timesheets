@@ -168,6 +168,28 @@ export async function updateTaskActive(taskId: number, active: boolean): Promise
   return data.task;
 }
 
+export async function updateTaskName(taskId: number, name: string): Promise<Task> {
+  const accessToken = await acquireTokenSilent([
+    protectedResources.timesheetApi.scope,
+  ]);
+  const apiBase = import.meta.env.VITE_API_URL;
+  const response = await fetch(`${apiBase}/api/tasks/${taskId}/name`, {
+    method: "PATCH",
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ name }),
+  });
+
+  if (!response.ok) {
+    throw new Error(`Failed to update task name (${response.status})`);
+  }
+
+  const data = await response.json();
+  return data.task;
+}
+
 export async function getAllTasks(includeInactive = true): Promise<Task[]> {
   const accessToken = await acquireTokenSilent([
     protectedResources.timesheetApi.scope,
