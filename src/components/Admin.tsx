@@ -619,6 +619,14 @@ export default function Admin({
     if (trimmed === selectedEditTask.name) {
       return;
     }
+    if (
+      confirmModal.type === "edit-task-name"
+      && confirmModal.id === selectedEditTask.id
+      && confirmModal.name === trimmed
+    ) {
+      return;
+    }
+    setEditTaskNameDraft(trimmed);
     setConfirmModal({ type: "edit-task-name", id: selectedEditTask.id, name: trimmed });
   };
 
@@ -961,22 +969,15 @@ export default function Admin({
                           style={{ marginTop: 0 }}
                           value={editTaskNameDraft}
                           onChange={(e) => setEditTaskNameDraft(e.target.value)}
+                          onBlur={handleRequestEditTaskNameSave}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter") {
+                              e.preventDefault();
+                              (e.currentTarget as HTMLInputElement).blur();
+                            }
+                          }}
                           disabled={savingTaskNameId === selectedEditTask.id}
                         />
-                        <div>
-                          <button
-                            type="button"
-                            className="btn secondary admin-record-status-btn"
-                            onClick={handleRequestEditTaskNameSave}
-                            disabled={
-                              savingTaskNameId === selectedEditTask.id
-                              || !editTaskNameDraft.trim()
-                              || editTaskNameDraft.trim() === selectedEditTask.name
-                            }
-                          >
-                            {savingTaskNameId === selectedEditTask.id ? "Saving..." : "Save Name"}
-                          </button>
-                        </div>
                       </div>
 
                       <p className="admin-detail-label">Department</p>
