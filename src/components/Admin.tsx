@@ -87,7 +87,7 @@ export default function Admin({
   const [deactivatingTaskId, setDeactivatingTaskId] = useState<number | null>(null);
   const [showNewProjectModal, setShowNewProjectModal] = useState(false);
   const [confirmModal, setConfirmModal] = useState<{
-    type: "project" | "phase" | "task" | "edit-task-status" | "edit-task-name" | null;
+    type: "project" | "phase" | "task" | "edit-task-status" | "edit-task-name" | "edit-sustaining-task-name" | null;
     id: number | null;
     name: string;
   }>({ type: null, id: null, name: "" });
@@ -106,9 +106,11 @@ export default function Admin({
   const [editTaskPhaseFilter, setEditTaskPhaseFilter] = useState<number | null>(null);
   const [editTaskActiveFilter, setEditTaskActiveFilter] = useState<"active" | "inactive">("active");
   const [editTaskNameDraft, setEditTaskNameDraft] = useState("");
+  const [sustainingTaskNameDraft, setSustainingTaskNameDraft] = useState("");
   const [savingTaskEnabledId, setSavingTaskEnabledId] = useState<number | null>(null);
   const [savingTaskActiveId, setSavingTaskActiveId] = useState<number | null>(null);
   const [savingTaskNameId, setSavingTaskNameId] = useState<number | null>(null);
+  const [sustainingTasksError, setSustainingTasksError] = useState<string | null>(null);
   const [showNewTaskModal, setShowNewTaskModal] = useState(false);
   const [newTaskName, setNewTaskName] = useState("");
   const [newTaskDepartmentId, setNewTaskDepartmentId] = useState<number | null>(null);
@@ -303,6 +305,30 @@ export default function Admin({
           setSavingTaskNameId(null);
         }
       };
+    } else if (confirmModal.type === "edit-sustaining-task-name") {
+      confirmTitle = "Confirm Name Change";
+      confirmMessage = `Are you sure you want to rename this task to "${confirmModal.name}"?`;
+      confirmLoading = savingTaskNameId === confirmModal.id;
+      confirmLabel = "Save Name";
+      confirmAction = async () => {
+        if (!confirmModal.id || !confirmModal.name.trim()) return;
+        setSavingTaskNameId(confirmModal.id);
+        setSustainingTasksError(null);
+        try {
+          const updatedTask = await updateTaskName(confirmModal.id, confirmModal.name.trim());
+          setSustainingTasks((prev) => prev.map((task) => (
+            task.id === updatedTask.id
+              ? { ...task, name: updatedTask.name }
+              : task
+          )));
+          setSustainingTaskNameDraft(updatedTask.name);
+          setConfirmModal({ type: null, id: null, name: "" });
+        } catch {
+          setSustainingTasksError("Failed to update task name.");
+        } finally {
+          setSavingTaskNameId(null);
+        }
+      };
     }
   const handleSaveNewProject = async () => {
     const trimmed = newProjectName.trim();
@@ -446,6 +472,7 @@ export default function Admin({
 
   const loadSustainingTasks = async (view: "active" | "inactive") => {
     setLoadingSustainingTasks(true);
+    setSustainingTasksError(null);
     try {
       const includeInactive = view === "inactive";
       const fetched = await getTasksForProjectPhaseWithInactive(SUSTAINING_PROJECT_ID, SUSTAINING_PHASE_ID, includeInactive);
@@ -505,6 +532,10 @@ export default function Admin({
     () => allTasks.find((task) => task.id === selectedEditTaskId) ?? null,
     [allTasks, selectedEditTaskId]
   );
+  const selectedSustainingTask = useMemo(
+    () => sustainingTasks.find((task) => task.id === selectedSustainingTaskId) ?? null,
+    [sustainingTasks, selectedSustainingTaskId]
+  );
 
   const projectEditTasks = useMemo(
     () => allTasks.filter((task) => task.task_type === "PROJECT"),
@@ -561,6 +592,10 @@ export default function Admin({
   useEffect(() => {
     setEditTaskNameDraft(selectedEditTask?.name ?? "");
   }, [selectedEditTask]);
+
+  useEffect(() => {
+    setSustainingTaskNameDraft(selectedSustainingTask?.name ?? "");
+  }, [selectedSustainingTask]);
 
   const getDepartmentName = (departmentId?: number | null) => {
     if (!departmentId) return "No department";
@@ -628,6 +663,27 @@ export default function Admin({
     }
     setEditTaskNameDraft(trimmed);
     setConfirmModal({ type: "edit-task-name", id: selectedEditTask.id, name: trimmed });
+  };
+
+  const handleRequestSustainingTaskNameSave = () => {
+    if (!selectedSustainingTask) return;
+    const trimmed = sustainingTaskNameDraft.trim();
+    if (!trimmed) {
+      setSustainingTaskNameDraft(selectedSustainingTask.name);
+      return;
+    }
+    if (trimmed === selectedSustainingTask.name) {
+      return;
+    }
+    if (
+      confirmModal.type === "edit-sustaining-task-name"
+      && confirmModal.id === selectedSustainingTask.id
+      && confirmModal.name === trimmed
+    ) {
+      return;
+    }
+    setSustainingTaskNameDraft(trimmed);
+    setConfirmModal({ type: "edit-sustaining-task-name", id: selectedSustainingTask.id, name: trimmed });
   };
 
   const getUserDisplayName = (user: AdminUser) => {
@@ -1065,6 +1121,8 @@ export default function Admin({
                   </div>
                 </div>
 
+                {sustainingTasksError && <p className="admin-error">{sustainingTasksError}</p>}
+
                 {loadingSustainingTasks ? (
                   <p className="muted">Loading sustaining tasks...</p>
                 ) : (() => {
@@ -1112,11 +1170,28 @@ export default function Admin({
                 <div className="admin-users-list-header">
                   <h3>Details</h3>
                 </div>
-                {(() => {
-                  const selectedSustainingTask = sustainingTasks.find((t) => t.id === selectedSustainingTaskId);
-                  return selectedSustainingTask ? (
+                {selectedSustainingTask ? (
                     <div className="admin-task-detail">
                       <div className="admin-task-detail-body">
+                        <p className="admin-detail-label">Name</p>
+                        <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                          <input
+                            type="text"
+                            className="modal-input admin-detail-input"
+                            style={{ marginTop: 0 }}
+                            value={sustainingTaskNameDraft}
+                            onChange={(e) => setSustainingTaskNameDraft(e.target.value)}
+                            onBlur={handleRequestSustainingTaskNameSave}
+                            onKeyDown={(e) => {
+                              if (e.key === "Enter") {
+                                e.preventDefault();
+                                (e.currentTarget as HTMLInputElement).blur();
+                              }
+                            }}
+                            disabled={savingTaskNameId === selectedSustainingTask.id}
+                          />
+                        </div>
+
                         <p className="admin-detail-label">Departments</p>
                         <div className="admin-detail-box">
                           {selectedSustainingTask.departments && selectedSustainingTask.departments.length > 0
@@ -1145,8 +1220,7 @@ export default function Admin({
                     </div>
                   ) : (
                     <p className="muted">Select a sustaining task to view details.</p>
-                  );
-                })()}
+                  )}
               </section>
             </div>
           )}
