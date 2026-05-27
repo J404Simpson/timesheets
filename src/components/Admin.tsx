@@ -965,7 +965,7 @@ export default function Admin({
                       <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                         <input
                           type="text"
-                          className="modal-input"
+                          className="modal-input admin-detail-input"
                           style={{ marginTop: 0 }}
                           value={editTaskNameDraft}
                           onChange={(e) => setEditTaskNameDraft(e.target.value)}

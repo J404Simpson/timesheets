@@ -1038,6 +1038,14 @@ select.admin-record-status-btn,
   align-items: center;
 }
 
+.admin-detail-input {
+  border: 1px solid rgba(15, 23, 42, 0.15);
+  border-radius: 6px;
+  background: #ffffff;
+  padding: 6px 10px;
+  min-height: 34px;
+}
+
 .admin-task-claimable-btns {
   display: flex;
   gap: 8px;
