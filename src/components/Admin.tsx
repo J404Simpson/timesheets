@@ -614,6 +614,7 @@ export default function Admin({
     const trimmed = editTaskNameDraft.trim();
     if (!trimmed) {
       setAllTasksError("Task name is required.");
+      setEditTaskNameDraft(selectedEditTask.name);
       return;
     }
     if (trimmed === selectedEditTask.name) {
