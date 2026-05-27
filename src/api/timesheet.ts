@@ -130,6 +130,20 @@ export async function deactivateProjectPhase(projectId: number, phaseId: number)
   return data.phase;
 }
 
+export async function reactivateProjectPhase(projectId: number, phaseId: number): Promise<Phase> {
+  const headers = await getAuthHeaders({ "Content-Type": "application/json" });
+  const data = await requestJson<{ phase: Phase }>(
+    buildUrl(`/api/projects/${projectId}/phases/${phaseId}/activate`),
+    {
+      method: "PATCH",
+      headers,
+      body: JSON.stringify({}),
+    },
+    "Failed to reactivate phase"
+  );
+  return data.phase;
+}
+
 const LOGIN_URL = `${import.meta.env.VITE_API_URL}/login`;
 const BASE_URL = `${import.meta.env.VITE_API_URL}/timesheet`;
 
