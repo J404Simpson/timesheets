@@ -31,6 +31,7 @@ import { getDepartments, type Department } from "../api/department";
 import {
   createProject,
   deactivateProject,
+  reactivateProject,
   deactivateProjectPhase,
   reactivateProjectPhase,
   getAdminUsers,
@@ -88,7 +89,7 @@ export default function Admin({
   const [deactivatingTaskId, setDeactivatingTaskId] = useState<number | null>(null);
   const [showNewProjectModal, setShowNewProjectModal] = useState(false);
   const [confirmModal, setConfirmModal] = useState<{
-    type: "project" | "phase" | "task" | "edit-task-status" | "edit-task-name" | "edit-sustaining-task-name" | "reactivate-phase" | null;
+    type: "project" | "reactivate-project" | "phase" | "task" | "edit-task-status" | "edit-task-name" | "edit-sustaining-task-name" | "reactivate-phase" | null;
     id: number | null;
     name: string;
   }>({ type: null, id: null, name: "" });
@@ -212,6 +213,11 @@ export default function Admin({
     }
   };
 
+  const handleReactivateProject = (project: Project) => {
+    if (project.active !== false) return;
+    setConfirmModal({ type: "reactivate-project", id: project.id, name: project.name });
+  };
+
   const handleDeactivatePhase = (phase: Phase) => {
     if (!selectedProjectId || phase.active === false) return;
     setConfirmModal({ type: "phase", id: phase.id, name: phase.name });
@@ -267,6 +273,25 @@ export default function Admin({
       confirmMessage = `Are you sure you want to set project "${confirmModal.name}" to inactive?`;
       confirmLoading = deactivatingProjectId === confirmModal.id;
       confirmAction = confirmDeactivateProject;
+    } else if (confirmModal.type === "reactivate-project") {
+      confirmTitle = "Set Project Active";
+      confirmMessage = `Are you sure you want to set project "${confirmModal.name}" back to active?`;
+      confirmLoading = deactivatingProjectId === confirmModal.id;
+      confirmLabel = "Set Active";
+      confirmAction = async () => {
+        if (!confirmModal.id) return;
+        setDeactivatingProjectId(confirmModal.id);
+        setProjectError(null);
+        try {
+          await reactivateProject(confirmModal.id);
+          await loadProjects(projectView);
+        } catch {
+          setProjectError("Failed to reactivate project.");
+        } finally {
+          setDeactivatingProjectId(null);
+          setConfirmModal({ type: null, id: null, name: "" });
+        }
+      };
     } else if (confirmModal.type === "phase") {
       confirmTitle = "Set Phase Inactive";
       confirmMessage = `Are you sure you want to set phase "${confirmModal.name}" to inactive?`;
@@ -841,7 +866,15 @@ export default function Admin({
                               {deactivatingProjectId === project.id ? "Saving..." : "Active"}
                             </button>
                           ) : (
-                            <span className="admin-user-email muted">Inactive</span>
+                            <button
+                              type="button"
+                              className="btn secondary admin-record-status-btn"
+                              onClick={() => handleReactivateProject(project)}
+                              disabled={deactivatingProjectId === project.id}
+                              title="Set active"
+                            >
+                              {deactivatingProjectId === project.id ? "Saving..." : "Inactive"}
+                            </button>
                           )}
                         </div>
                       </li>

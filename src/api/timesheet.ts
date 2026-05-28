@@ -116,6 +116,20 @@ export async function deactivateProject(projectId: number): Promise<Project> {
   return data.project;
 }
 
+export async function reactivateProject(projectId: number): Promise<Project> {
+  const headers = await getAuthHeaders({ "Content-Type": "application/json" });
+  const data = await requestJson<{ project: Project }>(
+    buildUrl(`/api/projects/${projectId}/activate`),
+    {
+      method: "PATCH",
+      headers,
+      body: JSON.stringify({}),
+    },
+    "Failed to reactivate project"
+  );
+  return data.project;
+}
+
 export async function deactivateProjectPhase(projectId: number, phaseId: number): Promise<Phase> {
   const headers = await getAuthHeaders({ "Content-Type": "application/json" });
   const data = await requestJson<{ phase: Phase }>(
