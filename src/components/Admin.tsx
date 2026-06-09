@@ -416,7 +416,7 @@ export default function Admin({
       return;
     }
     if (newTaskEnabled === null) {
-      setNewTaskError("Claimable selection is required.");
+      setNewTaskError("Qualifying selection is required.");
       return;
     }
     setSavingNewTask(true);
@@ -1131,22 +1131,22 @@ export default function Admin({
                       </div>
                     </div>
 
-                    <div className="admin-task-claimable-btns">
+                    <div className="admin-task-qualifying-btns">
                       <button
                         type="button"
-                        className={`btn admin-claimable-btn ${selectedEditTask.enabled ? "is-selected" : ""}`}
+                        className={`btn admin-qualifying-btn ${selectedEditTask.enabled ? "is-selected" : ""}`}
                         onClick={() => !selectedEditTask.enabled && handleToggleEditTaskEnabled()}
                         disabled={savingTaskEnabledId === selectedEditTask.id || selectedEditTask.enabled}
                       >
-                        Claimable
+                        Qualifying
                       </button>
                       <button
                         type="button"
-                        className={`btn admin-claimable-btn ${!selectedEditTask.enabled ? "is-selected" : ""}`}
+                        className={`btn admin-qualifying-btn ${!selectedEditTask.enabled ? "is-selected" : ""}`}
                         onClick={() => selectedEditTask.enabled && handleToggleEditTaskEnabled()}
                         disabled={savingTaskEnabledId === selectedEditTask.id || !selectedEditTask.enabled}
                       >
-                        Un-Claimable
+                        Non-Qualifying
                       </button>
                     </div>
                   </div>
@@ -1531,23 +1531,23 @@ export default function Admin({
               ))}
             </select>
 
-            <p className="admin-detail-label">Claimable</p>
-            <div className="admin-task-claimable-btns new-task-claimable-btns">
+            <p className="admin-detail-label">Qualifying</p>
+            <div className="admin-task-qualifying-btns new-task-qualifying-btns">
               <button
                 type="button"
-                className={`btn admin-claimable-btn ${newTaskEnabled === true ? "is-selected" : ""}`}
+                className={`btn admin-qualifying-btn ${newTaskEnabled === true ? "is-selected" : ""}`}
                 onClick={() => setNewTaskEnabled(true)}
                 disabled={savingNewTask}
               >
-                Claimable
+                Qualifying
               </button>
               <button
                 type="button"
-                className={`btn admin-claimable-btn ${newTaskEnabled === false ? "is-selected" : ""}`}
+                className={`btn admin-qualifying-btn ${newTaskEnabled === false ? "is-selected" : ""}`}
                 onClick={() => setNewTaskEnabled(false)}
                 disabled={savingNewTask}
               >
-                Un-Claimable
+                Non-Qualifying
               </button>
             </div>
             </div>

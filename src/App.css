@@ -1046,13 +1046,13 @@ select.admin-record-status-btn,
   min-height: 34px;
 }
 
-.admin-task-claimable-btns {
+.admin-task-qualifying-btns {
   display: flex;
   gap: 8px;
   padding-top: 12px;
 }
 
-.new-task-claimable-btns {
+.new-task-qualifying-btns {
   padding-top: 0;
 }
 
@@ -1060,7 +1060,7 @@ select.admin-record-status-btn,
   margin-top: 12px;
 }
 
-.admin-claimable-btn {
+.admin-qualifying-btn {
   flex: 1;
   text-align: center;
   justify-content: center;
@@ -1072,13 +1072,13 @@ select.admin-record-status-btn,
   padding: 8px 12px;
 }
 
-.admin-claimable-btn.is-selected {
+.admin-qualifying-btn.is-selected {
   background: var(--accent);
   color: #ffffff;
   border-color: var(--accent);
 }
 
-.admin-claimable-btn:disabled {
+.admin-qualifying-btn:disabled {
   cursor: default;
   opacity: 1;
 }
