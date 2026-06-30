@@ -35,6 +35,7 @@ import {
   deactivateProjectPhase,
   reactivateProjectPhase,
   getAdminUsers,
+  getEntryDateBounds,
   getPhasesForProject,
   getProjects,
   getWeekEntries,
@@ -131,6 +132,32 @@ export default function Admin({
   const [error, setError] = useState<string | null>(null);
   const [usersWeekOffset, setUsersWeekOffset] = useState(0);
   const [selectedUserWeekHours, setSelectedUserWeekHours] = useState<number | null>(null);
+  const [usersWeekOptions, setUsersWeekOptions] = useState<Array<{ offset: number; label: string }>>([]);
+
+  const getMonday = (date: Date) => {
+    const monday = new Date(date);
+    const day = monday.getDay();
+    const diffToMonday = day === 0 ? -6 : 1 - day;
+    monday.setDate(monday.getDate() + diffToMonday);
+    monday.setHours(0, 0, 0, 0);
+    return monday;
+  };
+
+  const formatWeekRangeLabel = (weekStart: Date) => {
+    const weekEnd = new Date(weekStart);
+    weekEnd.setDate(weekStart.getDate() + 6);
+
+    const start = `${weekStart.getDate()} ${weekStart.toLocaleDateString("en-GB", { month: "short" })}`;
+    const end = `${weekEnd.getDate()} ${weekEnd.toLocaleDateString("en-GB", { month: "short" })}`;
+    return `${start} - ${end}`;
+  };
+
+  const toDateKeyLocal = (value: Date) => {
+    const y = value.getFullYear();
+    const m = String(value.getMonth() + 1).padStart(2, "0");
+    const d = String(value.getDate()).padStart(2, "0");
+    return `${y}-${m}-${d}`;
+  };
 
   const loadProjects = async (view: "active" | "all") => {
     setLoadingProjects(true);
@@ -741,12 +768,47 @@ export default function Admin({
     return name || user.email;
   };
 
-  const toDateKeyLocal = (value: Date) => {
-    const y = value.getFullYear();
-    const m = String(value.getMonth() + 1).padStart(2, "0");
-    const d = String(value.getDate()).padStart(2, "0");
-    return `${y}-${m}-${d}`;
-  };
+  useEffect(() => {
+    if (activeSection !== "users" || !selectedUser) {
+      setUsersWeekOptions([]);
+      return;
+    }
+
+    getEntryDateBounds(selectedUser.id)
+      .then(({ firstDate, lastDate }) => {
+        const currentMonday = getMonday(new Date());
+        const firstMonday = firstDate ? getMonday(new Date(`${firstDate}T12:00:00`)) : currentMonday;
+        const lastMonday = lastDate ? getMonday(new Date(`${lastDate}T12:00:00`)) : currentMonday;
+
+        const options: Array<{ offset: number; label: string }> = [];
+        for (
+          let cursor = new Date(lastMonday);
+          cursor >= firstMonday;
+          cursor.setDate(cursor.getDate() - 7)
+        ) {
+          const offset = Math.round((cursor.getTime() - currentMonday.getTime()) / (7 * 24 * 60 * 60 * 1000));
+          options.push({
+            offset,
+            label: formatWeekRangeLabel(new Date(cursor)),
+          });
+        }
+
+        if (options.length === 0) {
+          options.push({ offset: 0, label: formatWeekRangeLabel(currentMonday) });
+        }
+
+        setUsersWeekOptions(options);
+        setUsersWeekOffset((prev) => {
+          if (options.some((opt) => opt.offset === prev)) return prev;
+          return options[0].offset;
+        });
+      })
+      .catch(() => {
+        const currentMonday = getMonday(new Date());
+        setUsersWeekOptions([{ offset: 0, label: formatWeekRangeLabel(currentMonday) }]);
+        setUsersWeekOffset(0);
+      });
+  }, [activeSection, selectedUser?.id]);
 
   useEffect(() => {
     if (activeSection !== "users" || !selectedUser) {
@@ -1362,16 +1424,18 @@ export default function Admin({
       <ViewFooter
         startContent={
           activeSection === "users" ? (
-            <button
-              type="button"
+            <select
               className="btn week-nav-toggle"
-              onClick={() => setUsersWeekOffset(usersWeekOffset === 0 ? -1 : 0)}
-              title={usersWeekOffset === 0 ? "View last week" : "Back to this week"}
-              aria-label={usersWeekOffset === 0 ? "View last week" : "Back to this week"}
+              value={String(usersWeekOffset)}
+              onChange={(e) => setUsersWeekOffset(Number(e.target.value))}
+              aria-label="Select week range"
             >
-              <span>{usersWeekOffset === 0 ? "Last Week" : "This Week"}</span>
-              <span aria-hidden="true">{usersWeekOffset === 0 ? "←" : "→"}</span>
-            </button>
+              {usersWeekOptions.map((option) => (
+                <option key={option.offset} value={option.offset}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
           ) : activeSection === "projects" ? (
             <button
               type="button"

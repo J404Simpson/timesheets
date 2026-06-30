@@ -275,6 +275,21 @@ export async function getWeekEntries(weekOf?: string, employeeId?: number): Prom
   return data.entries;
 }
 
+export type EntryDateBounds = {
+  firstDate: string | null;
+  lastDate: string | null;
+};
+
+export async function getEntryDateBounds(employeeId?: number): Promise<EntryDateBounds> {
+  const headers = await getAuthHeaders();
+  const data = await requestJson<EntryDateBounds>(
+    buildUrl("/api/entries/date-bounds", employeeId != null ? { employeeId } : undefined),
+    { headers },
+    "Failed to fetch entry date bounds"
+  );
+  return data;
+}
+
 export type CreateEntryPayload = {
   projectId: number;
   phaseId?: number | null;
