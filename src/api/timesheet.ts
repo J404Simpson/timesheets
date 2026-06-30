@@ -37,11 +37,14 @@ export type Phase = {
   enabled?: boolean;
 };
 
-export async function getPhasesForProject(projectId: number): Promise<Phase[]> {
+export async function getPhasesForProject(projectId: number, includeInactive = false): Promise<Phase[]> {
   try {
     const headers = await getAuthHeaders();
     const data = await requestJson<{ phases: Phase[] }>(
-      buildUrl(`/api/projects/${projectId}/phases`),
+      buildUrl(
+        `/api/projects/${projectId}/phases`,
+        includeInactive ? { includeInactive: "true" } : undefined
+      ),
       { headers },
       "Failed to fetch phases for project"
     );

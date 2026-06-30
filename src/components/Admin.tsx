@@ -177,7 +177,7 @@ export default function Admin({
     setPhaseError(null);
 
     try {
-      const phaseData = await getPhasesForProject(projectId);
+      const phaseData = await getPhasesForProject(projectId, true);
       setPhases(phaseData);
       setSelectedPhaseId((prev) => {
         if (phaseData.length === 0) return null;
