@@ -293,6 +293,7 @@ const App: React.FC = () => {
                         initialHour={selectedHour}
                         editingEntry={editingEntry}
                         targetEmployeeId={targetEmployeeId}
+                        isAdmin={isAdmin}
                         onSaved={handleEntrySaved}
                         onCancel={closeEntryForm}
                       />

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from "react";
+import React, { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { createPortal } from "react-dom";
 import { createEntry, updateEntry, deleteEntry, getActiveProjects, getPhasesForProject, getWeekEntries, type Project as ApiProject, type Phase as ApiPhase, type WeekEntry } from "../api/timesheet";
 import { getTasksForPhaseAndEmployee, getTasksForProjectPhase, type Task as ApiTask } from "../api/task";
@@ -249,6 +249,7 @@ export default function TimesheetForm({
   initialEndMinute,
   editingEntry,
   targetEmployeeId,
+  isAdmin = false,
 }: {
   onCancel?: () => void;
   onSaved?: () => void;
@@ -259,6 +260,7 @@ export default function TimesheetForm({
   initialEndMinute?: number;
   editingEntry?: WeekEntry;
   targetEmployeeId?: number;
+  isAdmin?: boolean;
 }) {
   const dateInputRef = useRef<HTMLInputElement | null>(null);
   const [projects, setProjects] = useState<ApiProject[]>([]);
@@ -295,6 +297,20 @@ export default function TimesheetForm({
   const timeOptions = generateTimeOptions(STEP_MINUTES);
   const [now, setNow] = useState(() => new Date());
   const today = getLocalDateKey(now);
+  const currentWeekMonday = useMemo(() => {
+    const monday = new Date(now);
+    const day = monday.getDay();
+    const diffToMonday = day === 0 ? -6 : 1 - day;
+    monday.setDate(monday.getDate() + diffToMonday);
+    monday.setHours(0, 0, 0, 0);
+    return monday;
+  }, [now]);
+  const previousWeekMonday = useMemo(() => {
+    const previous = new Date(currentWeekMonday);
+    previous.setDate(previous.getDate() - 7);
+    return previous;
+  }, [currentWeekMonday]);
+  const minWorkDate = isAdmin ? undefined : getLocalDateKey(previousWeekMonday);
   const currentLocalMinutes = getLocalMinuteOfDay(now);
   const currentHourBoundaryMinutes = Math.min(24 * 60, (Math.floor(currentLocalMinutes / 60) + 1) * 60);
 
@@ -795,6 +811,7 @@ export default function TimesheetForm({
             name="workDate"
             className="date-input"
             value={entry.workDate}
+            min={minWorkDate}
             max={today}
             onChange={(e) => handleField("workDate", e.target.value)}
             onKeyDown={(e) => e.preventDefault()}
