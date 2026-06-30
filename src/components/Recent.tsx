@@ -105,7 +105,8 @@ export default function Recent({
 
   // Calculate the reference week's Monday in local time
   const now = new Date();
-  const isMondayLocal = now.getDay() === 1;
+  const dayOfWeekNow = now.getDay();
+  const isWithinPreviousWeekEditWindowLocal = dayOfWeekNow === 1 || dayOfWeekNow === 2;
   const referenceDate = new Date(now);
   referenceDate.setDate(now.getDate() + weekOffset * 7);
   const dayOfWeek = referenceDate.getDay();
@@ -115,7 +116,7 @@ export default function Recent({
 
   const isPreviousWeekLocked =
     weekOffset === -1 &&
-    !isMondayLocal &&
+    !isWithinPreviousWeekEditWindowLocal &&
     !allowPreviousWeekEdits;
 
   const weekDays = Array.from({ length: 7 }, (_, i) => {
@@ -506,7 +507,7 @@ export default function Recent({
     entry?: WeekEntry
   ) => {
     if (isPreviousWeekLocked) {
-      return "Previous week entries can only be changed on Monday unless you are an admin";
+      return "Previous week entries can only be changed through Tuesday unless you are an admin";
     }
     if (isFuture) return "Cannot select future time";
     if (entry) return isLeaveEntry(entry) ? "Leave entries cannot be edited" : "Click to edit entry";
@@ -746,7 +747,7 @@ export default function Recent({
                 disabled={isPreviousWeekLocked}
                 title={
                   isPreviousWeekLocked
-                    ? "Previous week entries can only be created on Monday unless you are an admin"
+                    ? "Previous week entries can only be created through Tuesday unless you are an admin"
                     : undefined
                 }
               >
