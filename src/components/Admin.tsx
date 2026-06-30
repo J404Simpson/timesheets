@@ -35,7 +35,6 @@ import {
   deactivateProjectPhase,
   reactivateProjectPhase,
   getAdminUsers,
-  getEntryDateBounds,
   getPhasesForProject,
   getProjects,
   getWeekEntries,
@@ -774,40 +773,29 @@ export default function Admin({
       return;
     }
 
-    getEntryDateBounds(selectedUser.id)
-      .then(({ firstDate, lastDate }) => {
-        const currentMonday = getMonday(new Date());
-        const firstMonday = firstDate ? getMonday(new Date(`${firstDate}T12:00:00`)) : currentMonday;
-        const lastMonday = lastDate ? getMonday(new Date(`${lastDate}T12:00:00`)) : currentMonday;
+    const currentMonday = getMonday(new Date());
+    const sixMonthsAgo = new Date(currentMonday);
+    sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
+    const sixMonthsAgoMonday = getMonday(sixMonthsAgo);
 
-        const options: Array<{ offset: number; label: string }> = [];
-        for (
-          let cursor = new Date(lastMonday);
-          cursor >= firstMonday;
-          cursor.setDate(cursor.getDate() - 7)
-        ) {
-          const offset = Math.round((cursor.getTime() - currentMonday.getTime()) / (7 * 24 * 60 * 60 * 1000));
-          options.push({
-            offset,
-            label: formatWeekRangeLabel(new Date(cursor)),
-          });
-        }
-
-        if (options.length === 0) {
-          options.push({ offset: 0, label: formatWeekRangeLabel(currentMonday) });
-        }
-
-        setUsersWeekOptions(options);
-        setUsersWeekOffset((prev) => {
-          if (options.some((opt) => opt.offset === prev)) return prev;
-          return options[0].offset;
-        });
-      })
-      .catch(() => {
-        const currentMonday = getMonday(new Date());
-        setUsersWeekOptions([{ offset: 0, label: formatWeekRangeLabel(currentMonday) }]);
-        setUsersWeekOffset(0);
+    const options: Array<{ offset: number; label: string }> = [];
+    for (
+      let cursor = new Date(currentMonday);
+      cursor >= sixMonthsAgoMonday;
+      cursor.setDate(cursor.getDate() - 7)
+    ) {
+      const offset = Math.round((cursor.getTime() - currentMonday.getTime()) / (7 * 24 * 60 * 60 * 1000));
+      options.push({
+        offset,
+        label: formatWeekRangeLabel(new Date(cursor)),
       });
+    }
+
+    setUsersWeekOptions(options);
+    setUsersWeekOffset((prev) => {
+      if (options.some((opt) => opt.offset === prev)) return prev;
+      return 0;
+    });
   }, [activeSection, selectedUser?.id]);
 
   useEffect(() => {
