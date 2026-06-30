@@ -105,23 +105,18 @@ export async function acquireTokenSilent(scopes: string[]): Promise<string> {
     return response.accessToken;
   } catch (error) {
     if (error instanceof InteractionRequiredAuthError) {
+      // Use redirect flow instead of popup for better mobile compatibility
       try {
-        const interactive = await msalInstance.acquireTokenPopup({
+        await msalInstance.acquireTokenRedirect({
           account: activeAccount,
           scopes: tokenScopes,
         });
-        return interactive.accessToken;
-      } catch (popupError) {
-        if (
-          popupError instanceof BrowserAuthError &&
-          popupError.errorCode === "popup_window_error"
-        ) {
-          await msalInstance.acquireTokenRedirect({
-            account: activeAccount,
-            scopes: tokenScopes,
-          });
-        }
-        throw popupError;
+        // Note: acquireTokenRedirect does not return; it redirects and reloads the page.
+        // The token will be available in the cache after redirect.
+        throw new Error("Token acquisition redirect in progress");
+      } catch (redirectError) {
+        console.error("Token acquisition redirect failed:", redirectError);
+        throw redirectError;
       }
     }
     throw error;

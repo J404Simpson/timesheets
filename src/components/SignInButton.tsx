@@ -1,28 +1,32 @@
-import React from "react";
+import React, { useState } from "react";
 import { useMsal } from "@azure/msal-react";
 import { loginRequest } from "../auth/msalConfig";
 
 export default function SignInButton() {
   const { instance } = useMsal();
+  const [error, setError] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
 
   const handleLogin = async () => {
+    setError(null);
+    setIsLoading(true);
     try {
-      const response = await instance.loginPopup(loginRequest);
-      // Set the active account after successful login
-      instance.setActiveAccount(response.account);
-    } catch (e) {
-      // fallback to redirect if popup fails
-      try {
-        await instance.loginRedirect(loginRequest);
-      } catch (err) {
-        // Login failed silently
-      }
+      // Use redirect flow for better mobile compatibility
+      await instance.loginRedirect(loginRequest);
+    } catch (err: any) {
+      setIsLoading(false);
+      const errorMsg = err?.errorCode || err?.message || "Login failed. Please try again.";
+      setError(errorMsg);
+      console.error("Login error:", err);
     }
   };
 
   return (
-    <button onClick={handleLogin} className="sign-in-button">
-      Sign in
-    </button>
+    <div>
+      <button onClick={handleLogin} className="sign-in-button" disabled={isLoading}>
+        {isLoading ? "Signing in..." : "Sign in"}
+      </button>
+      {error && <div className="error-message" style={{ color: "#d32f2f", marginTop: "8px", fontSize: "14px" }}>{error}</div>}
+    </div>
   );
 }
