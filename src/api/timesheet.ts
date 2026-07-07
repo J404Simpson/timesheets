@@ -229,7 +229,18 @@ export type CurrentEmployee = {
   department_id?: number | null;
 };
 
-export type AdminUser = {
+export type EmployeeWeeklyHours = {
+  hours: number;
+  hours_monday: number;
+  hours_tuesday: number;
+  hours_wednesday: number;
+  hours_thursday: number;
+  hours_friday: number;
+  hours_saturday: number;
+  hours_sunday: number;
+};
+
+export type AdminUser = EmployeeWeeklyHours & {
   id: number;
   object_id: string;
   email: string;
@@ -237,6 +248,25 @@ export type AdminUser = {
   last_name?: string | null;
   department_id?: number | null;
 };
+
+function toNumericValue(value: unknown): number {
+  const parsed = typeof value === "number" ? value : Number(value);
+  return Number.isFinite(parsed) ? parsed : 0;
+}
+
+function normalizeAdminUser(user: AdminUser): AdminUser {
+  return {
+    ...user,
+    hours: toNumericValue(user.hours),
+    hours_monday: toNumericValue(user.hours_monday),
+    hours_tuesday: toNumericValue(user.hours_tuesday),
+    hours_wednesday: toNumericValue(user.hours_wednesday),
+    hours_thursday: toNumericValue(user.hours_thursday),
+    hours_friday: toNumericValue(user.hours_friday),
+    hours_saturday: toNumericValue(user.hours_saturday),
+    hours_sunday: toNumericValue(user.hours_sunday),
+  };
+}
 
 export async function getCurrentUser(): Promise<CurrentEmployee> {
   const headers = await getAuthHeaders();
@@ -255,7 +285,24 @@ export async function getAdminUsers(): Promise<AdminUser[]> {
     { headers },
     "Failed to fetch admin users"
   );
-  return data.users;
+  return data.users.map(normalizeAdminUser);
+}
+
+export async function updateAdminUserHours(
+  employeeId: number,
+  payload: EmployeeWeeklyHours
+): Promise<AdminUser> {
+  const headers = await getAuthHeaders({ "Content-Type": "application/json" });
+  const data = await requestJson<{ user: AdminUser }>(
+    buildUrl(`/api/admin/users/${employeeId}/hours`),
+    {
+      method: "PATCH",
+      headers,
+      body: JSON.stringify(payload),
+    },
+    "Failed to update employee hours"
+  );
+  return normalizeAdminUser(data.user);
 }
 
 export async function getWeekEntries(weekOf?: string, employeeId?: number): Promise<WeekEntry[]> {

@@ -409,6 +409,36 @@ body{
   gap: 14px;
 }
 
+.employee-hours-modal {
+  width: min(460px, 100%);
+}
+
+.employee-hours-subtitle {
+  margin: -6px 0 0;
+  color: #475569;
+  font-size: 14px;
+}
+
+.employee-hours-grid {
+  display: grid;
+  gap: 10px;
+}
+
+.employee-hours-field {
+  display: grid;
+  gap: 6px;
+}
+
+.employee-hours-input {
+  background: #ffffff;
+}
+
+.employee-hours-total {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text);
+}
+
 .modal-title {
   margin: 0;
   font-size: 1.15rem;
@@ -959,6 +989,10 @@ body{
 .admin-record-status-btn {
   min-width: 78px;
   text-align: center;
+}
+
+.admin-user-hours-btn {
+  min-width: 88px;
 }
 
 select.admin-record-status-btn,

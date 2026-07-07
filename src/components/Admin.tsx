@@ -1,5 +1,26 @@
 import { useEffect, useMemo, useState } from "react";
-// Reusable confirmation modal
+import Recent from "./Recent";
+import ViewFooter from "./ViewFooter";
+import { getTasksForProjectPhase, getTasksForProjectPhaseWithInactive, deactivateTask, getAllTasks, updateTaskEnabled, updateTaskActive, updateTaskName, createTask, createSustainingTask, type Task } from "../api/task";
+import { getDepartments, type Department } from "../api/department";
+import {
+  createProject,
+  deactivateProject,
+  reactivateProject,
+  deactivateProjectPhase,
+  reactivateProjectPhase,
+  getAdminUsers,
+  getPhasesForProject,
+  getProjects,
+  getWeekEntries,
+  updateAdminUserHours,
+  type AdminUser,
+  type EmployeeWeeklyHours,
+  type Phase,
+  type Project,
+  type WeekEntry,
+} from "../api/timesheet";
+
 function ConfirmModal({ open, title, message, onConfirm, onCancel, confirmLabel = "Confirm", cancelLabel = "Cancel", loading }: {
   open: boolean;
   title: string;
@@ -24,25 +45,71 @@ function ConfirmModal({ open, title, message, onConfirm, onCancel, confirmLabel 
     </div>
   );
 }
-import Recent from "./Recent";
-import ViewFooter from "./ViewFooter";
-import { getTasksForProjectPhase, getTasksForProjectPhaseWithInactive, deactivateTask, getAllTasks, updateTaskEnabled, updateTaskActive, updateTaskName, createTask, createSustainingTask, type Task } from "../api/task";
-import { getDepartments, type Department } from "../api/department";
-import {
-  createProject,
-  deactivateProject,
-  reactivateProject,
-  deactivateProjectPhase,
-  reactivateProjectPhase,
-  getAdminUsers,
-  getPhasesForProject,
-  getProjects,
-  getWeekEntries,
-  type AdminUser,
-  type Phase,
-  type Project,
-  type WeekEntry,
-} from "../api/timesheet";
+
+type EmployeeHoursModalProps = {
+  open: boolean;
+  userName: string;
+  values: EmployeeWeeklyHours;
+  error: string | null;
+  loading: boolean;
+  onChange: (field: keyof EmployeeWeeklyHours, value: string) => void;
+  onClose: () => void;
+  onSave: () => void;
+};
+
+function EmployeeHoursModal({
+  open,
+  userName,
+  values,
+  error,
+  loading,
+  onChange,
+  onClose,
+  onSave,
+}: EmployeeHoursModalProps) {
+  if (!open) return null;
+
+  const dayFields: Array<{ key: keyof EmployeeWeeklyHours; label: string }> = [
+    { key: "hours_monday", label: "Monday" },
+    { key: "hours_tuesday", label: "Tuesday" },
+    { key: "hours_wednesday", label: "Wednesday" },
+    { key: "hours_thursday", label: "Thursday" },
+    { key: "hours_friday", label: "Friday" },
+    { key: "hours_saturday", label: "Saturday" },
+    { key: "hours_sunday", label: "Sunday" },
+  ];
+
+  return (
+    <div className="modal-overlay" onClick={onClose}>
+      <div className="modal-box employee-hours-modal" onClick={(event) => event.stopPropagation()}>
+        <h3 className="modal-title">Update weekly hours</h3>
+        <p className="employee-hours-subtitle">{userName}</p>
+        <div className="employee-hours-grid">
+          {dayFields.map((field) => (
+            <label key={field.key} className="employee-hours-field">
+              <span className="modal-label">{field.label}</span>
+              <input
+                type="number"
+                min="0"
+                step="0.25"
+                className="modal-input employee-hours-input"
+                value={String(values[field.key])}
+                onChange={(event) => onChange(field.key, event.target.value)}
+                disabled={loading}
+              />
+            </label>
+          ))}
+        </div>
+        <div className="employee-hours-total">Total: {formatHoursValue(values.hours)} hrs</div>
+        {error ? <p className="modal-error">{error}</p> : null}
+        <div className="modal-actions">
+          <button type="button" className="btn secondary" onClick={onClose} disabled={loading}>Cancel</button>
+          <button type="button" className="btn primary" onClick={onSave} disabled={loading}>{loading ? "Saving..." : "Save"}</button>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 type Props = {
   onEditEntryForUser?: (entry: WeekEntry, employeeId: number) => void;
@@ -58,6 +125,36 @@ type Props = {
   onBackToRecent?: () => void;
   refreshToken?: number;
 };
+
+function formatHoursValue(value: number): string {
+  if (!Number.isFinite(value)) return "0";
+  return Number.isInteger(value) ? String(value) : value.toFixed(2).replace(/\.?0+$/, "");
+}
+
+function calculateEmployeeHoursTotal(hours: Omit<EmployeeWeeklyHours, "hours">): number {
+  return Number((
+    hours.hours_monday +
+    hours.hours_tuesday +
+    hours.hours_wednesday +
+    hours.hours_thursday +
+    hours.hours_friday +
+    hours.hours_saturday +
+    hours.hours_sunday
+  ).toFixed(2));
+}
+
+function toEmployeeWeeklyHours(user: AdminUser): EmployeeWeeklyHours {
+  return {
+    hours: Number(user.hours),
+    hours_monday: Number(user.hours_monday),
+    hours_tuesday: Number(user.hours_tuesday),
+    hours_wednesday: Number(user.hours_wednesday),
+    hours_thursday: Number(user.hours_thursday),
+    hours_friday: Number(user.hours_friday),
+    hours_saturday: Number(user.hours_saturday),
+    hours_sunday: Number(user.hours_sunday),
+  };
+}
 
 export default function Admin({
   onEditEntryForUser,
@@ -132,6 +229,19 @@ export default function Admin({
   const [usersWeekOffset, setUsersWeekOffset] = useState(0);
   const [selectedUserWeekHours, setSelectedUserWeekHours] = useState<number | null>(null);
   const [usersWeekOptions, setUsersWeekOptions] = useState<Array<{ offset: number; label: string }>>([]);
+  const [editingUserHoursId, setEditingUserHoursId] = useState<number | null>(null);
+  const [employeeHoursForm, setEmployeeHoursForm] = useState<EmployeeWeeklyHours>({
+    hours: 0,
+    hours_monday: 0,
+    hours_tuesday: 0,
+    hours_wednesday: 0,
+    hours_thursday: 0,
+    hours_friday: 0,
+    hours_saturday: 0,
+    hours_sunday: 0,
+  });
+  const [employeeHoursError, setEmployeeHoursError] = useState<string | null>(null);
+  const [savingEmployeeHours, setSavingEmployeeHours] = useState(false);
 
   const getMonday = (date: Date) => {
     const monday = new Date(date);
@@ -767,6 +877,66 @@ export default function Admin({
     return name || user.email;
   };
 
+  const openEmployeeHoursModal = (user: AdminUser) => {
+    setEditingUserHoursId(user.id);
+    setEmployeeHoursForm(toEmployeeWeeklyHours(user));
+    setEmployeeHoursError(null);
+  };
+
+  const closeEmployeeHoursModal = () => {
+    if (savingEmployeeHours) return;
+    setEditingUserHoursId(null);
+    setEmployeeHoursError(null);
+  };
+
+  const handleEmployeeHoursFieldChange = (field: keyof EmployeeWeeklyHours, rawValue: string) => {
+    if (field === "hours") {
+      return;
+    }
+
+    const parsed = rawValue.trim() === "" ? 0 : Number(rawValue);
+    setEmployeeHoursForm((prev) => {
+      const next = {
+        ...prev,
+        [field]: Number.isFinite(parsed) && parsed >= 0 ? Number(parsed.toFixed(2)) : 0,
+      } as EmployeeWeeklyHours;
+
+      next.hours = calculateEmployeeHoursTotal({
+        hours_monday: next.hours_monday,
+        hours_tuesday: next.hours_tuesday,
+        hours_wednesday: next.hours_wednesday,
+        hours_thursday: next.hours_thursday,
+        hours_friday: next.hours_friday,
+        hours_saturday: next.hours_saturday,
+        hours_sunday: next.hours_sunday,
+      });
+
+      return next;
+    });
+    setEmployeeHoursError(null);
+  };
+
+  const handleSaveEmployeeHours = async () => {
+    if (editingUserHoursId == null) return;
+
+    setSavingEmployeeHours(true);
+    setEmployeeHoursError(null);
+    try {
+      const updatedUser = await updateAdminUserHours(editingUserHoursId, employeeHoursForm);
+      setUsers((prev) => prev.map((user) => (user.id === updatedUser.id ? updatedUser : user)));
+      setEditingUserHoursId(null);
+    } catch {
+      setEmployeeHoursError("Failed to update employee hours.");
+    } finally {
+      setSavingEmployeeHours(false);
+    }
+  };
+
+  const editingUser = useMemo(
+    () => users.find((user) => user.id === editingUserHoursId) ?? null,
+    [users, editingUserHoursId]
+  );
+
   useEffect(() => {
     if (activeSection !== "users" || !selectedUser) {
       setUsersWeekOptions([]);
@@ -1368,13 +1538,23 @@ export default function Admin({
                       const selected = user.id === selectedUserId;
                       return (
                         <li key={user.id}>
-                          <button
-                            type="button"
-                            className={`admin-user-item ${selected ? "is-active" : ""}`}
-                            onClick={() => setSelectedUserId(user.id)}
-                          >
-                            <span className="admin-user-name">{getUserDisplayName(user)}</span>
-                          </button>
+                          <div className={`admin-user-item admin-record-item ${selected ? "is-active" : ""}`}>
+                            <button
+                              type="button"
+                              className="admin-record-select"
+                              onClick={() => setSelectedUserId(user.id)}
+                            >
+                              <span className="admin-user-name">{getUserDisplayName(user)}</span>
+                            </button>
+                            <button
+                              type="button"
+                              className="btn secondary admin-record-status-btn admin-user-hours-btn"
+                              onClick={() => openEmployeeHoursModal(user)}
+                              title="Edit weekly hours"
+                            >
+                              {formatHoursValue(Number(user.hours))} hrs
+                            </button>
+                          </div>
                         </li>
                       );
                     })}
@@ -1408,6 +1588,17 @@ export default function Admin({
           )}
         </div>
       </div>
+
+      <EmployeeHoursModal
+        open={editingUser != null}
+        userName={editingUser ? getUserDisplayName(editingUser) : ""}
+        values={employeeHoursForm}
+        error={employeeHoursError}
+        loading={savingEmployeeHours}
+        onChange={handleEmployeeHoursFieldChange}
+        onClose={closeEmployeeHoursModal}
+        onSave={handleSaveEmployeeHours}
+      />
 
       <ViewFooter
         startContent={
