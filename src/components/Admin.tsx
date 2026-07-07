@@ -83,13 +83,18 @@ function EmployeeHoursModal({
     <div className="modal-overlay" onClick={onClose}>
       <div className="modal-box employee-hours-modal" onClick={(event) => event.stopPropagation()}>
         <h3 className="modal-title">Update weekly hours</h3>
-        <p className="employee-hours-subtitle">{userName}</p>
+        <div className="employee-hours-header">
+          <span className="employee-hours-name">{userName}</span>
+          <span className="employee-hours-total">Total: {formatHoursValue(values.hours)} hrs</span>
+        </div>
         <div className="employee-hours-grid">
           {dayFields.map((field) => (
             <label key={field.key} className="employee-hours-field">
-              <span className="modal-label">{field.label}</span>
+              <span className="employee-hours-field-label">{field.label}</span>
               <input
-                type="number"
+                type="text"
+                inputMode="decimal"
+                maxLength={4}
                 min="0"
                 step="0.25"
                 className="modal-input employee-hours-input"
@@ -100,7 +105,6 @@ function EmployeeHoursModal({
             </label>
           ))}
         </div>
-        <div className="employee-hours-total">Total: {formatHoursValue(values.hours)} hrs</div>
         {error ? <p className="modal-error">{error}</p> : null}
         <div className="modal-actions">
           <button type="button" className="btn secondary" onClick={onClose} disabled={loading}>Cancel</button>

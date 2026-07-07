@@ -410,13 +410,33 @@ body{
 }
 
 .employee-hours-modal {
-  width: min(460px, 100%);
+  width: min(520px, 100%);
 }
 
-.employee-hours-subtitle {
-  margin: -6px 0 0;
+.employee-hours-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 16px;
+  margin: -6px 0 2px;
+}
+
+.employee-hours-name,
+.employee-hours-total,
+.employee-hours-field-label {
+  font-size: 15px;
+  line-height: 1.2;
   color: #475569;
-  font-size: 14px;
+}
+
+.employee-hours-name {
+  font-weight: 700;
+  color: var(--text);
+}
+
+.employee-hours-total {
+  font-weight: 600;
+  white-space: nowrap;
 }
 
 .employee-hours-grid {
@@ -425,16 +445,23 @@ body{
 }
 
 .employee-hours-field {
-  display: grid;
-  gap: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
 }
 
 .employee-hours-input {
   background: #ffffff;
+  width: 92px;
+  max-width: 92px;
+  text-align: right;
+  flex: 0 0 92px;
 }
 
-.employee-hours-total {
-  font-size: 15px;
+.employee-hours-field-label {
+  flex: 1 1 auto;
+  text-align: left;
   font-weight: 600;
   color: var(--text);
 }
