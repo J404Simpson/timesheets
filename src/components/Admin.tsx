@@ -82,8 +82,7 @@ function EmployeeHoursModal({
   return (
     <div className="modal-overlay" onClick={onClose}>
       <div className="modal-box employee-hours-modal" onClick={(event) => event.stopPropagation()}>
-        <h3 className="modal-title">Update weekly hours</h3>
-        <div className="employee-hours-header">
+        <div className="employee-hours-header employee-hours-title">
           <span className="employee-hours-name">{userName}</span>
           <span className="employee-hours-total">Total: {formatHoursValue(values.hours)} hrs</span>
         </div>
