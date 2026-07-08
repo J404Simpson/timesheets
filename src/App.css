@@ -420,7 +420,7 @@ body{
 .employee-hours-header {
   display: flex;
   flex-direction: column;
-  align-items: flex-start;
+  align-items: center;
   gap: 4px;
 }
 
@@ -432,7 +432,7 @@ body{
 }
 
 .employee-hours-total {
-  font-size: 1.15rem;
+  font-size: 1rem;
   font-weight: 600;
   color: #475569;
   white-space: nowrap;
