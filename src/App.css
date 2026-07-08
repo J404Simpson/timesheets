@@ -410,18 +410,18 @@ body{
 }
 
 .employee-hours-modal {
-  width: min(400px, 100%);
+  width: min(300px, 100%);
 }
 
 .employee-hours-title {
-  margin: 0 0 12px;
+  margin: 0 0 8px;
 }
 
 .employee-hours-header {
   display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 16px;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
 }
 
 .employee-hours-name {
