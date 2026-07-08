@@ -449,14 +449,18 @@ body{
   align-items: center;
   justify-content: space-between;
   gap: 16px;
+  height: 28px;
 }
 
 .employee-hours-input {
   background: #ffffff;
-  width: 92px;
-  max-width: 92px;
+  width: 72px;
+  max-width: 72px;
   text-align: right;
-  flex: 0 0 92px;
+  flex: 0 0 72px;
+  height: 28px;
+  padding: 4px 8px;
+  margin: 0;
 }
 
 .employee-hours-field-label {
@@ -464,6 +468,8 @@ body{
   text-align: left;
   font-weight: 600;
   color: var(--text);
+  font-size: 15px;
+  line-height: 1.2;
 }
 
 .modal-title {
