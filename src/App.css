@@ -410,7 +410,7 @@ body{
 }
 
 .employee-hours-modal {
-  width: min(520px, 100%);
+  width: min(350px, 100%);
 }
 
 .employee-hours-title {
