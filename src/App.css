@@ -467,6 +467,13 @@ select:focus-visible {
   text-align-last: center;
 }
 
+.employee-hours-department-select:focus,
+.employee-hours-department-select:focus-visible {
+  outline: none;
+  border-color: #cbd5e1;
+  box-shadow: none;
+}
+
 .employee-hours-grid {
   display: grid;
   gap: 8px;
