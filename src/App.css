@@ -532,10 +532,11 @@ select:focus-visible {
   box-sizing: border-box;
 }
 
-.modal-input:focus {
+.modal-input:focus,
+.modal-input:focus-visible {
   outline: none;
-  border-color: var(--accent);
-  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
+  border-color: rgba(15, 23, 42, 0.2);
+  box-shadow: none;
 }
 
 .modal-box .new-task-name-input {
