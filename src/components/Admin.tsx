@@ -53,6 +53,7 @@ type EmployeeHoursModalProps = {
   departmentId: number | null;
   departments: Department[];
   values: EmployeeWeeklyHours;
+  canSave: boolean;
   error: string | null;
   loading: boolean;
   onChange: (field: keyof EmployeeWeeklyHours, value: string) => void;
@@ -67,6 +68,7 @@ function EmployeeHoursModal({
   departmentId,
   departments,
   values,
+  canSave,
   error,
   loading,
   onChange,
@@ -127,7 +129,7 @@ function EmployeeHoursModal({
         {error ? <p className="modal-error">{error}</p> : null}
         <div className="modal-actions">
           <button type="button" className="btn secondary" onClick={onClose} disabled={loading}>Cancel</button>
-          <button type="button" className="btn primary" onClick={onSave} disabled={loading}>{loading ? "Saving..." : "Save"}</button>
+          <button type="button" className="btn primary" onClick={onSave} disabled={loading || !canSave}>{loading ? "Saving..." : "Save"}</button>
         </div>
       </div>
     </div>
@@ -177,6 +179,19 @@ function toEmployeeWeeklyHours(user: AdminUser): EmployeeWeeklyHours {
     hours_saturday: Number(user.hours_saturday),
     hours_sunday: Number(user.hours_sunday),
   };
+}
+
+function isEmployeeHoursUnchanged(form: EmployeeWeeklyHours, user: AdminUser): boolean {
+  return (
+    Number(user.hours) === form.hours &&
+    Number(user.hours_monday) === form.hours_monday &&
+    Number(user.hours_tuesday) === form.hours_tuesday &&
+    Number(user.hours_wednesday) === form.hours_wednesday &&
+    Number(user.hours_thursday) === form.hours_thursday &&
+    Number(user.hours_friday) === form.hours_friday &&
+    Number(user.hours_saturday) === form.hours_saturday &&
+    Number(user.hours_sunday) === form.hours_sunday
+  );
 }
 
 export default function Admin({
@@ -978,6 +993,16 @@ export default function Admin({
     [users, editingUserHoursId]
   );
 
+  const canSaveEmployeeHours = useMemo(() => {
+    if (!editingUser) return false;
+    if (editingUserDepartmentId == null) return false;
+
+    const departmentChanged = (editingUser.department_id ?? null) !== editingUserDepartmentId;
+    const hoursChanged = !isEmployeeHoursUnchanged(employeeHoursForm, editingUser);
+
+    return departmentChanged || hoursChanged;
+  }, [editingUser, editingUserDepartmentId, employeeHoursForm]);
+
   useEffect(() => {
     if (activeSection !== "users" || !selectedUser) {
       setUsersWeekOptions([]);
@@ -1636,6 +1661,7 @@ export default function Admin({
         departmentId={editingUserDepartmentId}
         departments={departments}
         values={employeeHoursForm}
+        canSave={canSaveEmployeeHours}
         error={employeeHoursError}
         loading={savingEmployeeHours}
         onChange={handleEmployeeHoursFieldChange}
