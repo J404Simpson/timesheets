@@ -5,7 +5,6 @@ export type Task = {
   name: string;
   enabled: boolean;
   active: boolean;
-  department_id?: number | null;
   task_type?: "LEAVE" | "PROJECT" | "SUSTAINING";
   phases?: { id: number; name: string }[];
   departments?: { id: number; name: string }[];

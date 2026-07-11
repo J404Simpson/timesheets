@@ -768,10 +768,15 @@ export default function Admin({
     [allTasks]
   );
 
+  const taskMatchesDepartmentFilter = (task: Task, departmentId: number | null) => {
+    if (departmentId === null) return true;
+    return (task.departments ?? []).some((d) => d.id === departmentId);
+  };
+
   const editTaskPhaseOptions = useMemo(() => {
     const phaseMap = new Map<number, string>();
     for (const task of projectEditTasks) {
-      if (editTaskDeptFilter !== null && task.department_id !== editTaskDeptFilter) continue;
+      if (!taskMatchesDepartmentFilter(task, editTaskDeptFilter)) continue;
       if (editTaskActiveFilter === "active" && task.active === false) continue;
       if (editTaskActiveFilter === "inactive" && task.active !== false) continue;
       for (const phase of task.phases ?? []) {
@@ -797,7 +802,7 @@ export default function Admin({
 
   const filteredEditTasks = useMemo(() => {
     return projectEditTasks
-      .filter((task) => editTaskDeptFilter === null || task.department_id === editTaskDeptFilter)
+      .filter((task) => taskMatchesDepartmentFilter(task, editTaskDeptFilter))
       .filter((task) => {
         if (editTaskActiveFilter === "active") return task.active !== false;
         return task.active === false;
@@ -823,9 +828,11 @@ export default function Admin({
     setSustainingTaskNameDraft(selectedSustainingTask?.name ?? "");
   }, [selectedSustainingTask]);
 
-  const getDepartmentName = (departmentId?: number | null) => {
-    if (!departmentId) return "No department";
-    return departments.find((department) => department.id === departmentId)?.name ?? "No department";
+  const getTaskDepartmentNames = (task?: Task | null) => {
+    if (!task) return "No department";
+    const names = (task.departments ?? []).map((department) => department.name).filter(Boolean);
+    if (names.length === 0) return "No department";
+    return names.join(", ");
   };
 
   const handleToggleEditTaskEnabled = async () => {
@@ -1268,7 +1275,7 @@ export default function Admin({
                 ) : (
                   <ul className="admin-user-list">
                     {tasks
-                      .filter((task) => taskDeptFilter === null || task.department_id === taskDeptFilter)
+                      .filter((task) => taskMatchesDepartmentFilter(task, taskDeptFilter))
                       .map((task) => (
                         <li key={task.id}>
                           <div className="admin-user-item admin-record-item">
@@ -1390,7 +1397,7 @@ export default function Admin({
 
                       <p className="admin-detail-label">Department</p>
                       <div className="admin-detail-box">
-                        {getDepartmentName(selectedEditTask.department_id)}
+                        {getTaskDepartmentNames(selectedEditTask)}
                       </div>
 
                       <p className="admin-detail-label">Phase</p>
