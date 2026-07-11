@@ -439,9 +439,17 @@ body{
   line-height: 1.2;
 }
 
+.employee-hours-department {
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: #64748b;
+  line-height: 1.2;
+}
+
 .employee-hours-grid {
   display: grid;
   gap: 8px;
+  margin: 16px 0;
 }
 
 .employee-hours-field {
@@ -466,6 +474,12 @@ body{
   font-weight: 600;
   color: var(--text);
   line-height: 1;
+}
+
+.employee-hours-total-section {
+  display: flex;
+  justify-content: center;
+  margin: 12px 0 16px;
 }
 
 .modal-title {

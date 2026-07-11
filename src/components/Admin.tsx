@@ -49,6 +49,7 @@ function ConfirmModal({ open, title, message, onConfirm, onCancel, confirmLabel 
 type EmployeeHoursModalProps = {
   open: boolean;
   userName: string;
+  departmentName?: string | null;
   values: EmployeeWeeklyHours;
   error: string | null;
   loading: boolean;
@@ -60,6 +61,7 @@ type EmployeeHoursModalProps = {
 function EmployeeHoursModal({
   open,
   userName,
+  departmentName,
   values,
   error,
   loading,
@@ -84,7 +86,7 @@ function EmployeeHoursModal({
       <div className="modal-box employee-hours-modal" onClick={(event) => event.stopPropagation()}>
         <div className="employee-hours-header employee-hours-title">
           <span className="employee-hours-name">{userName}</span>
-          <span className="employee-hours-total">Total: {formatHoursValue(values.hours)} hrs</span>
+          {departmentName && <span className="employee-hours-department">{departmentName}</span>}
         </div>
         <div className="employee-hours-grid">
           {dayFields.map((field) => (
@@ -103,6 +105,9 @@ function EmployeeHoursModal({
               />
             </label>
           ))}
+        </div>
+        <div className="employee-hours-total-section">
+          <span className="employee-hours-total">Total: {formatHoursValue(values.hours)} hrs</span>
         </div>
         {error ? <p className="modal-error">{error}</p> : null}
         <div className="modal-actions">
@@ -1595,6 +1600,7 @@ export default function Admin({
       <EmployeeHoursModal
         open={editingUser != null}
         userName={editingUser ? getUserDisplayName(editingUser) : ""}
+        departmentName={editingUser ? departments.find((d) => d.id === editingUser.department_id)?.name ?? null : null}
         values={employeeHoursForm}
         error={employeeHoursError}
         loading={savingEmployeeHours}
