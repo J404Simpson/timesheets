@@ -22,6 +22,12 @@ body{
   color:var(--text);
 }
 
+select:focus,
+select:focus-visible {
+  outline: none;
+  box-shadow: none;
+}
+
 /* layout */
 .app{
   height:100%;
