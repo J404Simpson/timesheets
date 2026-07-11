@@ -249,6 +249,10 @@ export type AdminUser = EmployeeWeeklyHours & {
   department_id?: number | null;
 };
 
+export type AdminUserHoursUpdatePayload = EmployeeWeeklyHours & {
+  department_id: number;
+};
+
 function toNumericValue(value: unknown): number {
   const parsed = typeof value === "number" ? value : Number(value);
   return Number.isFinite(parsed) ? parsed : 0;
@@ -290,7 +294,7 @@ export async function getAdminUsers(): Promise<AdminUser[]> {
 
 export async function updateAdminUserHours(
   employeeId: number,
-  payload: EmployeeWeeklyHours
+  payload: AdminUserHoursUpdatePayload
 ): Promise<AdminUser> {
   const headers = await getAuthHeaders({ "Content-Type": "application/json" });
   const data = await requestJson<{ user: AdminUser }>(

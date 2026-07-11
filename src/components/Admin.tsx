@@ -14,6 +14,7 @@ import {
   getProjects,
   getWeekEntries,
   updateAdminUserHours,
+  type AdminUserHoursUpdatePayload,
   type AdminUser,
   type EmployeeWeeklyHours,
   type Phase,
@@ -49,11 +50,13 @@ function ConfirmModal({ open, title, message, onConfirm, onCancel, confirmLabel 
 type EmployeeHoursModalProps = {
   open: boolean;
   userName: string;
-  departmentName?: string | null;
+  departmentId: number | null;
+  departments: Department[];
   values: EmployeeWeeklyHours;
   error: string | null;
   loading: boolean;
   onChange: (field: keyof EmployeeWeeklyHours, value: string) => void;
+  onDepartmentChange: (value: string) => void;
   onClose: () => void;
   onSave: () => void;
 };
@@ -61,11 +64,13 @@ type EmployeeHoursModalProps = {
 function EmployeeHoursModal({
   open,
   userName,
-  departmentName,
+  departmentId,
+  departments,
   values,
   error,
   loading,
   onChange,
+  onDepartmentChange,
   onClose,
   onSave,
 }: EmployeeHoursModalProps) {
@@ -86,7 +91,17 @@ function EmployeeHoursModal({
       <div className="modal-box employee-hours-modal" onClick={(event) => event.stopPropagation()}>
         <div className="employee-hours-header employee-hours-title">
           <span className="employee-hours-name">{userName}</span>
-          {departmentName && <span className="employee-hours-department">{departmentName}</span>}
+          <select
+            className="employee-hours-department-select"
+            value={departmentId ?? ""}
+            onChange={(event) => onDepartmentChange(event.target.value)}
+            disabled={loading}
+          >
+            <option value="" disabled>Select department</option>
+            {departments.map((department) => (
+              <option key={department.id} value={department.id}>{department.name}</option>
+            ))}
+          </select>
         </div>
         <div className="employee-hours-grid">
           {dayFields.map((field) => (
@@ -250,6 +265,7 @@ export default function Admin({
   });
   const [employeeHoursError, setEmployeeHoursError] = useState<string | null>(null);
   const [savingEmployeeHours, setSavingEmployeeHours] = useState(false);
+  const [editingUserDepartmentId, setEditingUserDepartmentId] = useState<number | null>(null);
 
   const getMonday = (date: Date) => {
     const monday = new Date(date);
@@ -889,12 +905,14 @@ export default function Admin({
   const openEmployeeHoursModal = (user: AdminUser) => {
     setEditingUserHoursId(user.id);
     setEmployeeHoursForm(toEmployeeWeeklyHours(user));
+    setEditingUserDepartmentId(user.department_id ?? null);
     setEmployeeHoursError(null);
   };
 
   const closeEmployeeHoursModal = () => {
     if (savingEmployeeHours) return;
     setEditingUserHoursId(null);
+    setEditingUserDepartmentId(null);
     setEmployeeHoursError(null);
   };
 
@@ -925,17 +943,31 @@ export default function Admin({
     setEmployeeHoursError(null);
   };
 
+  const handleEmployeeDepartmentChange = (rawValue: string) => {
+    setEditingUserDepartmentId(rawValue === "" ? null : Number(rawValue));
+    setEmployeeHoursError(null);
+  };
+
   const handleSaveEmployeeHours = async () => {
     if (editingUserHoursId == null) return;
+    if (editingUserDepartmentId == null) {
+      setEmployeeHoursError("Department is required.");
+      return;
+    }
 
     setSavingEmployeeHours(true);
     setEmployeeHoursError(null);
     try {
-      const updatedUser = await updateAdminUserHours(editingUserHoursId, employeeHoursForm);
+      const payload: AdminUserHoursUpdatePayload = {
+        ...employeeHoursForm,
+        department_id: editingUserDepartmentId,
+      };
+      const updatedUser = await updateAdminUserHours(editingUserHoursId, payload);
       setUsers((prev) => prev.map((user) => (user.id === updatedUser.id ? updatedUser : user)));
       setEditingUserHoursId(null);
+      setEditingUserDepartmentId(null);
     } catch {
-      setEmployeeHoursError("Failed to update employee hours.");
+      setEmployeeHoursError("Failed to update employee details.");
     } finally {
       setSavingEmployeeHours(false);
     }
@@ -1601,11 +1633,13 @@ export default function Admin({
       <EmployeeHoursModal
         open={editingUser != null}
         userName={editingUser ? getUserDisplayName(editingUser) : ""}
-        departmentName={editingUser ? departments.find((d) => d.id === editingUser.department_id)?.name ?? null : null}
+        departmentId={editingUserDepartmentId}
+        departments={departments}
         values={employeeHoursForm}
         error={employeeHoursError}
         loading={savingEmployeeHours}
         onChange={handleEmployeeHoursFieldChange}
+        onDepartmentChange={handleEmployeeDepartmentChange}
         onClose={closeEmployeeHoursModal}
         onSave={handleSaveEmployeeHours}
       />
