@@ -610,6 +610,7 @@ export default function Admin({
 
   useEffect(() => {
     loadUsers();
+    getDepartments().then(setDepartments).catch(() => {});
   }, []);
 
   useEffect(() => {
