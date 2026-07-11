@@ -539,6 +539,14 @@ select:focus-visible {
   box-shadow: none;
 }
 
+.modal-box #new-project-name:focus,
+.modal-box #new-project-name:focus-visible {
+  outline: none !important;
+  border-color: rgba(15, 23, 42, 0.2) !important;
+  box-shadow: none !important;
+  -webkit-box-shadow: none !important;
+}
+
 .modal-box .new-task-name-input {
   border-color: rgba(15, 23, 42, 0.15);
   background: #ffffff;
