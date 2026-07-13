@@ -229,7 +229,6 @@ export default function Admin({
       | "reactivate-project"
       | "phase"
       | "task"
-      | "edit-task-status"
       | "edit-task-name"
       | "edit-sustaining-task-name"
       | "reactivate-phase"
@@ -237,6 +236,9 @@ export default function Admin({
       | "allow-similar-new-sustaining-task"
       | "allow-similar-edit-task-name"
       | "allow-similar-edit-sustaining-task-name"
+      | "edit-task-qualifying"
+      | "edit-task-departments"
+      | "edit-task-status-change"
       | null;
     id: number | null;
     name: string;
@@ -521,14 +523,35 @@ export default function Admin({
       confirmMessage = `Are you sure you want to set task "${confirmModal.name}" to inactive?`;
       confirmLoading = deactivatingTaskId === confirmModal.id;
       confirmAction = confirmDeactivateTask;
-    } else if (confirmModal.type === "edit-task-status") {
-      confirmTitle = "Set Task Inactive";
-      confirmMessage = `Are you sure you want to set task "${confirmModal.name}" to inactive?`;
+    } else if (confirmModal.type === "edit-task-status-change") {
+      const makeActive = confirmModal.note === "active";
+      confirmTitle = makeActive ? "Set Task Active" : "Set Task Inactive";
+      confirmMessage = `Are you sure you want to set task "${confirmModal.name}" to ${makeActive ? "active" : "inactive"}?`;
       confirmLoading = savingTaskActiveId === confirmModal.id;
-      confirmLabel = "Set Inactive";
+      confirmLabel = makeActive ? "Set Active" : "Set Inactive";
       confirmAction = async () => {
         if (!confirmModal.id) return;
-        await handleSetEditTaskActive(false, confirmModal.id);
+        await handleSetEditTaskActive(makeActive, confirmModal.id);
+        setConfirmModal({ type: null, id: null, name: "" });
+      };
+    } else if (confirmModal.type === "edit-task-qualifying") {
+      const setToQualifying = confirmModal.note === "qualifying";
+      confirmTitle = "Confirm Qualifying Change";
+      confirmMessage = `Are you sure you want to set task "${confirmModal.name}" to ${setToQualifying ? "qualifying" : "non-qualifying"}?`;
+      confirmLoading = savingTaskEnabledId === confirmModal.id;
+      confirmLabel = setToQualifying ? "Set Qualifying" : "Set Non-Qualifying";
+      confirmAction = async () => {
+        if (!confirmModal.id) return;
+        await handleToggleEditTaskEnabled(confirmModal.id, setToQualifying);
+        setConfirmModal({ type: null, id: null, name: "" });
+      };
+    } else if (confirmModal.type === "edit-task-departments") {
+      confirmTitle = "Confirm Department Changes";
+      confirmMessage = confirmModal.note ?? "Are you sure you want to update department assignments for this task?";
+      confirmLoading = savingTaskDepartmentsId === confirmModal.id;
+      confirmLabel = "Save Departments";
+      confirmAction = async () => {
+        await handleSaveEditTaskDepartments();
         setConfirmModal({ type: null, id: null, name: "" });
       };
     } else if (confirmModal.type === "edit-task-name") {
@@ -1017,18 +1040,45 @@ export default function Admin({
     }
   };
 
-  const handleToggleEditTaskEnabled = async () => {
+  const handleRequestEditTaskDepartmentsSave = () => {
     if (!selectedEditTask) return;
-    setSavingTaskEnabledId(selectedEditTask.id);
+    if (editTaskDepartmentDraftIds.length === 0) {
+      setAllTasksError("At least one department is required.");
+      return;
+    }
+    if (!hasEditTaskDepartmentChanges) return;
+
+    setConfirmModal({
+      type: "edit-task-departments",
+      id: selectedEditTask.id,
+      name: selectedEditTask.name,
+      note: "Are you sure you want to update department assignments for this task?",
+    });
+  };
+
+  const handleToggleEditTaskEnabled = async (taskId: number, enabled: boolean) => {
+    setSavingTaskEnabledId(taskId);
     setAllTasksError(null);
     try {
-      const updatedTask = await updateTaskEnabled(selectedEditTask.id, !selectedEditTask.enabled);
+      const updatedTask = await updateTaskEnabled(taskId, enabled);
       setAllTasks((prev) => prev.map((task) => (task.id === updatedTask.id ? { ...task, enabled: updatedTask.enabled } : task)));
     } catch {
       setAllTasksError("Failed to update task enabled state.");
     } finally {
       setSavingTaskEnabledId(null);
     }
+  };
+
+  const handleRequestEditTaskEnabledChange = (enabled: boolean) => {
+    if (!selectedEditTask) return;
+    if (selectedEditTask.enabled === enabled) return;
+
+    setConfirmModal({
+      type: "edit-task-qualifying",
+      id: selectedEditTask.id,
+      name: selectedEditTask.name,
+      note: enabled ? "qualifying" : "non-qualifying",
+    });
   };
 
   const handleSetEditTaskActive = async (active: boolean, taskIdOverride?: number) => {
@@ -1052,11 +1102,13 @@ export default function Admin({
 
   const handleEditTaskStatusToggle = () => {
     if (!selectedEditTask) return;
-    if (selectedEditTask.active) {
-      setConfirmModal({ type: "edit-task-status", id: selectedEditTask.id, name: selectedEditTask.name });
-      return;
-    }
-    void handleSetEditTaskActive(true);
+    const nextActive = !selectedEditTask.active;
+    setConfirmModal({
+      type: "edit-task-status-change",
+      id: selectedEditTask.id,
+      name: selectedEditTask.name,
+      note: nextActive ? "active" : "inactive",
+    });
   };
 
   const handleRequestEditTaskNameSave = () => {
@@ -1552,13 +1604,29 @@ export default function Admin({
               </aside>
 
               <section className="admin-users-recent-panel">
-                <div className="admin-users-list-header">
-                  <h3>Details</h3>
-                </div>
                 {selectedEditTask ? (
                   <div className="admin-task-detail">
                     <div className="admin-task-detail-body">
-                      <p className="admin-detail-label">Name</p>
+                      <div style={{ display: "grid", gridTemplateColumns: "1fr auto 1fr", alignItems: "center", marginBottom: 10 }}>
+                        <div />
+                        <h3 style={{ margin: 0, textAlign: "center" }}>{selectedEditTask.name}</h3>
+                        <div style={{ display: "flex", justifyContent: "flex-end" }}>
+                          <button
+                            type="button"
+                            className="btn secondary admin-record-status-btn"
+                            onClick={handleEditTaskStatusToggle}
+                            disabled={savingTaskActiveId === selectedEditTask.id}
+                            style={{ minWidth: 92, textAlign: "center" }}
+                          >
+                            {savingTaskActiveId === selectedEditTask.id
+                              ? "Saving..."
+                              : selectedEditTask.active
+                                ? "Active"
+                                : "Inactive"}
+                          </button>
+                        </div>
+                      </div>
+
                       <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                         <input
                           type="text"
@@ -1577,45 +1645,6 @@ export default function Admin({
                         />
                       </div>
 
-                      <p className="admin-detail-label">Departments</p>
-                      <div className="admin-detail-box" style={{ maxHeight: 160, overflowY: "auto", display: "flex", flexDirection: "column", alignItems: "flex-start", gap: 6 }}>
-                        {departments.length === 0 ? (
-                          <span className="muted">No departments available</span>
-                        ) : (
-                          departments.map((department) => (
-                            <label key={department.id} style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer", width: "100%" }}>
-                              <input
-                                type="checkbox"
-                                checked={editTaskDepartmentDraftIds.includes(department.id)}
-                                onChange={(event) => {
-                                  setEditTaskDepartmentDraftIds((prev) => (
-                                    event.target.checked
-                                      ? (prev.includes(department.id) ? prev : [...prev, department.id])
-                                      : prev.filter((id) => id !== department.id)
-                                  ));
-                                }}
-                                disabled={savingTaskDepartmentsId === selectedEditTask.id}
-                              />
-                              {department.name}
-                            </label>
-                          ))
-                        )}
-                      </div>
-                      <div style={{ display: "flex", justifyContent: "flex-end", marginTop: 8 }}>
-                        <button
-                          type="button"
-                          className="btn secondary"
-                          onClick={handleSaveEditTaskDepartments}
-                          disabled={
-                            savingTaskDepartmentsId === selectedEditTask.id ||
-                            editTaskDepartmentDraftIds.length === 0 ||
-                            !hasEditTaskDepartmentChanges
-                          }
-                        >
-                          {savingTaskDepartmentsId === selectedEditTask.id ? "Saving..." : "Save Departments"}
-                        </button>
-                      </div>
-
                       <p className="admin-detail-label">Phase</p>
                       <div className="admin-detail-box">
                         {selectedEditTask.phases && selectedEditTask.phases.length > 0
@@ -1623,20 +1652,17 @@ export default function Admin({
                           : <span className="muted">No phase assigned</span>}
                       </div>
 
-                      <p className="admin-detail-label">Status</p>
-                      <div style={{ paddingTop: 0 }}>
-                        <button
-                          type="button"
-                          className="btn secondary admin-record-status-btn"
-                          onClick={handleEditTaskStatusToggle}
-                          disabled={savingTaskActiveId === selectedEditTask.id}
-                        >
-                          {savingTaskActiveId === selectedEditTask.id
-                            ? "Saving..."
-                            : selectedEditTask.active
-                              ? "Active"
-                              : "Inactive"}
-                        </button>
+                      <p className="admin-detail-label">Departments</p>
+                      <div className="admin-detail-box">
+                        {selectedEditTask.departments && selectedEditTask.departments.length > 0
+                          ? (
+                            <div style={{ display: "flex", flexDirection: "column", gap: 2, width: "100%" }}>
+                              {selectedEditTask.departments.map((department) => (
+                                <div key={department.id}>{department.name}</div>
+                              ))}
+                            </div>
+                          )
+                          : <span className="muted">No department assigned</span>}
                       </div>
                     </div>
 
@@ -1644,7 +1670,7 @@ export default function Admin({
                       <button
                         type="button"
                         className={`btn admin-qualifying-btn ${selectedEditTask.enabled ? "is-selected" : ""}`}
-                        onClick={() => !selectedEditTask.enabled && handleToggleEditTaskEnabled()}
+                        onClick={() => handleRequestEditTaskEnabledChange(true)}
                         disabled={savingTaskEnabledId === selectedEditTask.id || selectedEditTask.enabled}
                       >
                         Qualifying
@@ -1652,7 +1678,7 @@ export default function Admin({
                       <button
                         type="button"
                         className={`btn admin-qualifying-btn ${!selectedEditTask.enabled ? "is-selected" : ""}`}
-                        onClick={() => selectedEditTask.enabled && handleToggleEditTaskEnabled()}
+                        onClick={() => handleRequestEditTaskEnabledChange(false)}
                         disabled={savingTaskEnabledId === selectedEditTask.id || !selectedEditTask.enabled}
                       >
                         Non-Qualifying
@@ -1742,13 +1768,25 @@ export default function Admin({
               </aside>
 
               <section className="admin-users-recent-panel">
-                <div className="admin-users-list-header">
-                  <h3>Details</h3>
-                </div>
                 {selectedSustainingTask ? (
                     <div className="admin-task-detail">
                       <div className="admin-task-detail-body">
-                        <p className="admin-detail-label">Name</p>
+                        <div style={{ display: "grid", gridTemplateColumns: "1fr auto 1fr", alignItems: "center", marginBottom: 10 }}>
+                          <div />
+                          <h3 style={{ margin: 0, textAlign: "center" }}>{selectedSustainingTask.name}</h3>
+                          <div style={{ display: "flex", justifyContent: "flex-end" }}>
+                            <button
+                              type="button"
+                              className="btn secondary admin-record-status-btn"
+                              onClick={() => handleDeactivateTask(selectedSustainingTask)}
+                              disabled={deactivatingTaskId === selectedSustainingTask.id || !selectedSustainingTask.active}
+                              style={{ minWidth: 92, textAlign: "center" }}
+                            >
+                              {deactivatingTaskId === selectedSustainingTask.id ? "Saving..." : selectedSustainingTask.active ? "Active" : "Inactive"}
+                            </button>
+                          </div>
+                        </div>
+
                         <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                           <input
                             type="text"
@@ -1778,18 +1816,6 @@ export default function Admin({
                               </div>
                             )
                             : <span className="muted">No department assigned</span>}
-                        </div>
-
-                        <p className="admin-detail-label">Status</p>
-                        <div style={{ paddingTop: 0 }}>
-                          <button
-                            type="button"
-                            className="btn secondary admin-record-status-btn"
-                            onClick={() => handleDeactivateTask(selectedSustainingTask)}
-                            disabled={deactivatingTaskId === selectedSustainingTask.id || !selectedSustainingTask.active}
-                          >
-                            {deactivatingTaskId === selectedSustainingTask.id ? "Saving..." : selectedSustainingTask.active ? "Active" : "Inactive"}
-                          </button>
                         </div>
                       </div>
                     </div>
