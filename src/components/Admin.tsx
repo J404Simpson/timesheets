@@ -234,6 +234,7 @@ export default function Admin({
       | "reactivate-phase"
       | "allow-similar-new-task"
       | "allow-similar-new-sustaining-task"
+      | "allow-similar-edit-sustaining-task-modal"
       | "allow-similar-edit-task-name"
       | "allow-similar-edit-sustaining-task-name"
       | "edit-task-qualifying"
@@ -274,6 +275,7 @@ export default function Admin({
   const [savingNewTask, setSavingNewTask] = useState(false);
   const [newTaskError, setNewTaskError] = useState<string | null>(null);
   const [showNewSustainingTaskModal, setShowNewSustainingTaskModal] = useState(false);
+  const [editingSustainingTaskId, setEditingSustainingTaskId] = useState<number | null>(null);
   const [newSustainingTaskName, setNewSustainingTaskName] = useState("");
   const [newSustainingTaskDeptIds, setNewSustainingTaskDeptIds] = useState<number[]>([]);
   const [newSustainingTaskError, setNewSustainingTaskError] = useState<string | null>(null);
@@ -333,6 +335,41 @@ export default function Admin({
 
   const isSimilarNameConflictMessage = (message: string) =>
     message.toLowerCase().includes("very similar to existing task");
+
+  const haveSameDepartmentIds = (left: number[], right: number[]) => {
+    if (left.length !== right.length) return false;
+    const leftSet = new Set(left);
+    for (const id of right) {
+      if (!leftSet.has(id)) return false;
+    }
+    return true;
+  };
+
+  const closeSustainingTaskModal = () => {
+    if (savingNewSustainingTask) return;
+    setShowNewSustainingTaskModal(false);
+    setEditingSustainingTaskId(null);
+    setNewSustainingTaskName("");
+    setNewSustainingTaskDeptIds([]);
+    setNewSustainingTaskError(null);
+  };
+
+  const openNewSustainingTaskModal = () => {
+    setEditingSustainingTaskId(null);
+    setNewSustainingTaskName("");
+    setNewSustainingTaskDeptIds([]);
+    setNewSustainingTaskError(null);
+    setShowNewSustainingTaskModal(true);
+  };
+
+  const openEditSustainingTaskModal = () => {
+    if (!selectedSustainingTask) return;
+    setEditingSustainingTaskId(selectedSustainingTask.id);
+    setNewSustainingTaskName(selectedSustainingTask.name);
+    setNewSustainingTaskDeptIds((selectedSustainingTask.departments ?? []).map((department) => department.id));
+    setNewSustainingTaskError(null);
+    setShowNewSustainingTaskModal(true);
+  };
 
   const loadProjects = async (view: "active" | "all") => {
     setLoadingProjects(true);
@@ -644,6 +681,15 @@ export default function Admin({
         setConfirmModal({ type: null, id: null, name: "" });
         await handleSaveNewSustainingTask(true);
       };
+    } else if (confirmModal.type === "allow-similar-edit-sustaining-task-modal") {
+      confirmTitle = "Similar Task Name";
+      confirmMessage = `${confirmModal.note ?? "This task name is very similar to an existing task."} Save anyway?`;
+      confirmLoading = savingNewSustainingTask;
+      confirmLabel = "Save Anyway";
+      confirmAction = async () => {
+        setConfirmModal({ type: null, id: null, name: "" });
+        await handleSaveNewSustainingTask(true);
+      };
     } else if (confirmModal.type === "allow-similar-edit-task-name") {
       confirmTitle = "Similar Task Name";
       confirmMessage = `${confirmModal.note ?? "This task name is very similar to an existing task."} Save anyway?`;
@@ -783,16 +829,76 @@ export default function Admin({
     setSavingNewSustainingTask(true);
     setNewSustainingTaskError(null);
     try {
-      await createSustainingTask(
-        trimmed,
-        newSustainingTaskDeptIds,
-        false,
-        allowSimilarName ? { allowSimilarName: true } : undefined
-      );
-      setShowNewSustainingTaskModal(false);
-      setNewSustainingTaskName("");
-      setNewSustainingTaskDeptIds([]);
-      await loadSustainingTasks(sustainingView);
+      if (editingSustainingTaskId != null) {
+        const editingTask = sustainingTasks.find((task) => task.id === editingSustainingTaskId) ?? selectedSustainingTask;
+        if (!editingTask) {
+          setNewSustainingTaskError("Task not found.");
+          return;
+        }
+
+        const currentDepartmentIds = (editingTask.departments ?? []).map((department) => department.id);
+        const nameChanged = trimmed !== editingTask.name;
+        const departmentsChanged = !haveSameDepartmentIds(currentDepartmentIds, newSustainingTaskDeptIds);
+
+        let updatedName = editingTask.name;
+        let updatedDepartments = editingTask.departments;
+
+        if (nameChanged) {
+          try {
+            const updatedTask = await updateTaskName(
+              editingTask.id,
+              trimmed,
+              allowSimilarName ? { allowSimilarName: true } : undefined
+            );
+            updatedName = updatedTask.name;
+          } catch (err) {
+            const errorMsg = getErrorMessage(err, "Failed to update task name.");
+            if (!allowSimilarName && isSimilarNameConflictMessage(errorMsg)) {
+              setConfirmModal({
+                type: "allow-similar-edit-sustaining-task-modal",
+                id: editingTask.id,
+                name: trimmed,
+                note: errorMsg,
+              });
+            } else {
+              setNewSustainingTaskError(errorMsg);
+            }
+            return;
+          }
+        }
+
+        if (departmentsChanged) {
+          const updatedTask = await updateTaskDepartments(editingTask.id, newSustainingTaskDeptIds);
+          updatedName = updatedTask.name;
+          updatedDepartments = updatedTask.departments;
+        }
+
+        if (!nameChanged && !departmentsChanged) {
+          closeSustainingTaskModal();
+          return;
+        }
+
+        setSustainingTasks((prev) => prev.map((task) => (
+          task.id === editingTask.id
+            ? {
+                ...task,
+                name: updatedName,
+                departments: updatedDepartments,
+              }
+            : task
+        )));
+        setSustainingTaskNameDraft(updatedName);
+        closeSustainingTaskModal();
+      } else {
+        await createSustainingTask(
+          trimmed,
+          newSustainingTaskDeptIds,
+          false,
+          allowSimilarName ? { allowSimilarName: true } : undefined
+        );
+        closeSustainingTaskModal();
+        await loadSustainingTasks(sustainingView);
+      }
     } catch (err) {
       const errorMsg = getErrorMessage(err, "Failed to create task. Please try again.");
       if (!allowSimilarName && isSimilarNameConflictMessage(errorMsg)) {
@@ -1817,6 +1923,16 @@ export default function Admin({
                             )
                             : <span className="muted">No department assigned</span>}
                         </div>
+
+                        <div style={{ display: "flex", justifyContent: "flex-end", marginTop: 12 }}>
+                          <button
+                            type="button"
+                            className="btn secondary"
+                            onClick={openEditSustainingTaskModal}
+                          >
+                            Edit
+                          </button>
+                        </div>
                       </div>
                     </div>
                   ) : (
@@ -1986,12 +2102,7 @@ export default function Admin({
             <button
               type="button"
               className="btn primary week-nav-create"
-              onClick={() => {
-                setNewSustainingTaskName("");
-                setNewSustainingTaskDeptIds([]);
-                setNewSustainingTaskError(null);
-                setShowNewSustainingTaskModal(true);
-              }}
+              onClick={openNewSustainingTaskModal}
             >
               New Task
             </button>
@@ -2150,9 +2261,8 @@ export default function Admin({
       )}
 
       {showNewSustainingTaskModal && (
-        <div className="modal-overlay" onClick={() => setShowNewSustainingTaskModal(false)}>
+        <div className="modal-overlay" onClick={closeSustainingTaskModal}>
           <div className="modal-box" onClick={(e) => e.stopPropagation()}>
-            <h3 className="modal-title" style={{ textAlign: "center" }}>New Sustaining Task</h3>
             <input
               className="modal-input new-task-name-input"
               style={{ marginTop: 2 }}
@@ -2199,7 +2309,7 @@ export default function Admin({
               <button
                 type="button"
                 className="btn secondary"
-                onClick={() => setShowNewSustainingTaskModal(false)}
+                onClick={closeSustainingTaskModal}
                 disabled={savingNewSustainingTask}
               >
                 Cancel
