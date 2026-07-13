@@ -233,6 +233,7 @@ export default function Admin({
       | "edit-sustaining-task-name"
       | "reactivate-phase"
       | "allow-similar-new-task"
+      | "allow-similar-edit-project-task-modal"
       | "allow-similar-new-sustaining-task"
       | "allow-similar-edit-sustaining-task-modal"
       | "allow-similar-edit-task-name"
@@ -268,6 +269,7 @@ export default function Admin({
   const [editTaskDepartmentDraftIds, setEditTaskDepartmentDraftIds] = useState<number[]>([]);
   const [sustainingTasksError, setSustainingTasksError] = useState<string | null>(null);
   const [showNewTaskModal, setShowNewTaskModal] = useState(false);
+  const [editingProjectTaskId, setEditingProjectTaskId] = useState<number | null>(null);
   const [newTaskName, setNewTaskName] = useState("");
   const [newTaskDepartmentIds, setNewTaskDepartmentIds] = useState<number[]>([]);
   const [newTaskPhaseId, setNewTaskPhaseId] = useState<number | null>(null);
@@ -369,6 +371,39 @@ export default function Admin({
     setNewSustainingTaskDeptIds((selectedSustainingTask.departments ?? []).map((department) => department.id));
     setNewSustainingTaskError(null);
     setShowNewSustainingTaskModal(true);
+  };
+
+  const closeNewTaskModal = () => {
+    if (savingNewTask) return;
+    setShowNewTaskModal(false);
+    setEditingProjectTaskId(null);
+    setNewTaskName("");
+    setNewTaskDepartmentIds([]);
+    setNewTaskPhaseId(null);
+    setNewTaskEnabled(null);
+    setNewTaskError(null);
+  };
+
+  const openNewTaskModal = () => {
+    setEditingProjectTaskId(null);
+    setNewTaskName("");
+    setNewTaskDepartmentIds([]);
+    setNewTaskPhaseId(null);
+    setNewTaskEnabled(null);
+    setNewTaskError(null);
+    setShowNewTaskModal(true);
+  };
+
+  const openEditProjectTaskModal = () => {
+    if (!selectedEditTask) return;
+
+    setEditingProjectTaskId(selectedEditTask.id);
+    setNewTaskName(selectedEditTask.name);
+    setNewTaskDepartmentIds((selectedEditTask.departments ?? []).map((department) => department.id));
+    setNewTaskPhaseId(selectedEditTask.phases?.[0]?.id ?? null);
+    setNewTaskEnabled(selectedEditTask.enabled);
+    setNewTaskError(null);
+    setShowNewTaskModal(true);
   };
 
   const loadProjects = async (view: "active" | "all") => {
@@ -672,6 +707,15 @@ export default function Admin({
         setConfirmModal({ type: null, id: null, name: "" });
         await handleSaveNewTask(true);
       };
+    } else if (confirmModal.type === "allow-similar-edit-project-task-modal") {
+      confirmTitle = "Similar Task Name";
+      confirmMessage = `${confirmModal.note ?? "This task name is very similar to an existing task."} Save anyway?`;
+      confirmLoading = savingNewTask;
+      confirmLabel = "Save Anyway";
+      confirmAction = async () => {
+        setConfirmModal({ type: null, id: null, name: "" });
+        await handleSaveNewTask(true);
+      };
     } else if (confirmModal.type === "allow-similar-new-sustaining-task") {
       confirmTitle = "Similar Task Name";
       confirmMessage = `${confirmModal.note ?? "This task name is very similar to an existing task."} Create anyway?`;
@@ -774,7 +818,7 @@ export default function Admin({
       setNewTaskError("At least one department is required.");
       return;
     }
-    if (!newTaskPhaseId) {
+    if (editingProjectTaskId == null && !newTaskPhaseId) {
       setNewTaskError("Phase is required.");
       return;
     }
@@ -785,23 +829,89 @@ export default function Admin({
     setSavingNewTask(true);
     setNewTaskError(null);
     try {
-      const task = await createTask(
-        trimmed,
-        newTaskDepartmentIds,
-        newTaskPhaseId,
-        newTaskEnabled,
-        allowSimilarName ? { allowSimilarName: true } : undefined
-      );
-      setShowNewTaskModal(false);
-      setNewTaskName("");
-      setNewTaskDepartmentIds([]);
-      setNewTaskPhaseId(null);
-      setNewTaskEnabled(null);
-      await loadAllTasks();
-      setSelectedEditTaskId(task.id);
+      if (editingProjectTaskId != null) {
+        const editingTask = allTasks.find((task) => task.id === editingProjectTaskId) ?? selectedEditTask;
+        if (!editingTask) {
+          setNewTaskError("Task not found.");
+          return;
+        }
+
+        const currentDepartmentIds = (editingTask.departments ?? []).map((department) => department.id);
+        const nameChanged = trimmed !== editingTask.name;
+        const departmentsChanged = !haveSameDepartmentIds(currentDepartmentIds, newTaskDepartmentIds);
+        const enabledChanged = newTaskEnabled !== editingTask.enabled;
+
+        if (!nameChanged && !departmentsChanged && !enabledChanged) {
+          closeNewTaskModal();
+          return;
+        }
+
+        let updatedName = editingTask.name;
+        let updatedDepartments = editingTask.departments;
+        let updatedEnabled = editingTask.enabled;
+
+        if (nameChanged) {
+          try {
+            const updatedTask = await updateTaskName(
+              editingTask.id,
+              trimmed,
+              allowSimilarName ? { allowSimilarName: true } : undefined
+            );
+            updatedName = updatedTask.name;
+          } catch (err) {
+            const errorMsg = getErrorMessage(err, "Failed to update task name.");
+            if (!allowSimilarName && isSimilarNameConflictMessage(errorMsg)) {
+              setConfirmModal({
+                type: "allow-similar-edit-project-task-modal",
+                id: editingTask.id,
+                name: trimmed,
+                note: errorMsg,
+              });
+            } else {
+              setNewTaskError(errorMsg);
+            }
+            return;
+          }
+        }
+
+        if (departmentsChanged) {
+          const updatedTask = await updateTaskDepartments(editingTask.id, newTaskDepartmentIds);
+          updatedName = updatedTask.name;
+          updatedDepartments = updatedTask.departments;
+        }
+
+        if (enabledChanged) {
+          const updatedTask = await updateTaskEnabled(editingTask.id, newTaskEnabled);
+          updatedEnabled = updatedTask.enabled;
+        }
+
+        setAllTasks((prev) => prev.map((task) => (
+          task.id === editingTask.id
+            ? {
+                ...task,
+                name: updatedName,
+                departments: updatedDepartments,
+                enabled: updatedEnabled,
+              }
+            : task
+        )));
+        setEditTaskNameDraft(updatedName);
+        closeNewTaskModal();
+      } else {
+        const task = await createTask(
+          trimmed,
+          newTaskDepartmentIds,
+          newTaskPhaseId,
+          newTaskEnabled,
+          allowSimilarName ? { allowSimilarName: true } : undefined
+        );
+        closeNewTaskModal();
+        await loadAllTasks();
+        setSelectedEditTaskId(task.id);
+      }
     } catch (err) {
-      const errorMsg = getErrorMessage(err, "Failed to create task. Please try again.");
-      if (!allowSimilarName && isSimilarNameConflictMessage(errorMsg)) {
+      const errorMsg = getErrorMessage(err, "Failed to save task. Please try again.");
+      if (!allowSimilarName && isSimilarNameConflictMessage(errorMsg) && editingProjectTaskId == null) {
         setConfirmModal({
           type: "allow-similar-new-task",
           id: null,
@@ -1716,39 +1826,7 @@ export default function Admin({
                       <div style={{ display: "grid", gridTemplateColumns: "1fr auto 1fr", alignItems: "center", marginBottom: 10 }}>
                         <div />
                         <h3 style={{ margin: 0, textAlign: "center" }}>{selectedEditTask.name}</h3>
-                        <div style={{ display: "flex", justifyContent: "flex-end" }}>
-                          <button
-                            type="button"
-                            className="btn secondary admin-record-status-btn"
-                            onClick={handleEditTaskStatusToggle}
-                            disabled={savingTaskActiveId === selectedEditTask.id}
-                            style={{ minWidth: 92, textAlign: "center" }}
-                          >
-                            {savingTaskActiveId === selectedEditTask.id
-                              ? "Saving..."
-                              : selectedEditTask.active
-                                ? "Active"
-                                : "Inactive"}
-                          </button>
-                        </div>
-                      </div>
-
-                      <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-                        <input
-                          type="text"
-                          className="modal-input admin-detail-input"
-                          style={{ marginTop: 0 }}
-                          value={editTaskNameDraft}
-                          onChange={(e) => setEditTaskNameDraft(e.target.value)}
-                          onBlur={handleRequestEditTaskNameSave}
-                          onKeyDown={(e) => {
-                            if (e.key === "Enter") {
-                              e.preventDefault();
-                              (e.currentTarget as HTMLInputElement).blur();
-                            }
-                          }}
-                          disabled={savingTaskNameId === selectedEditTask.id}
-                        />
+                        <div />
                       </div>
 
                       <p className="admin-detail-label">Phase</p>
@@ -1770,25 +1848,36 @@ export default function Admin({
                           )
                           : <span className="muted">No department assigned</span>}
                       </div>
-                    </div>
 
-                    <div className="admin-task-qualifying-btns">
-                      <button
-                        type="button"
-                        className={`btn admin-qualifying-btn ${selectedEditTask.enabled ? "is-selected" : ""}`}
-                        onClick={() => handleRequestEditTaskEnabledChange(true)}
-                        disabled={savingTaskEnabledId === selectedEditTask.id || selectedEditTask.enabled}
-                      >
-                        Qualifying
-                      </button>
-                      <button
-                        type="button"
-                        className={`btn admin-qualifying-btn ${!selectedEditTask.enabled ? "is-selected" : ""}`}
-                        onClick={() => handleRequestEditTaskEnabledChange(false)}
-                        disabled={savingTaskEnabledId === selectedEditTask.id || !selectedEditTask.enabled}
-                      >
-                        Non-Qualifying
-                      </button>
+                      <p className="admin-detail-label">Qualifying</p>
+                      <div className="admin-task-qualifying-btns">
+                        <button
+                          type="button"
+                          className={`btn admin-qualifying-btn ${selectedEditTask.enabled ? "is-selected" : ""}`}
+                          onClick={() => handleRequestEditTaskEnabledChange(true)}
+                          disabled={savingTaskEnabledId === selectedEditTask.id || selectedEditTask.enabled}
+                        >
+                          Qualifying
+                        </button>
+                        <button
+                          type="button"
+                          className={`btn admin-qualifying-btn ${!selectedEditTask.enabled ? "is-selected" : ""}`}
+                          onClick={() => handleRequestEditTaskEnabledChange(false)}
+                          disabled={savingTaskEnabledId === selectedEditTask.id || !selectedEditTask.enabled}
+                        >
+                          Non-Qualifying
+                        </button>
+                      </div>
+
+                      <div style={{ display: "flex", justifyContent: "flex-end", marginTop: 12 }}>
+                        <button
+                          type="button"
+                          className="btn secondary"
+                          onClick={openEditProjectTaskModal}
+                        >
+                          Edit
+                        </button>
+                      </div>
                     </div>
                   </div>
                 ) : (
@@ -2055,12 +2144,7 @@ export default function Admin({
               className="btn primary week-nav-create"
               onClick={() => {
                 if (showEditTasksView) {
-                  setNewTaskName("");
-                  setNewTaskDepartmentIds([]);
-                  setNewTaskPhaseId(null);
-                  setNewTaskEnabled(null);
-                  setNewTaskError(null);
-                  setShowNewTaskModal(true);
+                  openNewTaskModal();
                 } else {
                   setNewProjectName("");
                   setNewProjectError(null);
@@ -2131,9 +2215,9 @@ export default function Admin({
       )}
 
       {showNewTaskModal && (
-        <div className="modal-overlay" onClick={() => setShowNewTaskModal(false)}>
+        <div className="modal-overlay" onClick={closeNewTaskModal}>
           <div className="modal-box" onClick={(e) => e.stopPropagation()}>
-            <h3 className="modal-title" style={{ textAlign: 'center' }}>New Task</h3>
+            <h3 className="modal-title" style={{ textAlign: 'center' }}>{editingProjectTaskId != null ? "Edit Task" : "New Task"}</h3>
             <input
               id="new-task-name"
               className="modal-input new-task-name-input"
@@ -2180,7 +2264,7 @@ export default function Admin({
               style={{ minHeight: 32, borderRadius: 8, padding: "0 12px", fontSize: 14, width: "100%" }}
               value={newTaskPhaseId ?? ""}
               onChange={(e) => setNewTaskPhaseId(e.target.value === "" ? null : Number(e.target.value))}
-              disabled={savingNewTask}
+              disabled={savingNewTask || editingProjectTaskId != null}
             >
               <option value="">Select Phase</option>
               {allAvailablePhases.map((phase) => (
@@ -2214,7 +2298,7 @@ export default function Admin({
               <button
                 type="button"
                 className="btn secondary"
-                onClick={() => setShowNewTaskModal(false)}
+                onClick={closeNewTaskModal}
                 disabled={savingNewTask}
               >
                 Cancel
@@ -2223,7 +2307,13 @@ export default function Admin({
                 type="button"
                 className="btn primary"
                 onClick={handleSaveNewTask}
-                disabled={savingNewTask || !newTaskName.trim() || newTaskDepartmentIds.length === 0 || !newTaskPhaseId || newTaskEnabled === null}
+                disabled={
+                  savingNewTask ||
+                  !newTaskName.trim() ||
+                  newTaskDepartmentIds.length === 0 ||
+                  (editingProjectTaskId == null && !newTaskPhaseId) ||
+                  newTaskEnabled === null
+                }
               >
                 {savingNewTask ? "Saving..." : "Save"}
               </button>
