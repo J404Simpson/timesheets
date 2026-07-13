@@ -72,13 +72,21 @@ export async function getTasksForPhaseAndEmployee(phaseId: number): Promise<Task
   return data.tasks;
 }
 
-export async function getTasksForProjectPhase(projectId: number, phaseId: number): Promise<Task[]> {
+export async function getTasksForProjectPhase(
+  projectId: number,
+  phaseId: number,
+  options?: { employeeId?: number; forEntry?: boolean }
+): Promise<Task[]> {
   const accessToken = await acquireTokenSilent([
     protectedResources.timesheetApi.scope,
   ]);
   const apiBase = import.meta.env.VITE_API_URL;
+  const params = new URLSearchParams();
+  if (options?.forEntry) params.set("forEntry", "true");
+  if (options?.employeeId != null) params.set("employeeId", String(options.employeeId));
+  const query = params.toString();
   const response = await fetch(
-    `${apiBase}/api/projects/${projectId}/phases/${phaseId}/tasks`,
+    `${apiBase}/api/projects/${projectId}/phases/${phaseId}/tasks${query ? `?${query}` : ""}`,
     {
       headers: {
         Authorization: `Bearer ${accessToken}`,

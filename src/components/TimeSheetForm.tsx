@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { createPortal } from "react-dom";
 import { createEntry, updateEntry, deleteEntry, getActiveProjects, getPhasesForProject, getWeekEntries, type Project as ApiProject, type Phase as ApiPhase, type WeekEntry } from "../api/timesheet";
-import { getTasksForPhaseAndEmployee, getTasksForProjectPhase, type Task as ApiTask } from "../api/task";
+import { getTasksForProjectPhase, type Task as ApiTask } from "../api/task";
 
 type Entry = {
   workDate: string;
@@ -722,6 +722,13 @@ export default function TimesheetForm({
   useEffect(() => {
     if (selectedType !== "project") return;
 
+    const projectId = Number(entry.project);
+    if (Number.isNaN(projectId) || projectId <= 0) {
+      setTasks([]);
+      setTaskError(null);
+      return;
+    }
+
     const phaseId = Number(entry.phase);
     if (Number.isNaN(phaseId) || phaseId <= 0) {
       setTasks([]);
@@ -732,11 +739,14 @@ export default function TimesheetForm({
     setLoadingTasks(true);
     setTaskError(null);
     setTasks([]);
-    getTasksForPhaseAndEmployee(phaseId)
+    getTasksForProjectPhase(projectId, phaseId, {
+      forEntry: true,
+      ...(targetEmployeeId != null ? { employeeId: targetEmployeeId } : {}),
+    })
       .then((fetchedTasks) => setTasks(fetchedTasks))
       .catch(() => setTaskError("Failed to load tasks"))
       .finally(() => setLoadingTasks(false));
-  }, [selectedType, entry.phase]);
+  }, [selectedType, entry.project, entry.phase, targetEmployeeId]);
 
   // Auto-populate task for Meetings phase.
   useEffect(() => {
@@ -761,11 +771,14 @@ export default function TimesheetForm({
     setLoadingTasks(true);
     setTaskError(null);
     setTasks([]);
-    getTasksForProjectPhase(SUSTAINING_PROJECT_ID, SUSTAINING_PHASE_ID)
+    getTasksForProjectPhase(SUSTAINING_PROJECT_ID, SUSTAINING_PHASE_ID, {
+      forEntry: true,
+      ...(targetEmployeeId != null ? { employeeId: targetEmployeeId } : {}),
+    })
       .then((fetchedTasks) => setTasks(fetchedTasks))
       .catch(() => setTaskError("Failed to load tasks"))
       .finally(() => setLoadingTasks(false));
-  }, [selectedType, entry.project, entry.phase]);
+  }, [selectedType, entry.project, entry.phase, targetEmployeeId]);
 
   // Back handler: only revert the top-level selection (project/internal) and clear project/phase
   const handleBack = () => {
