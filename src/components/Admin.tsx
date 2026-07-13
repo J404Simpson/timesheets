@@ -2377,6 +2377,7 @@ export default function Admin({
       {showNewSustainingTaskModal && (
         <div className="modal-overlay" onClick={closeSustainingTaskModal}>
           <div className="modal-box" onClick={(e) => e.stopPropagation()}>
+            <h3 className="modal-title" style={{ textAlign: 'center' }}>{editingSustainingTaskId != null ? "Edit Task" : "New Task"}</h3>
             <input
               className="modal-input new-task-name-input"
               style={{ marginTop: 2 }}
