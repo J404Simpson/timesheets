@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import Recent from "./Recent";
 import ViewFooter from "./ViewFooter";
-import { getTasksForProjectPhase, getTasksForProjectPhaseWithInactive, deactivateTask, getAllTasks, updateTaskEnabled, updateTaskActive, updateTaskName, updateTaskDepartments, createTask, createSustainingTask, type Task } from "../api/task";
+import { getTasksForProjectPhase, getTasksForProjectPhaseWithInactive, deactivateTask, getAllTasks, updateTaskEnabled, updateTaskActive, updateTaskName, updateTaskDepartments, updateTaskPhases, createTask, createSustainingTask, type Task } from "../api/task";
 import { getDepartments, type Department } from "../api/department";
 import {
   createProject,
@@ -272,7 +272,7 @@ export default function Admin({
   const [editingProjectTaskId, setEditingProjectTaskId] = useState<number | null>(null);
   const [newTaskName, setNewTaskName] = useState("");
   const [newTaskDepartmentIds, setNewTaskDepartmentIds] = useState<number[]>([]);
-  const [newTaskPhaseId, setNewTaskPhaseId] = useState<number | null>(null);
+  const [newTaskPhaseIds, setNewTaskPhaseIds] = useState<number[]>([]);
   const [newTaskEnabled, setNewTaskEnabled] = useState<boolean | null>(null);
   const [savingNewTask, setSavingNewTask] = useState(false);
   const [newTaskError, setNewTaskError] = useState<string | null>(null);
@@ -379,7 +379,7 @@ export default function Admin({
     setEditingProjectTaskId(null);
     setNewTaskName("");
     setNewTaskDepartmentIds([]);
-    setNewTaskPhaseId(null);
+    setNewTaskPhaseIds([]);
     setNewTaskEnabled(null);
     setNewTaskError(null);
   };
@@ -388,7 +388,7 @@ export default function Admin({
     setEditingProjectTaskId(null);
     setNewTaskName("");
     setNewTaskDepartmentIds([]);
-    setNewTaskPhaseId(null);
+    setNewTaskPhaseIds([]);
     setNewTaskEnabled(null);
     setNewTaskError(null);
     setShowNewTaskModal(true);
@@ -400,7 +400,7 @@ export default function Admin({
     setEditingProjectTaskId(selectedEditTask.id);
     setNewTaskName(selectedEditTask.name);
     setNewTaskDepartmentIds((selectedEditTask.departments ?? []).map((department) => department.id));
-    setNewTaskPhaseId(selectedEditTask.phases?.[0]?.id ?? null);
+    setNewTaskPhaseIds((selectedEditTask.phases ?? []).map((phase) => phase.id));
     setNewTaskEnabled(selectedEditTask.enabled);
     setNewTaskError(null);
     setShowNewTaskModal(true);
@@ -818,8 +818,8 @@ export default function Admin({
       setNewTaskError("At least one department is required.");
       return;
     }
-    if (editingProjectTaskId == null && !newTaskPhaseId) {
-      setNewTaskError("Phase is required.");
+    if (newTaskPhaseIds.length === 0) {
+      setNewTaskError("At least one phase is required.");
       return;
     }
     setSavingNewTask(true);
@@ -833,17 +833,20 @@ export default function Admin({
         }
 
         const currentDepartmentIds = (editingTask.departments ?? []).map((department) => department.id);
+        const currentPhaseIds = (editingTask.phases ?? []).map((phase) => phase.id);
         const nameChanged = trimmed !== editingTask.name;
         const departmentsChanged = !haveSameDepartmentIds(currentDepartmentIds, newTaskDepartmentIds);
+        const phasesChanged = !haveSameDepartmentIds(currentPhaseIds, newTaskPhaseIds);
         const enabledChanged = newTaskEnabled !== null && newTaskEnabled !== editingTask.enabled;
 
-        if (!nameChanged && !departmentsChanged && !enabledChanged) {
+        if (!nameChanged && !departmentsChanged && !phasesChanged && !enabledChanged) {
           closeNewTaskModal();
           return;
         }
 
         let updatedName = editingTask.name;
         let updatedDepartments = editingTask.departments;
+        let updatedPhases = editingTask.phases;
         let updatedEnabled = editingTask.enabled;
 
         if (nameChanged) {
@@ -876,6 +879,12 @@ export default function Admin({
           updatedDepartments = updatedTask.departments;
         }
 
+        if (phasesChanged) {
+          const updatedTask = await updateTaskPhases(editingTask.id, newTaskPhaseIds);
+          updatedName = updatedTask.name;
+          updatedPhases = updatedTask.phases;
+        }
+
         if (enabledChanged) {
           const updatedTask = await updateTaskEnabled(editingTask.id, newTaskEnabled);
           updatedEnabled = updatedTask.enabled;
@@ -887,6 +896,7 @@ export default function Admin({
                 ...task,
                 name: updatedName,
                 departments: updatedDepartments,
+                phases: updatedPhases,
                 enabled: updatedEnabled,
               }
             : task
@@ -897,7 +907,7 @@ export default function Admin({
         const task = await createTask(
           trimmed,
           newTaskDepartmentIds,
-          newTaskPhaseId,
+          newTaskPhaseIds,
           newTaskEnabled ?? true,
           allowSimilarName ? { allowSimilarName: true } : undefined
         );
@@ -1163,12 +1173,14 @@ export default function Admin({
 
     const trimmedName = newTaskName.trim();
     const existingDepartmentIds = (editingProjectTask.departments ?? []).map((department) => department.id);
+    const existingPhaseIds = (editingProjectTask.phases ?? []).map((phase) => phase.id);
 
     return (
       trimmedName !== editingProjectTask.name
       || !haveSameDepartmentIds(existingDepartmentIds, newTaskDepartmentIds)
+      || !haveSameDepartmentIds(existingPhaseIds, newTaskPhaseIds)
     );
-  }, [editingProjectTask, newTaskName, newTaskDepartmentIds]);
+  }, [editingProjectTask, newTaskName, newTaskDepartmentIds, newTaskPhaseIds]);
 
   const isSustainingTaskModalDirty = useMemo(() => {
     if (!editingSustainingTask) return true;
@@ -1186,13 +1198,13 @@ export default function Admin({
     const hasRequiredValues = (
       !!newTaskName.trim()
       && newTaskDepartmentIds.length > 0
-      && (editingProjectTaskId != null || !!newTaskPhaseId)
+      && newTaskPhaseIds.length > 0
     );
 
     if (!hasRequiredValues) return false;
     if (editingProjectTaskId != null && !isProjectTaskModalDirty) return false;
     return true;
-  }, [newTaskName, newTaskDepartmentIds, newTaskPhaseId, editingProjectTaskId, isProjectTaskModalDirty]);
+  }, [newTaskName, newTaskDepartmentIds, newTaskPhaseIds, editingProjectTaskId, isProjectTaskModalDirty]);
 
   const canSaveSustainingTaskModal = useMemo(() => {
     const hasRequiredValues = !!newSustainingTaskName.trim() && newSustainingTaskDeptIds.length > 0;
@@ -1874,7 +1886,7 @@ export default function Admin({
               <section className="admin-users-recent-panel">
                 {selectedEditTask ? (
                   <div className="admin-task-detail">
-                    <div className="admin-task-detail-body">
+                    <div className="admin-task-detail-body" style={{ display: "flex", flexDirection: "column", minHeight: 0 }}>
                       <div style={{ display: "grid", gridTemplateColumns: "1fr auto 1fr", alignItems: "center", marginBottom: 10 }}>
                         <div />
                         <h3 style={{ margin: 0, textAlign: "center" }}>{selectedEditTask.name}</h3>
@@ -1901,7 +1913,7 @@ export default function Admin({
                           : <span className="muted">No department assigned</span>}
                       </div>
 
-                      <div className="admin-task-qualifying-btns" style={{ marginTop: 12 }}>
+                      <div className="admin-task-qualifying-btns" style={{ marginTop: "auto", paddingTop: 12 }}>
                         <button
                           type="button"
                           className={`btn admin-qualifying-btn ${selectedEditTask.enabled ? "is-selected" : ""}`}
@@ -2309,19 +2321,33 @@ export default function Admin({
               )}
             </div>
 
-            <p className="admin-detail-label">Phase</p>
-            <select
-              className="admin-dept-filter admin-record-status-btn"
-              style={{ minHeight: 32, borderRadius: 8, padding: "0 12px", fontSize: 14, width: "100%" }}
-              value={newTaskPhaseId ?? ""}
-              onChange={(e) => setNewTaskPhaseId(e.target.value === "" ? null : Number(e.target.value))}
-              disabled={savingNewTask || editingProjectTaskId != null}
+            <p className="admin-detail-label">Phases</p>
+            <div
+              className="admin-detail-box"
+              style={{ maxHeight: 140, overflowY: "auto", display: "flex", flexDirection: "column", alignItems: "flex-start", gap: 6, padding: "8px 12px" }}
             >
-              <option value="">Select Phase</option>
-              {allAvailablePhases.map((phase) => (
-                <option key={phase.id} value={phase.id}>{phase.name}</option>
-              ))}
-            </select>
+              {allAvailablePhases.length === 0 ? (
+                <span className="muted">No phases available</span>
+              ) : (
+                allAvailablePhases.map((phase) => (
+                  <label key={phase.id} style={{ display: "flex", flexDirection: "row", alignItems: "center", justifyContent: "flex-start", width: "100%", gap: 8, cursor: "pointer", fontSize: 14, marginBottom: 0, fontWeight: 400, textAlign: "left" }}>
+                    <input
+                      type="checkbox"
+                      checked={newTaskPhaseIds.includes(phase.id)}
+                      onChange={(e) => {
+                        setNewTaskPhaseIds((prev) => (
+                          e.target.checked
+                            ? [...prev, phase.id]
+                            : prev.filter((id) => id !== phase.id)
+                        ));
+                      }}
+                      disabled={savingNewTask}
+                    />
+                    {phase.name}
+                  </label>
+                ))
+              )}
+            </div>
 
             </div>
 

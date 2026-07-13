@@ -285,7 +285,7 @@ export async function createSustainingTask(
 export async function createTask(
   name: string,
   department_ids: number[],
-  phase_id: number,
+  phase_ids: number[],
   enabled: boolean,
   options?: { allowSimilarName?: boolean }
 ): Promise<Task> {
@@ -302,7 +302,7 @@ export async function createTask(
     body: JSON.stringify({
       name,
       department_ids,
-      phase_id,
+      phase_ids,
       enabled,
       ...(options?.allowSimilarName ? { allowSimilarName: true } : {}),
     }),
@@ -314,4 +314,26 @@ export async function createTask(
 
   const data = await response.json();
   return data.task;
+}
+
+export async function updateTaskPhases(taskId: number, phase_ids: number[]): Promise<Task> {
+  const accessToken = await acquireTokenSilent([
+    protectedResources.timesheetApi.scope,
+  ]);
+  const apiBase = import.meta.env.VITE_API_URL;
+  const response = await fetch(`${apiBase}/api/tasks/${taskId}/phases`, {
+    method: "PATCH",
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ phase_ids }),
+  });
+
+  if (!response.ok) {
+    throw new Error(`Failed to update task phases (${response.status})`);
+  }
+
+  const data = await response.json();
+  return normalizeTask(data.task);
 }
