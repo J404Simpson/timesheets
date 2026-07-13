@@ -822,10 +822,6 @@ export default function Admin({
       setNewTaskError("Phase is required.");
       return;
     }
-    if (newTaskEnabled === null) {
-      setNewTaskError("Qualifying selection is required.");
-      return;
-    }
     setSavingNewTask(true);
     setNewTaskError(null);
     try {
@@ -839,7 +835,7 @@ export default function Admin({
         const currentDepartmentIds = (editingTask.departments ?? []).map((department) => department.id);
         const nameChanged = trimmed !== editingTask.name;
         const departmentsChanged = !haveSameDepartmentIds(currentDepartmentIds, newTaskDepartmentIds);
-        const enabledChanged = newTaskEnabled !== editingTask.enabled;
+        const enabledChanged = newTaskEnabled !== null && newTaskEnabled !== editingTask.enabled;
 
         if (!nameChanged && !departmentsChanged && !enabledChanged) {
           closeNewTaskModal();
@@ -902,7 +898,7 @@ export default function Admin({
           trimmed,
           newTaskDepartmentIds,
           newTaskPhaseId,
-          newTaskEnabled,
+          newTaskEnabled ?? true,
           allowSimilarName ? { allowSimilarName: true } : undefined
         );
         closeNewTaskModal();
@@ -1149,6 +1145,62 @@ export default function Admin({
     () => sustainingTasks.find((task) => task.id === selectedSustainingTaskId) ?? null,
     [sustainingTasks, selectedSustainingTaskId]
   );
+
+  const editingProjectTask = useMemo(() => {
+    if (editingProjectTaskId == null) return null;
+    return allTasks.find((task) => task.id === editingProjectTaskId)
+      ?? (selectedEditTask?.id === editingProjectTaskId ? selectedEditTask : null);
+  }, [allTasks, editingProjectTaskId, selectedEditTask]);
+
+  const editingSustainingTask = useMemo(() => {
+    if (editingSustainingTaskId == null) return null;
+    return sustainingTasks.find((task) => task.id === editingSustainingTaskId)
+      ?? (selectedSustainingTask?.id === editingSustainingTaskId ? selectedSustainingTask : null);
+  }, [sustainingTasks, editingSustainingTaskId, selectedSustainingTask]);
+
+  const isProjectTaskModalDirty = useMemo(() => {
+    if (!editingProjectTask) return true;
+
+    const trimmedName = newTaskName.trim();
+    const existingDepartmentIds = (editingProjectTask.departments ?? []).map((department) => department.id);
+
+    return (
+      trimmedName !== editingProjectTask.name
+      || !haveSameDepartmentIds(existingDepartmentIds, newTaskDepartmentIds)
+    );
+  }, [editingProjectTask, newTaskName, newTaskDepartmentIds]);
+
+  const isSustainingTaskModalDirty = useMemo(() => {
+    if (!editingSustainingTask) return true;
+
+    const trimmedName = newSustainingTaskName.trim();
+    const existingDepartmentIds = (editingSustainingTask.departments ?? []).map((department) => department.id);
+
+    return (
+      trimmedName !== editingSustainingTask.name
+      || !haveSameDepartmentIds(existingDepartmentIds, newSustainingTaskDeptIds)
+    );
+  }, [editingSustainingTask, newSustainingTaskName, newSustainingTaskDeptIds]);
+
+  const canSaveProjectTaskModal = useMemo(() => {
+    const hasRequiredValues = (
+      !!newTaskName.trim()
+      && newTaskDepartmentIds.length > 0
+      && (editingProjectTaskId != null || !!newTaskPhaseId)
+    );
+
+    if (!hasRequiredValues) return false;
+    if (editingProjectTaskId != null && !isProjectTaskModalDirty) return false;
+    return true;
+  }, [newTaskName, newTaskDepartmentIds, newTaskPhaseId, editingProjectTaskId, isProjectTaskModalDirty]);
+
+  const canSaveSustainingTaskModal = useMemo(() => {
+    const hasRequiredValues = !!newSustainingTaskName.trim() && newSustainingTaskDeptIds.length > 0;
+
+    if (!hasRequiredValues) return false;
+    if (editingSustainingTaskId != null && !isSustainingTaskModalDirty) return false;
+    return true;
+  }, [newSustainingTaskName, newSustainingTaskDeptIds, editingSustainingTaskId, isSustainingTaskModalDirty]);
 
   const projectEditTasks = useMemo(
     () => allTasks.filter((task) => task.task_type === "PROJECT"),
@@ -1849,8 +1901,7 @@ export default function Admin({
                           : <span className="muted">No department assigned</span>}
                       </div>
 
-                      <p className="admin-detail-label">Qualifying</p>
-                      <div className="admin-task-qualifying-btns">
+                      <div className="admin-task-qualifying-btns" style={{ marginTop: 12 }}>
                         <button
                           type="button"
                           className={`btn admin-qualifying-btn ${selectedEditTask.enabled ? "is-selected" : ""}`}
@@ -2272,25 +2323,6 @@ export default function Admin({
               ))}
             </select>
 
-            <p className="admin-detail-label">Qualifying</p>
-            <div className="admin-task-qualifying-btns new-task-qualifying-btns">
-              <button
-                type="button"
-                className={`btn admin-qualifying-btn ${newTaskEnabled === true ? "is-selected" : ""}`}
-                onClick={() => setNewTaskEnabled(true)}
-                disabled={savingNewTask}
-              >
-                Qualifying
-              </button>
-              <button
-                type="button"
-                className={`btn admin-qualifying-btn ${newTaskEnabled === false ? "is-selected" : ""}`}
-                onClick={() => setNewTaskEnabled(false)}
-                disabled={savingNewTask}
-              >
-                Non-Qualifying
-              </button>
-            </div>
             </div>
 
             {newTaskError && <p className="modal-error">{newTaskError}</p>}
@@ -2305,15 +2337,9 @@ export default function Admin({
               </button>
               <button
                 type="button"
-                className="btn primary"
+                className={`btn ${editingProjectTaskId != null && !isProjectTaskModalDirty ? "secondary" : "primary"}`}
                 onClick={handleSaveNewTask}
-                disabled={
-                  savingNewTask ||
-                  !newTaskName.trim() ||
-                  newTaskDepartmentIds.length === 0 ||
-                  (editingProjectTaskId == null && !newTaskPhaseId) ||
-                  newTaskEnabled === null
-                }
+                disabled={savingNewTask || !canSaveProjectTaskModal}
               >
                 {savingNewTask ? "Saving..." : "Save"}
               </button>
@@ -2378,9 +2404,9 @@ export default function Admin({
               </button>
               <button
                 type="button"
-                className="btn primary"
+                className={`btn ${editingSustainingTaskId != null && !isSustainingTaskModalDirty ? "secondary" : "primary"}`}
                 onClick={handleSaveNewSustainingTask}
-                disabled={savingNewSustainingTask || !newSustainingTaskName.trim() || newSustainingTaskDeptIds.length === 0}
+                disabled={savingNewSustainingTask || !canSaveSustainingTaskModal}
               >
                 {savingNewSustainingTask ? "Saving..." : "Save"}
               </button>
