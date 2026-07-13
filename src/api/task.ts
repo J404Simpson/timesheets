@@ -189,6 +189,28 @@ export async function updateTaskName(taskId: number, name: string): Promise<Task
   return data.task;
 }
 
+export async function updateTaskDepartments(taskId: number, department_ids: number[]): Promise<Task> {
+  const accessToken = await acquireTokenSilent([
+    protectedResources.timesheetApi.scope,
+  ]);
+  const apiBase = import.meta.env.VITE_API_URL;
+  const response = await fetch(`${apiBase}/api/tasks/${taskId}/departments`, {
+    method: "PATCH",
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ department_ids }),
+  });
+
+  if (!response.ok) {
+    throw new Error(`Failed to update task departments (${response.status})`);
+  }
+
+  const data = await response.json();
+  return normalizeTask(data.task);
+}
+
 export async function getAllTasks(includeInactive = true): Promise<Task[]> {
   const accessToken = await acquireTokenSilent([
     protectedResources.timesheetApi.scope,
@@ -236,7 +258,7 @@ export async function createSustainingTask(
 
 export async function createTask(
   name: string,
-  department_id: number,
+  department_ids: number[],
   phase_id: number,
   enabled: boolean
 ): Promise<Task> {
@@ -250,7 +272,7 @@ export async function createTask(
       Authorization: `Bearer ${accessToken}`,
       "Content-Type": "application/json",
     },
-    body: JSON.stringify({ name, department_id, phase_id, enabled }),
+    body: JSON.stringify({ name, department_ids, phase_id, enabled }),
   });
 
   if (!response.ok) {

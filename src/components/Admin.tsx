@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import Recent from "./Recent";
 import ViewFooter from "./ViewFooter";
-import { getTasksForProjectPhase, getTasksForProjectPhaseWithInactive, deactivateTask, getAllTasks, updateTaskEnabled, updateTaskActive, updateTaskName, createTask, createSustainingTask, type Task } from "../api/task";
+import { getTasksForProjectPhase, getTasksForProjectPhaseWithInactive, deactivateTask, getAllTasks, updateTaskEnabled, updateTaskActive, updateTaskName, updateTaskDepartments, createTask, createSustainingTask, type Task } from "../api/task";
 import { getDepartments, type Department } from "../api/department";
 import {
   createProject,
@@ -247,10 +247,12 @@ export default function Admin({
   const [savingTaskEnabledId, setSavingTaskEnabledId] = useState<number | null>(null);
   const [savingTaskActiveId, setSavingTaskActiveId] = useState<number | null>(null);
   const [savingTaskNameId, setSavingTaskNameId] = useState<number | null>(null);
+  const [savingTaskDepartmentsId, setSavingTaskDepartmentsId] = useState<number | null>(null);
+  const [editTaskDepartmentDraftIds, setEditTaskDepartmentDraftIds] = useState<number[]>([]);
   const [sustainingTasksError, setSustainingTasksError] = useState<string | null>(null);
   const [showNewTaskModal, setShowNewTaskModal] = useState(false);
   const [newTaskName, setNewTaskName] = useState("");
-  const [newTaskDepartmentId, setNewTaskDepartmentId] = useState<number | null>(null);
+  const [newTaskDepartmentIds, setNewTaskDepartmentIds] = useState<number[]>([]);
   const [newTaskPhaseId, setNewTaskPhaseId] = useState<number | null>(null);
   const [newTaskEnabled, setNewTaskEnabled] = useState<boolean | null>(null);
   const [savingNewTask, setSavingNewTask] = useState(false);
@@ -582,8 +584,8 @@ export default function Admin({
       setNewTaskError("Task name is required.");
       return;
     }
-    if (!newTaskDepartmentId) {
-      setNewTaskError("Department is required.");
+    if (newTaskDepartmentIds.length === 0) {
+      setNewTaskError("At least one department is required.");
       return;
     }
     if (!newTaskPhaseId) {
@@ -597,10 +599,10 @@ export default function Admin({
     setSavingNewTask(true);
     setNewTaskError(null);
     try {
-      const task = await createTask(trimmed, newTaskDepartmentId, newTaskPhaseId, newTaskEnabled);
+      const task = await createTask(trimmed, newTaskDepartmentIds, newTaskPhaseId, newTaskEnabled);
       setShowNewTaskModal(false);
       setNewTaskName("");
-      setNewTaskDepartmentId(null);
+      setNewTaskDepartmentIds([]);
       setNewTaskPhaseId(null);
       setNewTaskEnabled(null);
       await loadAllTasks();
@@ -825,14 +827,48 @@ export default function Admin({
   }, [selectedEditTask]);
 
   useEffect(() => {
+    setEditTaskDepartmentDraftIds((selectedEditTask?.departments ?? []).map((department) => department.id));
+  }, [selectedEditTask]);
+
+  useEffect(() => {
     setSustainingTaskNameDraft(selectedSustainingTask?.name ?? "");
   }, [selectedSustainingTask]);
 
-  const getTaskDepartmentNames = (task?: Task | null) => {
-    if (!task) return "No department";
-    const names = (task.departments ?? []).map((department) => department.name).filter(Boolean);
-    if (names.length === 0) return "No department";
-    return names.join(", ");
+  const hasEditTaskDepartmentChanges = useMemo(() => {
+    if (!selectedEditTask) return false;
+
+    const current = new Set((selectedEditTask.departments ?? []).map((department) => department.id));
+    const draft = new Set(editTaskDepartmentDraftIds);
+
+    if (current.size !== draft.size) return true;
+    for (const id of draft) {
+      if (!current.has(id)) return true;
+    }
+    return false;
+  }, [selectedEditTask, editTaskDepartmentDraftIds]);
+
+  const handleSaveEditTaskDepartments = async () => {
+    if (!selectedEditTask) return;
+    if (editTaskDepartmentDraftIds.length === 0) {
+      setAllTasksError("At least one department is required.");
+      return;
+    }
+    if (!hasEditTaskDepartmentChanges) return;
+
+    setSavingTaskDepartmentsId(selectedEditTask.id);
+    setAllTasksError(null);
+    try {
+      const updatedTask = await updateTaskDepartments(selectedEditTask.id, editTaskDepartmentDraftIds);
+      setAllTasks((prev) => prev.map((task) => (
+        task.id === updatedTask.id
+          ? { ...task, departments: updatedTask.departments }
+          : task
+      )));
+    } catch {
+      setAllTasksError("Failed to update task departments.");
+    } finally {
+      setSavingTaskDepartmentsId(null);
+    }
   };
 
   const handleToggleEditTaskEnabled = async () => {
@@ -1395,9 +1431,43 @@ export default function Admin({
                         />
                       </div>
 
-                      <p className="admin-detail-label">Department</p>
-                      <div className="admin-detail-box">
-                        {getTaskDepartmentNames(selectedEditTask)}
+                      <p className="admin-detail-label">Departments</p>
+                      <div className="admin-detail-box" style={{ maxHeight: 160, overflowY: "auto", display: "flex", flexDirection: "column", alignItems: "flex-start", gap: 6 }}>
+                        {departments.length === 0 ? (
+                          <span className="muted">No departments available</span>
+                        ) : (
+                          departments.map((department) => (
+                            <label key={department.id} style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer", width: "100%" }}>
+                              <input
+                                type="checkbox"
+                                checked={editTaskDepartmentDraftIds.includes(department.id)}
+                                onChange={(event) => {
+                                  setEditTaskDepartmentDraftIds((prev) => (
+                                    event.target.checked
+                                      ? (prev.includes(department.id) ? prev : [...prev, department.id])
+                                      : prev.filter((id) => id !== department.id)
+                                  ));
+                                }}
+                                disabled={savingTaskDepartmentsId === selectedEditTask.id}
+                              />
+                              {department.name}
+                            </label>
+                          ))
+                        )}
+                      </div>
+                      <div style={{ display: "flex", justifyContent: "flex-end", marginTop: 8 }}>
+                        <button
+                          type="button"
+                          className="btn secondary"
+                          onClick={handleSaveEditTaskDepartments}
+                          disabled={
+                            savingTaskDepartmentsId === selectedEditTask.id ||
+                            editTaskDepartmentDraftIds.length === 0 ||
+                            !hasEditTaskDepartmentChanges
+                          }
+                        >
+                          {savingTaskDepartmentsId === selectedEditTask.id ? "Saving..." : "Save Departments"}
+                        </button>
                       </div>
 
                       <p className="admin-detail-label">Phase</p>
@@ -1726,7 +1796,7 @@ export default function Admin({
               onClick={() => {
                 if (showEditTasksView) {
                   setNewTaskName("");
-                  setNewTaskDepartmentId(null);
+                  setNewTaskDepartmentIds([]);
                   setNewTaskPhaseId(null);
                   setNewTaskEnabled(null);
                   setNewTaskError(null);
@@ -1823,19 +1893,31 @@ export default function Admin({
             />
 
             <div style={{ display: "flex", flexDirection: "column" }}>
-            <p className="admin-detail-label">Department</p>
-            <select
-              className="admin-dept-filter admin-record-status-btn"
-              style={{ minHeight: 32, borderRadius: 8, padding: "0 12px", fontSize: 14, width: "100%" }}
-              value={newTaskDepartmentId ?? ""}
-              onChange={(e) => setNewTaskDepartmentId(e.target.value === "" ? null : Number(e.target.value))}
-              disabled={savingNewTask}
+            <p className="admin-detail-label">Departments</p>
+            <div
+              className="admin-detail-box"
+              style={{ maxHeight: 140, overflowY: "auto", display: "flex", flexDirection: "column", alignItems: "flex-start", gap: 6, padding: "8px 12px" }}
             >
-              <option value="">Select Department</option>
-              {departments.map((dept) => (
-                <option key={dept.id} value={dept.id}>{dept.name}</option>
-              ))}
-            </select>
+              {departments.length === 0 ? (
+                <span className="muted">No departments available</span>
+              ) : (
+                departments.map((dept) => (
+                  <label key={dept.id} style={{ display: "flex", flexDirection: "row", alignItems: "center", justifyContent: "flex-start", width: "100%", gap: 8, cursor: "pointer", fontSize: 14, marginBottom: 0, fontWeight: 400, textAlign: "left" }}>
+                    <input
+                      type="checkbox"
+                      checked={newTaskDepartmentIds.includes(dept.id)}
+                      onChange={(e) => {
+                        setNewTaskDepartmentIds((prev) =>
+                          e.target.checked ? [...prev, dept.id] : prev.filter((id) => id !== dept.id)
+                        );
+                      }}
+                      disabled={savingNewTask}
+                    />
+                    {dept.name}
+                  </label>
+                ))
+              )}
+            </div>
 
             <p className="admin-detail-label">Phase</p>
             <select
@@ -1886,7 +1968,7 @@ export default function Admin({
                 type="button"
                 className="btn primary"
                 onClick={handleSaveNewTask}
-                disabled={savingNewTask || !newTaskName.trim() || !newTaskDepartmentId || !newTaskPhaseId || newTaskEnabled === null}
+                disabled={savingNewTask || !newTaskName.trim() || newTaskDepartmentIds.length === 0 || !newTaskPhaseId || newTaskEnabled === null}
               >
                 {savingNewTask ? "Saving..." : "Save"}
               </button>
