@@ -1893,10 +1893,16 @@ export default function Admin({
                         <div />
                       </div>
 
-                      <p className="admin-detail-label">Phase</p>
+                      <p className="admin-detail-label">Phases</p>
                       <div className="admin-detail-box">
                         {selectedEditTask.phases && selectedEditTask.phases.length > 0
-                          ? selectedEditTask.phases.map((ph) => ph.name).join(", ")
+                          ? (
+                            <div style={{ display: "flex", flexDirection: "column", gap: 2, width: "100%" }}>
+                              {selectedEditTask.phases.map((phase) => (
+                                <div key={phase.id}>{phase.name}</div>
+                              ))}
+                            </div>
+                          )
                           : <span className="muted">No phase assigned</span>}
                       </div>
 
