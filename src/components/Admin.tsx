@@ -1880,35 +1880,7 @@ export default function Admin({
                         <div style={{ display: "grid", gridTemplateColumns: "1fr auto 1fr", alignItems: "center", marginBottom: 10 }}>
                           <div />
                           <h3 style={{ margin: 0, textAlign: "center" }}>{selectedSustainingTask.name}</h3>
-                          <div style={{ display: "flex", justifyContent: "flex-end" }}>
-                            <button
-                              type="button"
-                              className="btn secondary admin-record-status-btn"
-                              onClick={() => handleDeactivateTask(selectedSustainingTask)}
-                              disabled={deactivatingTaskId === selectedSustainingTask.id || !selectedSustainingTask.active}
-                              style={{ minWidth: 92, textAlign: "center" }}
-                            >
-                              {deactivatingTaskId === selectedSustainingTask.id ? "Saving..." : selectedSustainingTask.active ? "Active" : "Inactive"}
-                            </button>
-                          </div>
-                        </div>
-
-                        <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-                          <input
-                            type="text"
-                            className="modal-input admin-detail-input"
-                            style={{ marginTop: 0 }}
-                            value={sustainingTaskNameDraft}
-                            onChange={(e) => setSustainingTaskNameDraft(e.target.value)}
-                            onBlur={handleRequestSustainingTaskNameSave}
-                            onKeyDown={(e) => {
-                              if (e.key === "Enter") {
-                                e.preventDefault();
-                                (e.currentTarget as HTMLInputElement).blur();
-                              }
-                            }}
-                            disabled={savingTaskNameId === selectedSustainingTask.id}
-                          />
+                          <div />
                         </div>
 
                         <p className="admin-detail-label">Departments</p>
