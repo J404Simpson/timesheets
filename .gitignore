@@ -27,3 +27,4 @@ prisma/.env
 *.njsproj
 *.sln
 *.sw?
+.DS_Store
