@@ -1893,19 +1893,6 @@ export default function Admin({
                         <div />
                       </div>
 
-                      <p className="admin-detail-label">Phases</p>
-                      <div className="admin-detail-box">
-                        {selectedEditTask.phases && selectedEditTask.phases.length > 0
-                          ? (
-                            <div style={{ display: "flex", flexDirection: "column", gap: 2, width: "100%" }}>
-                              {selectedEditTask.phases.map((phase) => (
-                                <div key={phase.id}>{phase.name}</div>
-                              ))}
-                            </div>
-                          )
-                          : <span className="muted">No phase assigned</span>}
-                      </div>
-
                       <p className="admin-detail-label">Departments</p>
                       <div className="admin-detail-box">
                         {selectedEditTask.departments && selectedEditTask.departments.length > 0
@@ -1917,6 +1904,19 @@ export default function Admin({
                             </div>
                           )
                           : <span className="muted">No department assigned</span>}
+                      </div>
+
+                      <p className="admin-detail-label">Phases</p>
+                      <div className="admin-detail-box">
+                        {selectedEditTask.phases && selectedEditTask.phases.length > 0
+                          ? (
+                            <div style={{ display: "flex", flexDirection: "column", gap: 2, width: "100%" }}>
+                              {selectedEditTask.phases.map((phase) => (
+                                <div key={phase.id}>{phase.name}</div>
+                              ))}
+                            </div>
+                          )
+                          : <span className="muted">No phase assigned</span>}
                       </div>
 
                       <div style={{ display: "flex", justifyContent: "flex-end", marginTop: 12 }}>
