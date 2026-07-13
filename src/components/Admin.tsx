@@ -224,9 +224,23 @@ export default function Admin({
   const [deactivatingTaskId, setDeactivatingTaskId] = useState<number | null>(null);
   const [showNewProjectModal, setShowNewProjectModal] = useState(false);
   const [confirmModal, setConfirmModal] = useState<{
-    type: "project" | "reactivate-project" | "phase" | "task" | "edit-task-status" | "edit-task-name" | "edit-sustaining-task-name" | "reactivate-phase" | null;
+    type:
+      | "project"
+      | "reactivate-project"
+      | "phase"
+      | "task"
+      | "edit-task-status"
+      | "edit-task-name"
+      | "edit-sustaining-task-name"
+      | "reactivate-phase"
+      | "allow-similar-new-task"
+      | "allow-similar-new-sustaining-task"
+      | "allow-similar-edit-task-name"
+      | "allow-similar-edit-sustaining-task-name"
+      | null;
     id: number | null;
     name: string;
+    note?: string;
   }>({ type: null, id: null, name: "" });
   const [newProjectName, setNewProjectName] = useState("");
   const [savingProject, setSavingProject] = useState(false);
@@ -308,6 +322,15 @@ export default function Admin({
     const d = String(value.getDate()).padStart(2, "0");
     return `${y}-${m}-${d}`;
   };
+
+  const getErrorMessage = (error: unknown, fallback: string) => (
+    error instanceof Error && error.message
+      ? error.message
+      : fallback
+  );
+
+  const isSimilarNameConflictMessage = (message: string) =>
+    message.toLowerCase().includes("very similar to existing task");
 
   const loadProjects = async (view: "active" | "all") => {
     setLoadingProjects(true);
@@ -515,10 +538,12 @@ export default function Admin({
       confirmLabel = "Save Name";
       confirmAction = async () => {
         if (!confirmModal.id || !confirmModal.name.trim()) return;
+        const taskId = confirmModal.id;
+        const targetName = confirmModal.name.trim();
         setSavingTaskNameId(confirmModal.id);
         setAllTasksError(null);
         try {
-          const updatedTask = await updateTaskName(confirmModal.id, confirmModal.name.trim());
+          const updatedTask = await updateTaskName(taskId, targetName);
           setAllTasks((prev) => prev.map((task) => (
             task.id === updatedTask.id
               ? { ...task, name: updatedTask.name }
@@ -526,8 +551,18 @@ export default function Admin({
           )));
           setEditTaskNameDraft(updatedTask.name);
           setConfirmModal({ type: null, id: null, name: "" });
-        } catch {
-          setAllTasksError("Failed to update task name.");
+        } catch (err) {
+          const errorMsg = getErrorMessage(err, "Failed to update task name.");
+          if (isSimilarNameConflictMessage(errorMsg)) {
+            setConfirmModal({
+              type: "allow-similar-edit-task-name",
+              id: taskId,
+              name: targetName,
+              note: errorMsg,
+            });
+          } else {
+            setAllTasksError(errorMsg);
+          }
         } finally {
           setSavingTaskNameId(null);
         }
@@ -539,10 +574,12 @@ export default function Admin({
       confirmLabel = "Save Name";
       confirmAction = async () => {
         if (!confirmModal.id || !confirmModal.name.trim()) return;
+        const taskId = confirmModal.id;
+        const targetName = confirmModal.name.trim();
         setSavingTaskNameId(confirmModal.id);
         setSustainingTasksError(null);
         try {
-          const updatedTask = await updateTaskName(confirmModal.id, confirmModal.name.trim());
+          const updatedTask = await updateTaskName(taskId, targetName);
           setSustainingTasks((prev) => prev.map((task) => (
             task.id === updatedTask.id
               ? { ...task, name: updatedTask.name }
@@ -550,8 +587,88 @@ export default function Admin({
           )));
           setSustainingTaskNameDraft(updatedTask.name);
           setConfirmModal({ type: null, id: null, name: "" });
-        } catch {
-          setSustainingTasksError("Failed to update task name.");
+        } catch (err) {
+          const errorMsg = getErrorMessage(err, "Failed to update task name.");
+          if (isSimilarNameConflictMessage(errorMsg)) {
+            setConfirmModal({
+              type: "allow-similar-edit-sustaining-task-name",
+              id: taskId,
+              name: targetName,
+              note: errorMsg,
+            });
+          } else {
+            setSustainingTasksError(errorMsg);
+          }
+        } finally {
+          setSavingTaskNameId(null);
+        }
+      };
+    } else if (confirmModal.type === "allow-similar-new-task") {
+      confirmTitle = "Similar Task Name";
+      confirmMessage = `${confirmModal.note ?? "This task name is very similar to an existing task."} Create anyway?`;
+      confirmLoading = savingNewTask;
+      confirmLabel = "Create Anyway";
+      confirmAction = async () => {
+        setConfirmModal({ type: null, id: null, name: "" });
+        await handleSaveNewTask(true);
+      };
+    } else if (confirmModal.type === "allow-similar-new-sustaining-task") {
+      confirmTitle = "Similar Task Name";
+      confirmMessage = `${confirmModal.note ?? "This task name is very similar to an existing task."} Create anyway?`;
+      confirmLoading = savingNewSustainingTask;
+      confirmLabel = "Create Anyway";
+      confirmAction = async () => {
+        setConfirmModal({ type: null, id: null, name: "" });
+        await handleSaveNewSustainingTask(true);
+      };
+    } else if (confirmModal.type === "allow-similar-edit-task-name") {
+      confirmTitle = "Similar Task Name";
+      confirmMessage = `${confirmModal.note ?? "This task name is very similar to an existing task."} Save anyway?`;
+      confirmLoading = savingTaskNameId === confirmModal.id;
+      confirmLabel = "Save Anyway";
+      confirmAction = async () => {
+        if (!confirmModal.id || !confirmModal.name.trim()) return;
+        const taskId = confirmModal.id;
+        const targetName = confirmModal.name.trim();
+        setSavingTaskNameId(taskId);
+        setAllTasksError(null);
+        try {
+          const updatedTask = await updateTaskName(taskId, targetName, { allowSimilarName: true });
+          setAllTasks((prev) => prev.map((task) => (
+            task.id === updatedTask.id
+              ? { ...task, name: updatedTask.name }
+              : task
+          )));
+          setEditTaskNameDraft(updatedTask.name);
+          setConfirmModal({ type: null, id: null, name: "" });
+        } catch (err) {
+          setAllTasksError(getErrorMessage(err, "Failed to update task name."));
+        } finally {
+          setSavingTaskNameId(null);
+        }
+      };
+    } else if (confirmModal.type === "allow-similar-edit-sustaining-task-name") {
+      confirmTitle = "Similar Task Name";
+      confirmMessage = `${confirmModal.note ?? "This task name is very similar to an existing task."} Save anyway?`;
+      confirmLoading = savingTaskNameId === confirmModal.id;
+      confirmLabel = "Save Anyway";
+      confirmAction = async () => {
+        if (!confirmModal.id || !confirmModal.name.trim()) return;
+        const taskId = confirmModal.id;
+        const targetName = confirmModal.name.trim();
+        setSavingTaskNameId(taskId);
+        setSustainingTasksError(null);
+        try {
+          const updatedTask = await updateTaskName(taskId, targetName, { allowSimilarName: true });
+          setSustainingTasks((prev) => prev.map((task) => (
+            task.id === updatedTask.id
+              ? { ...task, name: updatedTask.name }
+              : task
+          )));
+          setSustainingTaskNameDraft(updatedTask.name);
+          setConfirmModal({ type: null, id: null, name: "" });
+        } catch (err) {
+          setSustainingTasksError(getErrorMessage(err, "Failed to update task name."));
         } finally {
           setSavingTaskNameId(null);
         }
@@ -578,7 +695,7 @@ export default function Admin({
     }
   };
 
-  const handleSaveNewTask = async () => {
+  const handleSaveNewTask = async (allowSimilarName = false) => {
     const trimmed = newTaskName.trim();
     if (!trimmed) {
       setNewTaskError("Task name is required.");
@@ -599,7 +716,13 @@ export default function Admin({
     setSavingNewTask(true);
     setNewTaskError(null);
     try {
-      const task = await createTask(trimmed, newTaskDepartmentIds, newTaskPhaseId, newTaskEnabled);
+      const task = await createTask(
+        trimmed,
+        newTaskDepartmentIds,
+        newTaskPhaseId,
+        newTaskEnabled,
+        allowSimilarName ? { allowSimilarName: true } : undefined
+      );
       setShowNewTaskModal(false);
       setNewTaskName("");
       setNewTaskDepartmentIds([]);
@@ -608,14 +731,23 @@ export default function Admin({
       await loadAllTasks();
       setSelectedEditTaskId(task.id);
     } catch (err) {
-      const errorMsg = err instanceof Error ? err.message : "Failed to create task. Please try again.";
-      setNewTaskError(errorMsg);
+      const errorMsg = getErrorMessage(err, "Failed to create task. Please try again.");
+      if (!allowSimilarName && isSimilarNameConflictMessage(errorMsg)) {
+        setConfirmModal({
+          type: "allow-similar-new-task",
+          id: null,
+          name: trimmed,
+          note: errorMsg,
+        });
+      } else {
+        setNewTaskError(errorMsg);
+      }
     } finally {
       setSavingNewTask(false);
     }
   };
 
-  const handleSaveNewSustainingTask = async () => {
+  const handleSaveNewSustainingTask = async (allowSimilarName = false) => {
     const trimmed = newSustainingTaskName.trim();
     if (!trimmed) {
       setNewSustainingTaskError("Task name is required.");
@@ -628,14 +760,28 @@ export default function Admin({
     setSavingNewSustainingTask(true);
     setNewSustainingTaskError(null);
     try {
-      await createSustainingTask(trimmed, newSustainingTaskDeptIds, false);
+      await createSustainingTask(
+        trimmed,
+        newSustainingTaskDeptIds,
+        false,
+        allowSimilarName ? { allowSimilarName: true } : undefined
+      );
       setShowNewSustainingTaskModal(false);
       setNewSustainingTaskName("");
       setNewSustainingTaskDeptIds([]);
       await loadSustainingTasks(sustainingView);
     } catch (err) {
-      const errorMsg = err instanceof Error ? err.message : "Failed to create task. Please try again.";
-      setNewSustainingTaskError(errorMsg);
+      const errorMsg = getErrorMessage(err, "Failed to create task. Please try again.");
+      if (!allowSimilarName && isSimilarNameConflictMessage(errorMsg)) {
+        setConfirmModal({
+          type: "allow-similar-new-sustaining-task",
+          id: null,
+          name: trimmed,
+          note: errorMsg,
+        });
+      } else {
+        setNewSustainingTaskError(errorMsg);
+      }
     } finally {
       setSavingNewSustainingTask(false);
     }

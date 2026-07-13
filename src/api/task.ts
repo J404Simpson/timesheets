@@ -42,6 +42,19 @@ function normalizeTask(task: Task & { departments?: unknown }): Task {
   };
 }
 
+async function getApiErrorMessage(response: Response, fallback: string): Promise<string> {
+  try {
+    const data = await response.json() as { error?: unknown };
+    if (typeof data?.error === "string" && data.error.trim()) {
+      return `${data.error} (${response.status})`;
+    }
+  } catch {
+    // Fall back to generic message when body is unavailable.
+  }
+
+  return `${fallback} (${response.status})`;
+}
+
 export async function getTasksForPhaseAndEmployee(phaseId: number): Promise<Task[]> {
   const accessToken = await acquireTokenSilent([
     protectedResources.timesheetApi.scope,
@@ -167,7 +180,11 @@ export async function updateTaskActive(taskId: number, active: boolean): Promise
   return data.task;
 }
 
-export async function updateTaskName(taskId: number, name: string): Promise<Task> {
+export async function updateTaskName(
+  taskId: number,
+  name: string,
+  options?: { allowSimilarName?: boolean }
+): Promise<Task> {
   const accessToken = await acquireTokenSilent([
     protectedResources.timesheetApi.scope,
   ]);
@@ -178,11 +195,14 @@ export async function updateTaskName(taskId: number, name: string): Promise<Task
       Authorization: `Bearer ${accessToken}`,
       "Content-Type": "application/json",
     },
-    body: JSON.stringify({ name }),
+    body: JSON.stringify({
+      name,
+      ...(options?.allowSimilarName ? { allowSimilarName: true } : {}),
+    }),
   });
 
   if (!response.ok) {
-    throw new Error(`Failed to update task name (${response.status})`);
+    throw new Error(await getApiErrorMessage(response, "Failed to update task name"));
   }
 
   const data = await response.json();
@@ -233,7 +253,8 @@ export async function getAllTasks(includeInactive = true): Promise<Task[]> {
 export async function createSustainingTask(
   name: string,
   department_ids: number[],
-  enabled: boolean
+  enabled: boolean,
+  options?: { allowSimilarName?: boolean }
 ): Promise<Task> {
   const accessToken = await acquireTokenSilent([
     protectedResources.timesheetApi.scope,
@@ -245,11 +266,16 @@ export async function createSustainingTask(
       Authorization: `Bearer ${accessToken}`,
       "Content-Type": "application/json",
     },
-    body: JSON.stringify({ name, department_ids, enabled }),
+    body: JSON.stringify({
+      name,
+      department_ids,
+      enabled,
+      ...(options?.allowSimilarName ? { allowSimilarName: true } : {}),
+    }),
   });
 
   if (!response.ok) {
-    throw new Error(`Failed to create sustaining task (${response.status})`);
+    throw new Error(await getApiErrorMessage(response, "Failed to create sustaining task"));
   }
 
   const data = await response.json();
@@ -260,7 +286,8 @@ export async function createTask(
   name: string,
   department_ids: number[],
   phase_id: number,
-  enabled: boolean
+  enabled: boolean,
+  options?: { allowSimilarName?: boolean }
 ): Promise<Task> {
   const accessToken = await acquireTokenSilent([
     protectedResources.timesheetApi.scope,
@@ -272,11 +299,17 @@ export async function createTask(
       Authorization: `Bearer ${accessToken}`,
       "Content-Type": "application/json",
     },
-    body: JSON.stringify({ name, department_ids, phase_id, enabled }),
+    body: JSON.stringify({
+      name,
+      department_ids,
+      phase_id,
+      enabled,
+      ...(options?.allowSimilarName ? { allowSimilarName: true } : {}),
+    }),
   });
 
   if (!response.ok) {
-    throw new Error(`Failed to create task (${response.status})`);
+    throw new Error(await getApiErrorMessage(response, "Failed to create task"));
   }
 
   const data = await response.json();
