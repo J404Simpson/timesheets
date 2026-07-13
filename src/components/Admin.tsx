@@ -1913,6 +1913,16 @@ export default function Admin({
                           : <span className="muted">No department assigned</span>}
                       </div>
 
+                      <div style={{ display: "flex", justifyContent: "flex-end", marginTop: 12 }}>
+                        <button
+                          type="button"
+                          className="btn secondary"
+                          onClick={openEditProjectTaskModal}
+                        >
+                          Edit
+                        </button>
+                      </div>
+
                       <div className="admin-task-qualifying-btns" style={{ marginTop: "auto", paddingTop: 12 }}>
                         <button
                           type="button"
@@ -1929,16 +1939,6 @@ export default function Admin({
                           disabled={savingTaskEnabledId === selectedEditTask.id || !selectedEditTask.enabled}
                         >
                           Non-Qualifying
-                        </button>
-                      </div>
-
-                      <div style={{ display: "flex", justifyContent: "flex-end", marginTop: 12 }}>
-                        <button
-                          type="button"
-                          className="btn secondary"
-                          onClick={openEditProjectTaskModal}
-                        >
-                          Edit
                         </button>
                       </div>
                     </div>
