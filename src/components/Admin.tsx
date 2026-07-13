@@ -1391,6 +1391,16 @@ export default function Admin({
     });
   };
 
+  const handleRequestTaskActiveToggle = (task: Task) => {
+    const nextActive = !task.active;
+    setConfirmModal({
+      type: "edit-task-status-change",
+      id: task.id,
+      name: task.name,
+      note: nextActive ? "active" : "inactive",
+    });
+  };
+
   const handleRequestEditTaskNameSave = () => {
     if (!selectedEditTask) return;
     const trimmed = editTaskNameDraft.trim();
@@ -1871,6 +1881,19 @@ export default function Admin({
                               onClick={() => setSelectedEditTaskId(task.id)}
                             >
                               <span className="admin-user-name">{task.name}</span>
+                            </button>
+                            <button
+                              type="button"
+                              className="btn secondary admin-record-status-btn"
+                              onClick={() => handleRequestTaskActiveToggle(task)}
+                              disabled={savingTaskActiveId === task.id}
+                              title={task.active ? "Set inactive" : "Set active"}
+                            >
+                              {savingTaskActiveId === task.id
+                                ? "Saving..."
+                                : task.active
+                                  ? "Active"
+                                  : "Inactive"}
                             </button>
                             <span
                               className={`admin-enabled-indicator ${task.enabled ? "is-enabled" : ""}`}
