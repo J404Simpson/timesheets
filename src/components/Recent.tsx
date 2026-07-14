@@ -107,6 +107,7 @@ export default function Recent({
   const now = new Date();
   const dayOfWeekNow = now.getDay();
   const isWithinPreviousWeekEditWindowLocal = dayOfWeekNow === 1 || dayOfWeekNow === 2;
+  const enforcePreviousWeekTuesdayCutoff = false;
   const referenceDate = new Date(now);
   referenceDate.setDate(now.getDate() + weekOffset * 7);
   const dayOfWeek = referenceDate.getDay();
@@ -116,6 +117,7 @@ export default function Recent({
 
   const isPreviousWeekLocked =
     weekOffset === -1 &&
+    enforcePreviousWeekTuesdayCutoff &&
     !isWithinPreviousWeekEditWindowLocal &&
     !allowPreviousWeekEdits;
 
