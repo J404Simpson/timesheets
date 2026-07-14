@@ -1803,11 +1803,11 @@ export default function Admin({
                       .map((task) => (
                         <li key={task.id}>
                           <div className="admin-user-item admin-record-item">
-                            <span className="admin-user-name">{task.name}</span>
                             <span
                               className={`admin-enabled-indicator ${task.enabled ? "is-enabled" : ""}`}
                               title={task.enabled ? 'Enabled' : 'Disabled'}
                             />
+                            <span className="admin-user-name">{task.name}</span>
                           </div>
                         </li>
                       ))}
@@ -1875,6 +1875,10 @@ export default function Admin({
                     {filteredEditTasks.map((task) => (
                         <li key={task.id}>
                           <div className={`admin-user-item admin-record-item ${selectedEditTaskId === task.id ? "is-active" : ""}`}>
+                            <span
+                              className={`admin-enabled-indicator ${task.enabled ? "is-enabled" : ""}`}
+                              title={task.enabled ? "Enabled" : "Disabled"}
+                            />
                             <button
                               type="button"
                               className="admin-record-select"
@@ -1895,10 +1899,6 @@ export default function Admin({
                                   ? "Active"
                                   : "Inactive"}
                             </button>
-                            <span
-                              className={`admin-enabled-indicator ${task.enabled ? "is-enabled" : ""}`}
-                              title={task.enabled ? "Enabled" : "Disabled"}
-                            />
                           </div>
                         </li>
                       ))}
