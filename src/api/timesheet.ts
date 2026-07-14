@@ -287,7 +287,7 @@ export async function getAdminUsers(): Promise<AdminUser[]> {
   const data = await requestJson<{ users: AdminUser[] }>(
     buildUrl("/api/admin/users"),
     { headers },
-    "Failed to fetch admin users"
+    "Failed to fetch admin employees"
   );
   return data.users.map(normalizeAdminUser);
 }

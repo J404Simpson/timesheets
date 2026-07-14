@@ -99,7 +99,7 @@ function EmployeeHoursModal({
             onChange={(event) => onDepartmentChange(event.target.value)}
             disabled={loading}
           >
-            <option value="" disabled>Select department</option>
+                            <span className="admin-user-name" style={{ textAlign: "left" }}>{task.name}</span>
             {departments.map((department) => (
               <option key={department.id} value={department.id}>{department.name}</option>
             ))}
@@ -440,7 +440,7 @@ export default function Admin({
         setSelectedUserId(userData[0].id);
       }
     } catch {
-      setError("Failed to load users.");
+      setError("Failed to load employees.");
     } finally {
       setLoadingUsers(false);
     }
@@ -1601,7 +1601,7 @@ export default function Admin({
               className={`btn admin-option ${activeSection === "users" ? "is-active" : ""}`}
               onClick={() => setActiveSection("users")}
             >
-              Users
+              Employees
             </button>
             <button
               type="button"
@@ -1802,12 +1802,14 @@ export default function Admin({
                       .filter((task) => taskMatchesDepartmentFilter(task, taskDeptFilter))
                       .map((task) => (
                         <li key={task.id}>
-                          <div className="admin-user-item admin-record-item">
+                          <div className="admin-user-item admin-record-item" style={{ justifyContent: "flex-start", gap: 8 }}>
                             <span
                               className={`admin-enabled-indicator ${task.enabled ? "is-enabled" : ""}`}
                               title={task.enabled ? 'Enabled' : 'Disabled'}
                             />
-                            <span className="admin-user-name">{task.name}</span>
+                            <span className="admin-record-select">
+                              <span className="admin-user-name">{task.name}</span>
+                            </span>
                           </div>
                         </li>
                       ))}
@@ -2099,7 +2101,7 @@ export default function Admin({
             <div className="admin-users-layout">
               <aside className="admin-users-list-panel">
                 <div className="admin-users-list-header">
-                  <h3>Users</h3>
+                  <h3>Employees</h3>
                   <button
                     type="button"
                     className="btn secondary"
@@ -2113,9 +2115,9 @@ export default function Admin({
                 {error && <p className="admin-error">{error}</p>}
 
                 {loadingUsers ? (
-                  <p className="muted">Loading users...</p>
+                  <p className="muted">Loading employees...</p>
                 ) : users.length === 0 ? (
-                  <p className="muted">No non-admin users found.</p>
+                  <p className="muted">No non-admin employees found.</p>
                 ) : (
                   <ul className="admin-user-list">
                     {users.map((user) => {
@@ -2165,7 +2167,7 @@ export default function Admin({
                     />
                   </>
                 ) : (
-                  <p className="muted">Select a user to view recent entries.</p>
+                  <p className="muted">Select an employee to view recent entries.</p>
                 )}
               </section>
             </div>
