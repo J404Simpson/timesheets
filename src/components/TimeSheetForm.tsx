@@ -1127,7 +1127,7 @@ export default function TimesheetForm({
         {/* actions */}
         <div className="actions">
           {showEntryFields && (
-            <button type="submit" className="btn btn-primary" disabled={!canSubmit}>
+            <button type="submit" className="btn primary" disabled={!canSubmit}>
               {editingEntry ? "Update" : "Save"}
             </button>
           )}
