@@ -99,7 +99,6 @@ function EmployeeHoursModal({
             onChange={(event) => onDepartmentChange(event.target.value)}
             disabled={loading}
           >
-                            <span className="admin-user-name" style={{ textAlign: "left" }}>{task.name}</span>
             {departments.map((department) => (
               <option key={department.id} value={department.id}>{department.name}</option>
             ))}
