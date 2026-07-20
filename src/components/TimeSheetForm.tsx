@@ -608,10 +608,26 @@ export default function TimesheetForm({
   const phaseRequired = showProjectFields && !!entry.project && phases.length > 0;
   const taskRequiredForProject = showProjectFields && !!entry.phase && tasks.length > 0;
 
+  // Check if entry has changed from its initial state (for edit mode)
+  const hasChanged = useMemo(() => {
+    if (!editingEntry) return true; // New entries always "have changed"
+    
+    const original = getInitialEntry();
+    return (
+      entry.startTime !== original.startTime ||
+      entry.endTime !== original.endTime ||
+      entry.project !== original.project ||
+      entry.phase !== original.phase ||
+      entry.task !== original.task ||
+      entry.notes !== original.notes
+    );
+  }, [entry, editingEntry]);
+
   const canSubmit = (() => {
     if (!showEntryFields || !entry.startTime || !entry.endTime) return false;
     if (endMin < startMin + STEP_MINUTES) return false;
     if (isTodaySelected && endMin > currentHourBoundaryMinutes) return false;
+    if (!hasChanged) return false; // Don't allow save if nothing changed
 
     if (showProjectFields) {
       if (!entry.project) return false;
