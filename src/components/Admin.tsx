@@ -2394,7 +2394,9 @@ export default function Admin({
               <button
                 type="button"
                 className={`btn ${editingProjectTaskId != null && !isProjectTaskModalDirty ? "secondary" : "primary"}`}
-                onClick={handleSaveNewTask}
+                onClick={() => {
+                  void handleSaveNewTask();
+                }}
                 disabled={savingNewTask || !canSaveProjectTaskModal}
               >
                 {savingNewTask ? "Saving..." : "Save"}
@@ -2462,7 +2464,9 @@ export default function Admin({
               <button
                 type="button"
                 className={`btn ${editingSustainingTaskId != null && !isSustainingTaskModalDirty ? "secondary" : "primary"}`}
-                onClick={handleSaveNewSustainingTask}
+                onClick={() => {
+                  void handleSaveNewSustainingTask();
+                }}
                 disabled={savingNewSustainingTask || !canSaveSustainingTaskModal}
               >
                 {savingNewSustainingTask ? "Saving..." : "Save"}
