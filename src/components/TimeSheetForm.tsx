@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { createPortal } from "react-dom";
-import { createEntry, updateEntry, deleteEntry, getActiveProjects, getPhasesForProject, getWeekEntries, type Project as ApiProject, type Phase as ApiPhase, type WeekEntry } from "../api/timesheet";
+import { createEntry, updateEntry, deleteEntry, updateLeaveEntryTime, getActiveProjects, getPhasesForProject, getWeekEntries, type Project as ApiProject, type Phase as ApiPhase, type WeekEntry } from "../api/timesheet";
 import { getTasksForProjectPhase, type Task as ApiTask } from "../api/task";
 
 type Entry = {
@@ -804,6 +804,91 @@ export default function TimesheetForm({
       setIsDeleting(false);
     }
   };
+
+  // ── Leave start-time adjustment mode ────────────────────────────────────────
+  const LEAVE_NOTE_PREFIX = "[BambooHR Leave]";
+  const isLeaveEditMode =
+    !!editingEntry && (editingEntry.notes ?? "").startsWith(LEAVE_NOTE_PREFIX);
+
+  const [leaveStartTime, setLeaveStartTime] = useState<string>(() => {
+    if (!editingEntry) return "09:00";
+    const raw = editingEntry.start_time;
+    const part = raw.includes("T") ? raw.split("T")[1] : raw;
+    return part.substring(0, 5);
+  });
+  const [leaveSaving, setLeaveSaving] = useState(false);
+
+  if (isLeaveEditMode && editingEntry) {
+    const leaveHours = Number(editingEntry.hours);
+    const leaveStartMinutes = minutesFrom(leaveStartTime);
+    const leaveEndMinutes = leaveStartMinutes + Math.round(leaveHours * 60);
+    const leaveEndHours = Math.floor(leaveEndMinutes / 60);
+    const leaveEndMins = leaveEndMinutes % 60;
+    const leaveEndDisplay =
+      leaveEndMinutes <= 24 * 60
+        ? format12(`${String(leaveEndHours).padStart(2, "0")}:${String(leaveEndMins).padStart(2, "0")}`)
+        : "—";
+    const leaveCanSave = leaveEndMinutes <= 24 * 60;
+
+    const handleLeaveSave = async () => {
+      if (!leaveCanSave) return;
+      setLeaveSaving(true);
+      try {
+        await updateLeaveEntryTime(editingEntry.id, leaveStartTime);
+        onSaved?.();
+      } catch (err) {
+        console.error("Leave time update failed", err);
+      } finally {
+        setLeaveSaving(false);
+      }
+    };
+
+    return (
+      <section>
+        <div className="new-entry-header" style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 8, marginBottom: 14 }}>
+          <span style={{ fontWeight: 600, fontSize: 15 }}>
+            Leave – {leaveHours % 1 === 0 ? leaveHours : leaveHours.toFixed(2)} hrs
+          </span>
+          <span className="muted" style={{ fontSize: 12 }}>
+            Adjust the start time of this leave block
+          </span>
+        </div>
+        <form onSubmit={(e) => { e.preventDefault(); void handleLeaveSave(); }} className="form">
+          <div className="entry-time-row">
+            <label className="entry-time-field">
+              Start
+              <FormDropdown
+                className="time-select"
+                name="leaveStartTime"
+                value={leaveStartTime}
+                ariaLabel="Leave start time"
+                onChange={(_name, value) => setLeaveStartTime(value)}
+                options={timeOptions}
+              />
+            </label>
+            <label className="entry-time-field">
+              End
+              <span className="form-dropdown" style={{ display: "flex", alignItems: "center", padding: "0 10px", opacity: 0.7 }}>
+                {leaveEndDisplay}
+              </span>
+            </label>
+          </div>
+          {!leaveCanSave && (
+            <p className="modal-error">Start time too late — leave would extend past midnight.</p>
+          )}
+          <div className="actions">
+            <button type="submit" className="btn btn-primary" disabled={leaveSaving || !leaveCanSave}>
+              {leaveSaving ? "Saving..." : "Save"}
+            </button>
+            <button type="button" className="btn secondary" onClick={onCancel} disabled={leaveSaving}>
+              Cancel
+            </button>
+          </div>
+        </form>
+      </section>
+    );
+  }
+  // ─────────────────────────────────────────────────────────────────────────────
 
   return (
     <section>

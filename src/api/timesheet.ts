@@ -378,6 +378,19 @@ export async function updateEntry(entryId: number, payload: CreateEntryPayload, 
   );
 }
 
+export async function updateLeaveEntryTime(entryId: number, startTime: string): Promise<any> {
+  const headers = await getAuthHeaders({ "Content-Type": "application/json" });
+  return requestJson(
+    buildUrl(`/api/entries/${entryId}/leave-time`),
+    {
+      method: "PATCH",
+      headers,
+      body: JSON.stringify({ startTime }),
+    },
+    "Failed to update leave entry time"
+  );
+}
+
 export async function deleteEntry(entryId: number, employeeId?: number): Promise<any> {
   const headers = await getAuthHeaders();
   return requestJson(

@@ -473,9 +473,15 @@ export default function Recent({
     }
   };
 
-  const isLeaveEntry = (entry: WeekEntry) => {
-    return ["leave", "holiday"].includes((entry.project?.name ?? "").trim().toLowerCase());
+  const isHolidayEntry = (entry: WeekEntry) => {
+    return (entry.project?.name ?? "").trim().toLowerCase() === "holiday";
   };
+
+  const isLeaveEntry = (entry: WeekEntry) => {
+    return (entry.project?.name ?? "").trim().toLowerCase() === "leave";
+  };
+
+  const isProtectedEntry = (entry: WeekEntry) => isHolidayEntry(entry);
 
   const getEntryTypeClass = (entry?: WeekEntry) => {
     if (!entry) return "";
@@ -512,7 +518,7 @@ export default function Recent({
       return "Previous week entries can only be changed through Tuesday unless you are an admin";
     }
     if (isFuture) return "Cannot select future time";
-    if (entry) return isLeaveEntry(entry) ? "Leave entries cannot be edited" : "Click to edit entry";
+    if (entry) return isHolidayEntry(entry) ? "Holiday entries cannot be edited" : isLeaveEntry(entry) ? "Click to adjust leave start time" : "Click to edit entry";
     if (!onSelectDate) return "Only existing entries can be edited in this view";
     if (isOccupied) return "Time slot occupied";
     if (isSelected) return "Click highlighted range to create entry";
@@ -521,7 +527,7 @@ export default function Recent({
 
   const getEntryCursor = (entry?: WeekEntry) => {
     if (!entry) return undefined;
-    return isLeaveEntry(entry) ? "not-allowed" : "pointer";
+    return isProtectedEntry(entry) ? "not-allowed" : "pointer";
   };
 
   if (loading) {
@@ -670,7 +676,7 @@ export default function Recent({
                                 if (isPreviousWeekLocked) {
                                   return;
                                 }
-                                if (!isLeaveEntry(entry)) {
+                                if (!isProtectedEntry(entry)) {
                                   onEditEntry?.(entry);
                                 }
                                 return;
