@@ -374,7 +374,8 @@ export default function TimesheetForm({
     }
 
     const startMin = minutesFrom(startTime);
-    const minEnd = startMin + STEP_MINUTES;
+    const DEFAULT_SINGLE_CLICK_DURATION_MINUTES = 30;
+    const minEnd = startMin + DEFAULT_SINGLE_CLICK_DURATION_MINUTES;
     const candidate = timeOptions.find((opt) => minutesFrom(opt.value) >= minEnd);
     return candidate ? candidate.value : "17:00";
   };
