@@ -182,6 +182,23 @@ function FormDropdown({
     };
   }, [disabled, isOpen, updateMenuPosition]);
 
+  useEffect(() => {
+    if (!isOpen || disabled || !menuRef.current) return;
+
+    const menu = menuRef.current;
+    const selectedOption = menu.querySelector<HTMLButtonElement>('[aria-selected="true"]');
+    const selectedValue = selectedOption?.getAttribute("data-value") ?? value;
+    const fallbackValue =
+      options.find((opt) => opt.value === "08:00" && !opt.disabled)?.value ??
+      options.find((opt) => !opt.disabled)?.value;
+    const targetValue = selectedValue || fallbackValue;
+
+    if (!targetValue) return;
+
+    const targetOption = menu.querySelector<HTMLButtonElement>(`[data-value="${targetValue}"]`);
+    targetOption?.scrollIntoView({ block: "center" });
+  }, [disabled, isOpen, options, value]);
+
   const selected = options.find((opt) => opt.value === value);
   const display = selected?.label ?? "Select";
 
@@ -217,6 +234,7 @@ function FormDropdown({
                   type="button"
                   role="option"
                   aria-selected={isSelected}
+                  data-value={opt.value}
                   disabled={opt.disabled}
                   className={`form-dropdown-option ${isSelected ? "selected" : ""}`.trim()}
                   onClick={() => {
