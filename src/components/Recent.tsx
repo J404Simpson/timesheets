@@ -288,6 +288,16 @@ export default function Recent({
     return [Math.floor(normalized / 60), normalized % 60];
   };
 
+  const formatTimeForDisplay = (hour: number, minute: number) => {
+    const value = new Date();
+    value.setHours(hour, minute, 0, 0);
+    return value.toLocaleTimeString("en-US", {
+      hour: "numeric",
+      minute: "2-digit",
+      hour12: true,
+    });
+  };
+
   const isSlotSelectable = (date: Date, hour: number, minute: number) => {
     // Avoid selecting the last half-hour of the day because end-time options
     // in New Entry cannot represent 24:00.
@@ -583,7 +593,7 @@ export default function Recent({
 
           {/* Time slots rows */}
           {Array.from({ length: 24 }, (_, hour) => {
-            const hourLabel = `${hour.toString().padStart(2, "0")}:00`;
+            const hourLabel = formatTimeForDisplay(hour, 0);
             const isWorkingHour = hour >= 7 && hour < 19;
 
             return (
@@ -597,7 +607,7 @@ export default function Recent({
                 {Array.from({ length: 4 }, (_, quarter) => {
                   const minute = quarter * 15;
                   const snappedMinute = normalizeToHalfHour(minute);
-                  const timeLabel = `${hour.toString().padStart(2, "0")}:${minute.toString().padStart(2, "0")}`;
+                  const timeLabel = formatTimeForDisplay(hour, minute);
                   const isHourDivider = minute === 15 || minute === 45;
                   const isTrueHourDivider = minute === 45;
 
